@@ -19,17 +19,21 @@ export const Route = createFileRoute("/play/$trackId")({
   component: PlayPage,
 });
 
+const SEP = "  ¶  ";
+
 function PlayPage() {
   const { artist, track, preview, art } = Route.useSearch();
   const [lines, setLines] = useState<LyricLine[] | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
-  const [time, setTime] = useState(0);
-  const [playing, setPlaying] = useState(false);
   const [typed, setTyped] = useState("");
   const [stats, setStats] = useState({ correct: 0, total: 0, started: 0 });
-  const [doneIdx, setDoneIdx] = useState(-1);
+  const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const cursorRef = useRef<HTMLSpanElement | null>(null);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const [offset, setOffset] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,61 +49,29 @@ function PlayPage() {
     };
   }, [artist, track]);
 
-  // Time tracking
-  useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    const onTime = () => setTime(a.currentTime);
-    const onPlay = () => setPlaying(true);
-    const onPause = () => setPlaying(false);
-    a.addEventListener("timeupdate", onTime);
-    a.addEventListener("play", onPlay);
-    a.addEventListener("pause", onPause);
-    return () => {
-      a.removeEventListener("timeupdate", onTime);
-      a.removeEventListener("play", onPlay);
-      a.removeEventListener("pause", onPause);
-    };
+  const fullText = useMemo(() => {
+    if (!lines) return "";
+    return lines.map((l) => l.text).join(SEP);
   }, [lines]);
 
-  const currentIdx = useMemo(() => {
-    if (!lines) return -1;
-    let idx = -1;
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].time <= time + 0.05) idx = i;
-      else break;
-    }
-    return idx;
-  }, [lines, time]);
-
-  const currentLine = currentIdx >= 0 && lines ? lines[currentIdx].text : "";
-
-  // Reset typed when line advances
+  // Keep the active character centered in the viewport with smooth transform.
   useEffect(() => {
-    if (currentIdx !== doneIdx) {
-      setTyped("");
-    }
-  }, [currentIdx, doneIdx]);
-
-  // Auto-finalize previous line when it advances
-  useEffect(() => {
-    if (!lines || currentIdx <= 0) return;
-    // when currentIdx changes, count what user typed in *previous* line
-    // (we already cleared typed; nothing further to do — stats are updated on keystroke)
-  }, [currentIdx, lines]);
+    const cursor = cursorRef.current;
+    const viewport = viewportRef.current;
+    if (!cursor || !viewport) return;
+    const cursorX = cursor.offsetLeft + cursor.offsetWidth / 2;
+    setOffset(viewport.clientWidth / 2 - cursorX);
+  }, [typed, fullText]);
 
   function onChange(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!currentLine) return;
+    if (!fullText) return;
     const v = e.target.value;
-    if (v.length > currentLine.length) return;
-    // Update stats incrementally only for new chars
-    const prev = typed;
-    if (v.length > prev.length) {
-      const newChars = v.slice(prev.length);
+    if (v.length > fullText.length) return;
+    if (v.length > typed.length) {
+      const newChars = v.slice(typed.length);
       let c = 0;
       for (let i = 0; i < newChars.length; i++) {
-        const idx = prev.length + i;
-        if (newChars[i] === currentLine[idx]) c++;
+        if (newChars[i] === fullText[typed.length + i]) c++;
       }
       setStats((s) => ({
         correct: s.correct + c,
@@ -108,7 +80,6 @@ function PlayPage() {
       }));
     }
     setTyped(v);
-    if (v === currentLine) setDoneIdx(currentIdx);
   }
 
   const accuracy = stats.total ? Math.round((stats.correct / stats.total) * 100) : 100;
@@ -117,26 +88,40 @@ function PlayPage() {
 
   function togglePlay() {
     const a = audioRef.current;
-    if (!a) return;
-    if (a.paused) a.play();
-    else a.pause();
+    if (a) {
+      if (a.paused) a.play();
+      else a.pause();
+    }
     inputRef.current?.focus();
   }
 
   function restart() {
     const a = audioRef.current;
-    if (!a) return;
-    a.currentTime = 0;
-    a.play();
+    if (a) {
+      a.currentTime = 0;
+      a.play();
+    }
     setTyped("");
     setStats({ correct: 0, total: 0, started: 0 });
-    setDoneIdx(-1);
     inputRef.current?.focus();
   }
 
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    const onPlay = () => setPlaying(true);
+    const onPause = () => setPlaying(false);
+    a.addEventListener("play", onPlay);
+    a.addEventListener("pause", onPause);
+    return () => {
+      a.removeEventListener("play", onPlay);
+      a.removeEventListener("pause", onPause);
+    };
+  }, [lines]);
+
   return (
     <main className="min-h-screen bg-background text-foreground font-sans">
-      <div className="mx-auto max-w-3xl px-6 py-10">
+      <div className="mx-auto max-w-4xl px-6 py-10">
         <Link to="/" className="font-mono text-xs text-muted-foreground hover:text-foreground">
           ← back
         </Link>
@@ -162,9 +147,6 @@ function PlayPage() {
         {loadErr && (
           <div className="mt-10 rounded-md border border-border bg-card p-6 text-center">
             <p className="text-sm text-muted-foreground">{loadErr}</p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Try a different version of the song, or pick another track.
-            </p>
           </div>
         )}
 
@@ -176,47 +158,56 @@ function PlayPage() {
 
         {lines && (
           <>
-            {/* Lyric viewport */}
-            <div className="mt-10 min-h-[180px] space-y-3 text-center">
-              {[currentIdx - 1, currentIdx, currentIdx + 1].map((i, pos) => {
-                if (i < 0 || i >= lines.length)
-                  return <p key={pos} className="h-7" />;
-                const line = lines[i];
-                const isCurrent = pos === 1;
-                if (!isCurrent) {
+            {/* Smooth scrolling lyric ticker */}
+            <div
+              ref={viewportRef}
+              className="relative mt-12 h-24 overflow-hidden"
+              style={{
+                maskImage:
+                  "linear-gradient(90deg, transparent, black 15%, black 85%, transparent)",
+                WebkitMaskImage:
+                  "linear-gradient(90deg, transparent, black 15%, black 85%, transparent)",
+              }}
+              onClick={() => inputRef.current?.focus()}
+            >
+              {/* center indicator */}
+              <div className="pointer-events-none absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-primary/30" />
+              <div
+                ref={trackRef}
+                className="absolute top-1/2 -translate-y-1/2 whitespace-pre font-mono text-3xl leading-none tracking-tight will-change-transform"
+                style={{
+                  transform: `translateX(${offset}px)`,
+                  transition: "transform 120ms cubic-bezier(0.22, 1, 0.36, 1)",
+                }}
+              >
+                {fullText.split("").map((ch, idx) => {
+                  const isCursor = idx === typed.length;
+                  let cls = "text-pending";
+                  if (idx < typed.length) {
+                    cls =
+                      typed[idx] === ch
+                        ? "text-correct"
+                        : "text-incorrect underline decoration-incorrect";
+                  } else if (isCursor) {
+                    cls = "text-foreground";
+                  }
                   return (
-                    <p
-                      key={`${i}-${pos}`}
-                      className="truncate font-mono text-base text-muted-foreground/50"
+                    <span
+                      key={idx}
+                      ref={isCursor ? cursorRef : undefined}
+                      className={cls}
                     >
-                      {line.text}
-                    </p>
+                      {ch}
+                    </span>
                   );
-                }
-                return (
-                  <p
-                    key={`${i}-${pos}`}
-                    className="font-mono text-2xl leading-relaxed tracking-tight"
-                  >
-                    {line.text.split("").map((ch, idx) => {
-                      let cls = "text-pending";
-                      if (idx < typed.length) {
-                        cls = typed[idx] === ch ? "text-correct" : "text-incorrect underline";
-                      } else if (idx === typed.length) {
-                        cls = "text-foreground border-l-2 border-primary -ml-[2px]";
-                      }
-                      return (
-                        <span key={idx} className={cls}>
-                          {ch}
-                        </span>
-                      );
-                    })}
-                  </p>
-                );
-              })}
+                })}
+                {/* trailing cursor when finished */}
+                {typed.length === fullText.length && (
+                  <span ref={cursorRef} />
+                )}
+              </div>
             </div>
 
-            {/* Input */}
             <input
               ref={inputRef}
               value={typed}
@@ -224,15 +215,17 @@ function PlayPage() {
               autoFocus
               spellCheck={false}
               autoComplete="off"
-              placeholder={playing ? "type the line above…" : "press play to start"}
-              className="mt-8 w-full rounded-md border border-border bg-card px-4 py-3 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
+              autoCapitalize="off"
+              autoCorrect="off"
+              placeholder="start typing the lyrics…"
+              className="mt-8 w-full rounded-md border border-border bg-card px-4 py-3 text-center font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
             />
 
-            {/* Audio controls */}
             <div className="mt-6 flex items-center justify-center gap-3">
               <button
                 onClick={togglePlay}
-                className="rounded-md bg-primary px-6 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                disabled={!preview}
+                className="rounded-md bg-primary px-6 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
               >
                 {playing ? "Pause" : "Play"}
               </button>
@@ -248,12 +241,12 @@ function PlayPage() {
               <audio ref={audioRef} src={preview} preload="auto" />
             ) : (
               <p className="mt-4 text-center text-xs text-incorrect">
-                No audio preview available for this track.
+                No audio preview available — type at your own pace.
               </p>
             )}
 
             <p className="mt-6 text-center font-mono text-xs text-muted-foreground">
-              Note: iTunes previews are 30 seconds — lyrics scroll for the full song so type along to what you hear.
+              Type to overwrite the lyrics — the line scrolls smoothly under your cursor.
             </p>
           </>
         )}
