@@ -12,7 +12,7 @@ let serverEntryPromise: Promise<ServerEntry> | undefined;
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
     serverEntryPromise = import("@tanstack/react-start/server-entry").then(
-      (m) => ((m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry)),
+      (m) => (m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry),
     );
   }
   return serverEntryPromise;
@@ -69,6 +69,62 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      // Handle API proxy requests
+      const url = new URL(request.url);
+      if (url.pathname === "/api/lyrics") {
+        const artist = url.searchParams.get("artist");
+        const track = url.searchParams.get("track");
+
+        if (!artist || !track) {
+          return new Response(JSON.stringify({ error: "Missing artist or track" }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          });
+        }
+
+        try {
+          const lyricsUrl = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(track)}`;
+          const res = await fetch(lyricsUrl);
+          const data = await res.json();
+          return new Response(JSON.stringify(data), {
+            status: res.status,
+            headers: { "content-type": "application/json" },
+          });
+        } catch (error) {
+          console.error("Lyrics API error:", error);
+          return new Response(JSON.stringify({ error: "Failed to fetch lyrics" }), {
+            status: 500,
+            headers: { "content-type": "application/json" },
+          });
+        }
+      }
+
+      if (url.pathname === "/api/youtube-search") {
+        const query = url.searchParams.get("q");
+
+        if (!query) {
+          return new Response(JSON.stringify({ error: "Missing query" }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          });
+        }
+
+        try {
+          // Fallback: return empty video ID
+          // YouTube search requires authentication, so we'll skip it for now
+          return new Response(JSON.stringify({ videoId: null }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        } catch (error) {
+          console.error("YouTube search error:", error);
+          return new Response(JSON.stringify({ error: "Failed to search YouTube" }), {
+            status: 500,
+            headers: { "content-type": "application/json" },
+          });
+        }
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

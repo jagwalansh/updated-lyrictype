@@ -19,21 +19,35 @@ export const Route = createFileRoute("/play/$trackId")({
   component: PlayPage,
 });
 
-const SEP = "  ¶  ";
+function getAudioType(src: string) {
+  const lower = src.split("?")[0].split("#")[0].toLowerCase();
+  if (lower.endsWith(".mp3")) return "audio/mpeg";
+  if (lower.endsWith(".m4a") || lower.endsWith(".mp4") || lower.endsWith(".aac"))
+    return "audio/mp4";
+  if (lower.endsWith(".wav")) return "audio/wav";
+  if (lower.endsWith(".ogg") || lower.endsWith(".oga")) return "audio/ogg";
+  return "";
+}
 
 function PlayPage() {
   const { artist, track, preview, art } = Route.useSearch();
   const [lines, setLines] = useState<LyricLine[] | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
+
   const [typed, setTyped] = useState("");
   const [stats, setStats] = useState({ correct: 0, total: 0, started: 0 });
-  const [playing, setPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const trackRef = useRef<HTMLDivElement | null>(null);
-  const cursorRef = useRef<HTMLSpanElement | null>(null);
-  const viewportRef = useRef<HTMLDivElement | null>(null);
-  const [offset, setOffset] = useState(0);
+  const lyricsRef = useRef<HTMLDivElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const [audioType, setAudioType] = useState("");
+  const [playing, setPlaying] = useState(false);
+  const [audioReady, setAudioReady] = useState(false);
+  const [audioErr, setAudioErr] = useState<string | null>(null);
+  const [previewSupported, setPreviewSupported] = useState(true);
+  const [currentLineIdx, setCurrentLineIdx] = useState(0);
+  const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,29 +63,76 @@ function PlayPage() {
     };
   }, [artist, track]);
 
+  // Set audio type when preview URL is available
+  useEffect(() => {
+    if (preview) {
+      const type = getAudioType(preview);
+      setAudioType(type);
+      setPreviewSupported(!!type);
+    }
+  }, [preview]);
+
+  // Search for YouTube video
+  useEffect(() => {
+    const searchYouTube = async () => {
+      try {
+        const query = `${artist} ${track} official`;
+        const response = await fetch(`/api/youtube-search?q=${encodeURIComponent(query)}`);
+        if (response.ok) {
+          const data = (await response.json()) as { videoId?: string };
+          if (data.videoId) {
+            setYoutubeVideoId(data.videoId);
+          }
+        }
+      } catch (error) {
+        console.error("YouTube search failed:", error);
+      }
+    };
+    if (artist && track) {
+      searchYouTube();
+    }
+  }, [artist, track]);
+
   const fullText = useMemo(() => {
     if (!lines) return "";
-    return lines.map((l) => l.text).join(SEP);
+    return lines.map((l) => l.text).join("\n");
   }, [lines]);
 
-  // Keep the active character centered in the viewport with smooth transform.
+  // Scroll to current line
   useEffect(() => {
-    const cursor = cursorRef.current;
-    const viewport = viewportRef.current;
-    if (!cursor || !viewport) return;
-    const cursorX = cursor.offsetLeft + cursor.offsetWidth / 2;
-    setOffset(viewport.clientWidth / 2 - cursorX);
-  }, [typed, fullText]);
+    if (!lyricsRef.current) return;
+    const lines = lyricsRef.current.querySelectorAll("[data-line-idx]");
+    const currentLine = lines[currentLineIdx] as HTMLElement;
+    if (currentLine) {
+      currentLine.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [currentLineIdx]);
 
   function onChange(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!fullText) return;
-    const v = e.target.value;
-    if (v.length > fullText.length) return;
+    if (!fullText || !lines) return;
+    const v = e.target.value.toLowerCase();
+
+    // Check if user pressed Enter to move to next line
+    if (e.nativeEvent instanceof KeyboardEvent && e.nativeEvent.key === "Enter") {
+      setTyped("");
+      setCurrentLineIdx((idx) => Math.min(idx + 1, lines.length - 1));
+      return;
+    }
+
+    // Get current line
+    const currentLine = lines[currentLineIdx]?.text || "";
+    const typedLower = v.toLowerCase();
+
+    // Check if typed matches current line (allowing some flexibility)
+    if (v.length > currentLine.length) return;
+
     if (v.length > typed.length) {
       const newChars = v.slice(typed.length);
       let c = 0;
       for (let i = 0; i < newChars.length; i++) {
-        if (newChars[i] === fullText[typed.length + i]) c++;
+        const typedChar = v[typed.length + i]?.toLowerCase() || "";
+        const lineChar = currentLine[typed.length + i]?.toLowerCase() || "";
+        if (typedChar === lineChar) c++;
       }
       setStats((s) => ({
         correct: s.correct + c,
@@ -87,41 +148,62 @@ function PlayPage() {
   const wpm = elapsed > 0 ? Math.round(stats.correct / 5 / elapsed) : 0;
 
   function togglePlay() {
-    const a = audioRef.current;
-    if (a) {
-      if (a.paused) a.play();
-      else a.pause();
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (playing) {
+      audio.pause();
+      setPlaying(false);
+    } else {
+      audio.play().catch((err) => {
+        console.error("Play error:", err);
+        setAudioErr("Failed to play audio.");
+      });
+      setPlaying(true);
     }
     inputRef.current?.focus();
   }
 
   function restart() {
-    const a = audioRef.current;
-    if (a) {
-      a.currentTime = 0;
-      a.play();
-    }
     setTyped("");
+    setCurrentLineIdx(0);
     setStats({ correct: 0, total: 0, started: 0 });
+
+    // Reset audio to beginning
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      // Auto-play if audio is ready
+      if (audioReady) {
+        audioRef.current.play().catch((err) => console.error("Play error:", err));
+      }
+    }
+
     inputRef.current?.focus();
   }
 
-  useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    const onPlay = () => setPlaying(true);
-    const onPause = () => setPlaying(false);
-    a.addEventListener("play", onPlay);
-    a.addEventListener("pause", onPause);
-    return () => {
-      a.removeEventListener("play", onPlay);
-      a.removeEventListener("pause", onPause);
-    };
-  }, [lines]);
-
   return (
-    <main className="min-h-screen bg-background text-foreground font-sans">
-      <div className="mx-auto max-w-4xl px-6 py-10">
+    <main className="relative min-h-screen bg-background text-foreground font-sans">
+      {/* YouTube Background Video */}
+      {youtubeVideoId && (
+        <div className="absolute inset-0 z-0 opacity-40">
+          <iframe
+            width="100%"
+            height="100%"
+            src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=0&controls=0&modestbranding=1&loop=1&playlist=${youtubeVideoId}`}
+            title="YouTube video player"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+
+      {/* Semi-transparent overlay for better text readability */}
+      <div className="absolute inset-0 z-10 bg-black/40" />
+
+      {/* Content Overlay */}
+      <div className="relative z-20 mx-auto max-w-4xl px-6 py-10">
         <Link to="/" className="font-mono text-xs text-muted-foreground hover:text-foreground">
           ← back
         </Link>
@@ -158,73 +240,84 @@ function PlayPage() {
 
         {lines && (
           <>
-            {/* Smooth scrolling lyric ticker */}
+            {/* Spotify-style lyrics display */}
             <div
-              ref={viewportRef}
-              className="relative mt-12 h-24 overflow-hidden"
-              style={{
-                maskImage:
-                  "linear-gradient(90deg, transparent, black 15%, black 85%, transparent)",
-                WebkitMaskImage:
-                  "linear-gradient(90deg, transparent, black 15%, black 85%, transparent)",
-              }}
+              ref={lyricsRef}
+              className="relative mt-12 h-96 overflow-y-auto rounded-lg bg-gradient px-6 py-12"
               onClick={() => inputRef.current?.focus()}
+              style={{
+                scrollBehavior: "smooth",
+              }}
             >
-              {/* center indicator */}
-              <div className="pointer-events-none absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-primary/30" />
-              <div
-                ref={trackRef}
-                className="absolute top-1/2 -translate-y-1/2 whitespace-pre font-mono text-3xl leading-none tracking-tight will-change-transform"
-                style={{
-                  transform: `translateX(${offset}px)`,
-                  transition: "transform 120ms cubic-bezier(0.22, 1, 0.36, 1)",
-                }}
-              >
-                {fullText.split("").map((ch, idx) => {
-                  const isCursor = idx === typed.length;
-                  let cls = "text-pending";
-                  if (idx < typed.length) {
-                    cls =
-                      typed[idx] === ch
-                        ? "text-correct"
-                        : "text-incorrect underline decoration-incorrect";
-                  } else if (isCursor) {
-                    cls = "text-foreground";
-                  }
-                  return (
-                    <span
-                      key={idx}
-                      ref={isCursor ? cursorRef : undefined}
-                      className={cls}
-                    >
-                      {ch}
-                    </span>
-                  );
-                })}
-                {/* trailing cursor when finished */}
-                {typed.length === fullText.length && (
-                  <span ref={cursorRef} />
-                )}
-              </div>
+              {lines.map((line, idx) => {
+                const isCurrentLine = idx === currentLineIdx;
+                const isPassed = idx < currentLineIdx;
+                const lineText = line.text;
+                const typedLower = typed.toLowerCase();
+                const lineLower = lineText.toLowerCase();
+
+                return (
+                  <div
+                    key={idx}
+                    data-line-idx={idx}
+                    className={`mb-8 text-center transition-all duration-300 ${
+                      isCurrentLine ? "scale-110" : "scale-95"
+                    } ${isPassed ? "opacity-40" : "opacity-100"}`}
+                  >
+                    <div className="text-3xl font-bold leading-relaxed">
+                      {isCurrentLine
+                        ? // Display current line with character-by-character feedback
+                          lineText.split("").map((ch, charIdx) => {
+                            const typedChar = typed[charIdx];
+                            let className = "text-muted-foreground";
+
+                            if (charIdx < typed.length) {
+                              className =
+                                typedChar?.toLowerCase() === ch.toLowerCase()
+                                  ? "text-correct font-semibold"
+                                  : "text-incorrect underline decoration-incorrect font-semibold";
+                            } else if (charIdx === typed.length) {
+                              className = "text-foreground animate-pulse";
+                            }
+
+                            return (
+                              <span key={charIdx} className={className}>
+                                {ch}
+                              </span>
+                            );
+                          })
+                        : // Display other lines as-is
+                          lineText}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
+            {/* Hidden input for capturing keyboard events */}
             <input
               ref={inputRef}
               value={typed}
               onChange={onChange}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  setTyped("");
+                  setCurrentLineIdx((idx) => Math.min(idx + 1, lines.length - 1));
+                }
+              }}
               autoFocus
               spellCheck={false}
               autoComplete="off"
               autoCapitalize="off"
               autoCorrect="off"
-              placeholder="start typing the lyrics…"
-              className="mt-8 w-full rounded-md border border-border bg-card px-4 py-3 text-center font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
+              className="sr-only"
             />
 
             <div className="mt-6 flex items-center justify-center gap-3">
               <button
                 onClick={togglePlay}
-                disabled={!preview}
+                disabled={!preview || !previewSupported || !audioReady}
                 className="rounded-md bg-primary px-6 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
               >
                 {playing ? "Pause" : "Play"}
@@ -238,7 +331,46 @@ function PlayPage() {
             </div>
 
             {preview ? (
-              <audio ref={audioRef} src={preview} preload="auto" />
+              previewSupported ? (
+                <>
+                  <audio
+                    ref={audioRef}
+                    src={preview}
+                    type={audioType}
+                    preload="auto"
+                    onPlay={() => setPlaying(true)}
+                    onPause={() => setPlaying(false)}
+                    onEnded={() => setPlaying(false)}
+                    onError={(e) => {
+                      console.log("audio error", e);
+                      setAudioErr("Audio preview failed to load.");
+                      setAudioReady(false);
+                      setPlaying(false);
+                    }}
+                    onLoadedData={() => {
+                      console.log("audio loaded data");
+                      setAudioErr(null);
+                      setAudioReady(true);
+                    }}
+                    onCanPlayThrough={() => {
+                      console.log("audio can play through");
+                      setAudioReady(true);
+                    }}
+                  />
+                  {audioErr && (
+                    <p className="mt-4 text-center text-xs text-incorrect">{audioErr}</p>
+                  )}
+                  {!audioReady && !audioErr && (
+                    <p className="mt-4 text-center text-xs text-muted-foreground">
+                      Loading audio preview…
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="mt-4 text-center text-xs text-incorrect">
+                  Audio preview format is not supported by the browser.
+                </p>
+              )
             ) : (
               <p className="mt-4 text-center text-xs text-incorrect">
                 No audio preview available — type at your own pace.
@@ -246,7 +378,8 @@ function PlayPage() {
             )}
 
             <p className="mt-6 text-center font-mono text-xs text-muted-foreground">
-              Type to overwrite the lyrics — the line scrolls smoothly under your cursor.
+              Just start typing — press <span className="font-bold">Enter</span> to go to the next
+              line
             </p>
           </>
         )}

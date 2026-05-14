@@ -21,31 +21,47 @@ export function parseLrc(lrc: string): LyricLine[] {
   return lines.filter((l) => l.text.length > 0);
 }
 
-export interface ITunesTrack {
+export interface TrackSearchResult {
   trackId: number;
   trackName: string;
   artistName: string;
-  collectionName?: string;
   artworkUrl100?: string;
   previewUrl?: string;
 }
 
-export async function searchTracks(query: string): Promise<ITunesTrack[]> {
-  const url = `https://itunes.apple.com/search?media=music&entity=song&limit=20&term=${encodeURIComponent(query)}`;
+export async function searchTracks(query: string): Promise<TrackSearchResult[]> {
+  console.log("searchTracks called", query);
+  if (!query.trim()) return [];
+
+  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=20`;
   const res = await fetch(url);
+  console.log("fetch done", res.ok);
   if (!res.ok) throw new Error("Search failed");
-  const data = (await res.json()) as { results: ITunesTrack[] };
-  return data.results.filter((t) => t.previewUrl);
+  const data = (await res.json()) as { results: any[] };
+  console.log("data results length", data.results.length);
+
+  return data.results.map((result) => ({
+    trackId: result.trackId,
+    trackName: result.trackName,
+    artistName: result.artistName,
+    artworkUrl100: result.artworkUrl100,
+    previewUrl: result.previewUrl,
+  }));
 }
 
 export async function fetchSyncedLyrics(
   artist: string,
   track: string,
 ): Promise<LyricLine[] | null> {
-  const url = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(track)}`;
-  const res = await fetch(url);
-  if (!res.ok) return null;
-  const data = (await res.json()) as { syncedLyrics?: string | null };
-  if (!data.syncedLyrics) return null;
-  return parseLrc(data.syncedLyrics);
+  try {
+    const url = `/api/lyrics?artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(track)}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = (await res.json()) as { syncedLyrics?: string | null };
+    if (!data.syncedLyrics) return null;
+    return parseLrc(data.syncedLyrics);
+  } catch (error) {
+    console.error("Failed to fetch lyrics:", error);
+    return null;
+  }
 }

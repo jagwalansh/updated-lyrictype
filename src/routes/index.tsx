@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { searchTracks, type ITunesTrack } from "@/lib/lrc";
+import { searchTracks, type TrackSearchResult } from "@/lib/lrc";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -9,7 +9,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [q, setQ] = useState("");
-  const [results, setResults] = useState<ITunesTrack[]>([]);
+  const [results, setResults] = useState<TrackSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 

@@ -78,12 +78,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "LyricType — Type along to your favorite songs" },
-      { name: "description", content: "A typing game where you race to type the lyrics of songs in real time. Minimal, fast, and free." },
+      {
+        name: "description",
+        content:
+          "A typing game where you race to type the lyrics of songs in real time. Minimal, fast, and free.",
+      },
       { property: "og:title", content: "LyricType" },
       { property: "og:description", content: "Race to type lyrics in time with the music." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
