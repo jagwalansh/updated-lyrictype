@@ -59,12 +59,8 @@ function PlayPage() {
     const cursor = cursorRef.current;
     const viewport = viewportRef.current;
     if (!cursor || !viewport) return;
-    const cRect = cursor.getBoundingClientRect();
-    const vRect = viewport.getBoundingClientRect();
-    const cursorXInTrack = cRect.left - vRect.left - offset;
-    const target = vRect.width / 2 - cursorXInTrack;
-    setOffset(target);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const cursorX = cursor.offsetLeft + cursor.offsetWidth / 2;
+    setOffset(viewport.clientWidth / 2 - cursorX);
   }, [typed, fullText]);
 
   function onChange(e: React.ChangeEvent<HTMLInputElement>) {
