@@ -121,7 +121,6 @@ function PlayPage() {
 
     // Get current line
     const currentLine = lines[currentLineIdx]?.text || "";
-    const typedLower = v.toLowerCase();
 
     // Check if typed matches current line (allowing some flexibility)
     if (v.length > currentLine.length) return;
@@ -245,16 +244,11 @@ function PlayPage() {
               ref={lyricsRef}
               className="relative mt-12 h-96 overflow-hidden rounded-lg bg-gradient px-6 py-12"
               onClick={() => inputRef.current?.focus()}
-              style={{
-                scrollBehavior: "smooth",
-              }}
             >
               {lines.map((line, idx) => {
                 const isCurrentLine = idx === currentLineIdx;
                 const isPassed = idx < currentLineIdx;
                 const lineText = line.text;
-                const typedLower = typed.toLowerCase();
-                const lineLower = lineText.toLowerCase();
 
                 return (
                   <div
