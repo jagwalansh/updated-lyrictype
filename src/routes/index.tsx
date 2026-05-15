@@ -84,12 +84,19 @@ function Index() {
         </header>
 
         <form onSubmit={onSearch} className="flex border-black border-b-2 py-2 gap-2">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search song or artist…"
-            className="flex-1 rounded-md  bg-card px-4 py-3 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
-          />
+          <div className="flex-1 relative">
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder=" "
+              className="flex-1 w-full rounded-md bg-background px-4 py-3 font-mono text-sm outline-none peer"
+            />
+            <label
+              className={`absolute left-4 top-3 font-mono text-sm transition-all pointer-events-none ${q ? "text-xs -top-5 text-muted-foreground" : "text-muted-foreground"} peer-focus:-top-5 peer-focus:text-xs peer-focus:text-muted-foreground`}
+            >
+              Search song or artist…
+            </label>
+          </div>
           <button
             type="submit"
             disabled={loading}

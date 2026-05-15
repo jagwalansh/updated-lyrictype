@@ -243,7 +243,7 @@ function PlayPage() {
             {/* Spotify-style lyrics display */}
             <div
               ref={lyricsRef}
-              className="relative mt-12 h-96 overflow-y-auto rounded-lg bg-gradient px-6 py-12"
+              className="relative mt-12 h-96 overflow-hidden rounded-lg bg-gradient px-6 py-12"
               onClick={() => inputRef.current?.focus()}
               style={{
                 scrollBehavior: "smooth",
