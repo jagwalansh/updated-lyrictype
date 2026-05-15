@@ -31,27 +31,69 @@ function Index() {
 
   return (
     <main className="min-h-screen bg-background text-foreground font-sans">
+      <nav className="w-full bg-white border-b shadow-sm">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-8 py-4">
+          {/* Left Side Logo */}
+          <div className="flex items-center gap-3">
+            <h1 className="font-mono text-2xl font-medium tracking-tight">
+              lyric<span className="text-primary border-b-2 border-primary">type</span>
+            </h1>
+          </div>
+
+          {/* Center Links */}
+          {/* <ul className="hidden md:flex items-center gap-8 text-gray-600 font-medium">
+            <li>
+              <a href="#" className="hover:text-sky-500 transition">
+                Home
+              </a>
+            </li>
+
+            <li>
+              <a href="#" className="hover:text-sky-500 transition">
+                Flights
+              </a>
+            </li>
+
+            <li>
+              <a href="#" className="hover:text-sky-500 transition">
+                About
+              </a>
+            </li>
+
+            <li>
+              <a href="#" className="hover:text-sky-500 transition">
+                Contact
+              </a>
+            </li>
+          </ul> */}
+
+          {/* Right Side Button */}
+          <button className="bg-black text-primary-foreground px-5 py-2 rounded-xl hover:bg-primary/80 transition">
+            Login
+          </button>
+        </div>
+      </nav>
       <div className="mx-auto max-w-2xl px-6 py-16">
         <header className="mb-12 text-center">
           <h1 className="font-mono text-4xl font-medium tracking-tight">
-            lyric<span className="text-primary">type</span>
+            lyric<span className="text-primary border-b-2 border-primary">type</span>
           </h1>
           <p className="mt-3 text-sm text-muted-foreground">
             Search a song. Type the lyrics in time with the music.
           </p>
         </header>
 
-        <form onSubmit={onSearch} className="flex gap-2">
+        <form onSubmit={onSearch} className="flex border-black border-b-2 py-2 gap-2">
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search song or artist…"
-            className="flex-1 rounded-md border border-border bg-card px-4 py-3 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
+            className="flex-1 rounded-md  bg-card px-4 py-3 font-mono text-sm outline-none focus:ring-2 focus:ring-ring"
           />
           <button
             type="submit"
             disabled={loading}
-            className="rounded-md bg-primary px-5 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="rounded-md bg-black px-5 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {loading ? "…" : "Search"}
           </button>
