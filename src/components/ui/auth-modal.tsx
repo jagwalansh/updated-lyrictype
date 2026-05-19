@@ -1,6 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Tabs from "@radix-ui/react-tabs";
-import { X } from "lucide-react";
+import { Chrome, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useModal } from "@/lib/modal-context";
@@ -11,13 +11,14 @@ type AuthMode = "signIn" | "signUp";
 
 export function AuthModal() {
   const { modalOpen, setModalOpen } = useModal();
-  const { signIn, signUp, resendConfirmation } = useAuth();
+  const { signIn, signUp, signInWithGoogle, resendConfirmation } = useAuth();
   const [authMode, setAuthMode] = useState<AuthMode>("signIn");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const [resending, setResending] = useState(false);
 
   const emailNotConfirmed = error?.toLowerCase().includes("email not confirmed") ?? false;
@@ -82,6 +83,19 @@ export function AuthModal() {
     }
   }
 
+  async function handleGoogleSignIn() {
+    setError(null);
+    setMessage(null);
+    setGoogleSubmitting(true);
+
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      setGoogleSubmitting(false);
+      setError(err instanceof Error ? err.message : "Could not start Google sign-in. Try again.");
+    }
+  }
+
   function handleOpenChange(open: boolean) {
     setModalOpen(open);
     if (!open) {
@@ -135,6 +149,27 @@ export function AuthModal() {
                 Sign up
               </Tabs.Trigger>
             </Tabs.List>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="mb-4 w-full"
+              onClick={handleGoogleSignIn}
+              disabled={googleSubmitting || submitting}
+            >
+              <Chrome aria-hidden="true" />
+              {googleSubmitting
+                ? "Opening Google..."
+                : authMode === "signIn"
+                  ? "Sign in with Google"
+                  : "Sign up with Google"}
+            </Button>
+
+            <div className="mb-4 flex items-center gap-3 text-xs text-muted-foreground">
+              <div className="h-px flex-1 bg-border" />
+              <span>or use email</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">

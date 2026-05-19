@@ -12,6 +12,7 @@ interface AuthContextType {
   profileLoading: boolean;
   signUp: (email: string, password: string) => Promise<{ needsEmailConfirmation: boolean }>;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   resendConfirmation: (email: string) => Promise<void>;
   refreshProfile: () => Promise<Profile | null>;
@@ -98,6 +99,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await loadProfile(data.user);
   };
 
+  const signInWithGoogle = async () => {
+    const redirectTo = typeof window !== "undefined" ? window.location.href : undefined;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: redirectTo ? { redirectTo } : undefined,
+    });
+
+    if (error) throw error;
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
@@ -164,6 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profileLoading,
         signUp,
         signIn,
+        signInWithGoogle,
         signOut,
         resendConfirmation,
         refreshProfile,

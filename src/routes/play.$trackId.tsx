@@ -9,6 +9,8 @@ interface Search {
   art: string;
 }
 
+const SHOW_TYPING_ERRORS = false;
+
 export const Route = createFileRoute("/play/$trackId")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     artist: String(s.artist ?? ""),
@@ -198,8 +200,8 @@ function PlayPage() {
         </div>
       )}
 
-      {/* Semi-transparent overlay for better text readability */}
-      <div className="absolute inset-0 z-10 bg-black/40" />
+      {/* Semi-transparent overlay for better text readability when video is visible */}
+      {youtubeVideoId && <div className="absolute inset-0 z-10 bg-black/40" />}
 
       {/* Content Overlay */}
       <div className="relative z-20 mx-auto max-w-4xl px-6 py-10">
@@ -266,10 +268,15 @@ function PlayPage() {
                             let className = "text-muted-foreground";
 
                             if (charIdx < typed.length) {
-                              className =
-                                typedChar?.toLowerCase() === ch.toLowerCase()
-                                  ? "text-correct font-semibold"
-                                  : "text-incorrect underline decoration-incorrect font-semibold";
+                              const isCorrect = typedChar?.toLowerCase() === ch.toLowerCase();
+                              if (isCorrect) {
+                                className = "text-correct font-semibold";
+                              } else if (!SHOW_TYPING_ERRORS) {
+                                className = "text-correct font-semibold";
+                              } else if (SHOW_TYPING_ERRORS) {
+                                className =
+                                  "text-incorrect underline decoration-incorrect font-semibold";
+                              }
                             } else if (charIdx === typed.length) {
                               className = "text-foreground animate-pulse";
                             }

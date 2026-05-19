@@ -47,9 +47,18 @@ The following files have been created and need to be integrated:
 - `src/server/api/leaderboard.ts` - Get leaderboard endpoint
 - `src/server/api/profile.ts` - Get user profile endpoint
 
+## Step 5: Enable Google Login
+
+1. In Supabase, open **Authentication > Providers**
+2. Enable **Google**
+3. Add your Google OAuth Client ID and Client Secret
+4. In the Google Cloud OAuth client, add the Supabase callback URL shown in the Google provider settings
+5. In Supabase **Authentication > URL Configuration**, add your local app URL, for example `http://localhost:5173`, to the allowed redirect URLs
+
 ## What This Enables:
 
 ✅ User authentication (email/password signup & login)
+✅ Single-click Google login and signup
 ✅ Automatic profile creation on signup
 ✅ Score saving with automatic song tracking
 ✅ Star to 10-point rating conversion
