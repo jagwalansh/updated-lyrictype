@@ -49,17 +49,22 @@ export async function searchTracks(query: string): Promise<TrackSearchResult[]> 
   }));
 }
 
+export interface LyricsResult {
+  lines: LyricLine[];
+  duration: number;
+}
+
 export async function fetchSyncedLyrics(
   artist: string,
   track: string,
-): Promise<LyricLine[] | null> {
+): Promise<LyricsResult | null> {
   try {
     const url = `/api/lyrics?artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(track)}`;
     const res = await fetch(url);
     if (!res.ok) return null;
-    const data = (await res.json()) as { syncedLyrics?: string | null };
+    const data = (await res.json()) as { syncedLyrics?: string | null, duration?: number };
     if (!data.syncedLyrics) return null;
-    return parseLrc(data.syncedLyrics);
+    return { lines: parseLrc(data.syncedLyrics), duration: data.duration || 0 };
   } catch (error) {
     console.error("Failed to fetch lyrics:", error);
     return null;

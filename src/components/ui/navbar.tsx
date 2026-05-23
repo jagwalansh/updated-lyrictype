@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { LogIn, UserRound } from "lucide-react";
-import { useState } from "react";
+import { LogIn, UserRound, Moon, Sun } from "lucide-react";
+import { useState, useEffect } from "react";
 import { AccountModal } from "@/components/ui/account-modal";
 import { AuthModal } from "@/components/ui/auth-modal";
 import { useAuth } from "@/lib/auth-context";
@@ -55,6 +55,27 @@ export function Navbar() {
   const { setModalOpen } = useModal();
   const { user, profile, loading: authLoading } = useAuth();
   const [accountOpen, setAccountOpen] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const dark = document.documentElement.classList.contains("dark") || localStorage.getItem("theme") === "dark";
+    setIsDark(dark);
+    if (dark) {
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    if (isDark) {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+      setIsDark(false);
+    } else {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+      setIsDark(true);
+    }
+  };
 
   return (
     <>
@@ -92,6 +113,31 @@ export function Navbar() {
                   </div>
                 </div>
               </Link>
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={toggleTheme}
+              className="group border border-border/40 bg-card/50 shadow-sm hover:bg-accent transition-all rounded-md px-3 h-8 cursor-pointer flex items-center justify-center"
+              title="Toggle Theme"
+            >
+              <div className="relative w-4 h-4">
+                {isDark ? (
+                  <>
+                    <Sun className="h-4 w-4 text-foreground transition-colors duration-300" />
+                    <div className="absolute inset-0 w-0 overflow-hidden transition-all duration-300 group-hover:w-full">
+                      <Sun className="h-4 w-4 text-primary max-w-none" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Moon className="h-4 w-4 text-foreground transition-colors duration-300" />
+                    <div className="absolute inset-0 w-0 overflow-hidden transition-all duration-300 group-hover:w-full">
+                      <Moon className="h-4 w-4 text-primary max-w-none" />
+                    </div>
+                  </>
+                )}
+              </div>
             </motion.button>
             <div className="flex min-w-0 items-center gap-3">
               {authLoading ? (

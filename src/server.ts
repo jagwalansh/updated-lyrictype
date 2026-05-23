@@ -101,6 +101,8 @@ export default {
 
       if (url.pathname === "/api/youtube-search") {
         const query = url.searchParams.get("q");
+        const durationParam = url.searchParams.get("duration");
+        const expectedDuration = durationParam ? parseInt(durationParam, 10) : 0;
 
         if (!query) {
           return new Response(JSON.stringify({ error: "Missing query" }), {
@@ -112,8 +114,24 @@ export default {
         try {
           const yts = (await import("yt-search")).default;
           const r = await yts(query);
-          const videoId = r.videos.length > 0 ? r.videos[0].videoId : null;
-          const authorName = r.videos.length > 0 ? r.videos[0].author.name : null;
+          
+          let bestVideo = r.videos.length > 0 ? r.videos[0] : null;
+
+          if (expectedDuration > 0 && r.videos.length > 0) {
+            let bestDiff = Infinity;
+            // Only look at the top 10 results to ensure high relevance
+            const candidates = r.videos.slice(0, 10);
+            for (const video of candidates) {
+               const diff = Math.abs(video.seconds - expectedDuration);
+               if (diff < bestDiff) {
+                 bestDiff = diff;
+                 bestVideo = video;
+               }
+            }
+          }
+
+          const videoId = bestVideo ? bestVideo.videoId : null;
+          const authorName = bestVideo ? bestVideo.author.name : null;
 
           return new Response(JSON.stringify({ videoId, authorName }), {
             status: 200,

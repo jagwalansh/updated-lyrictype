@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { motion } from "motion/react";
 import { Navbar } from "@/components/ui/navbar";
 import { fetchSyncedLyrics, type LyricLine } from "@/lib/lrc";
 import YouTube, { type YouTubePlayer } from "react-youtube";
@@ -65,35 +66,43 @@ function PlayPage() {
   useEffect(() => {
     let cancelled = false;
     
-    // 1. Fetch Lyrics
-    fetchSyncedLyrics(artist, track)
-      .then((r) => {
+    async function loadData() {
+      try {
+        // 1. Fetch Lyrics
+        const lyricsRes = await fetchSyncedLyrics(artist, track);
         if (cancelled) return;
-        if (!r || r.length === 0) setLoadErr("No synced lyrics found for this song.");
-        else setLines(r);
-      })
-      .catch(() => !cancelled && setLoadErr("Failed to load lyrics."));
+        
+        if (!lyricsRes || lyricsRes.lines.length === 0) {
+          setLoadErr("No synced lyrics found for this song.");
+          setYtLoading(false);
+          return;
+        }
+        
+        setLines(lyricsRes.lines);
+        const expectedDuration = lyricsRes.duration;
 
-    // 2. Fetch YouTube Video ID
-    setYtLoading(true);
-    fetch(`/api/youtube-search?q=${encodeURIComponent(artist + " " + track + " audio")}`)
-      .then(r => r.json())
-      .then(d => {
+        // 2. Fetch YouTube Video ID
+        setYtLoading(true);
+        const ytResponse = await fetch(`/api/youtube-search?q=${encodeURIComponent(artist + " " + track + " audio")}&duration=${expectedDuration}`);
+        const d = await ytResponse.json();
+        
         if (cancelled) return;
+        
         if (d.videoId) {
            setVideoId(d.videoId);
            setYtAuthor(d.authorName);
         } else {
            setLoadErr("Could not find a YouTube video for this track.");
         }
-      })
-      .catch(e => {
-         console.error(e);
-         if (!cancelled) setLoadErr("Failed to search YouTube.");
-      })
-      .finally(() => {
-         if (!cancelled) setYtLoading(false);
-      });
+      } catch (e) {
+        console.error(e);
+        if (!cancelled) setLoadErr("Failed to load track data.");
+      } finally {
+        if (!cancelled) setYtLoading(false);
+      }
+    }
+    
+    loadData();
 
     return () => {
       cancelled = true;
@@ -176,7 +185,6 @@ function PlayPage() {
         // Visual Updates
         const approachEl = document.getElementById('approach-circle');
         const progressEl = document.getElementById('progress-circle');
-        const pulseEl = document.getElementById('bg-pulse');
 
         if (approachEl) {
           if (timeDiff > 0 && timeDiff < 2.0) {
@@ -262,8 +270,10 @@ function PlayPage() {
     if (!player) return;
 
     if (playing) {
+      setPlaying(false);
       player.pauseVideo();
     } else {
+      setPlaying(true);
       player.playVideo();
     }
     inputRef.current?.focus();
@@ -281,17 +291,16 @@ function PlayPage() {
 
     const player = ytPlayerRef.current;
     if (player) {
+      player.pauseVideo();
       player.seekTo(0, true);
-      if (audioReady) {
-        player.playVideo();
-      }
+      setPlaying(false);
     }
 
     inputRef.current?.focus();
   }
 
   return (
-    <main className="relative min-h-screen bg-background text-foreground font-sans flex flex-col items-center">
+    <main className="relative min-h-screen bg-background text-foreground font-sans flex flex-col items-center" style={{ zoom: 0.8 }}>
       <Navbar />
 
       {/* Content Overlay */}
@@ -373,14 +382,7 @@ function PlayPage() {
                           className="w-full h-full scale-[1.5]"
                         />
                     </div>
-                    {/* Overlay to hide YouTube UI when paused/loading */}
-                    <div className={`absolute inset-0 w-full h-full z-0 transition-opacity duration-500 pointer-events-none ${playing ? 'opacity-0' : 'opacity-100'}`}>
-                      {art ? (
-                        <img src={art} alt="" className="w-full h-full object-cover blur-sm brightness-50" />
-                      ) : (
-                        <div className="w-full h-full bg-black" />
-                      )}
-                    </div>
+                    {/* YouTube Center Icon Blur Mask Animation Removed as requested */}
                   </>
                 ) : (
                   <>
@@ -392,7 +394,7 @@ function PlayPage() {
                   </>
                 )}
                 
-                <div className="relative z-10 mt-auto bg-background/80 backdrop-blur-md p-4 rounded-xl shadow-lg border border-border/50">
+                <div className="relative z-10 mt-auto mb-4 mx-auto w-fit bg-background/40 backdrop-blur-md px-6 py-3 rounded-md shadow-lg border border-white/10 dark:border-white/5">
                   <h2 className="text-2xl font-bold tracking-tight text-foreground line-clamp-1">{track}</h2>
                   <p className="text-base text-muted-foreground mt-1">{artist}</p>
                   {ytAuthor && (
@@ -420,11 +422,10 @@ function PlayPage() {
               {/* Game Area */}
               <div
                 ref={lyricsRef}
-                className="relative h-[450px] rounded-xl bg-gradient border border-border/40 shadow-inner px-6 py-10 cursor-pointer overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                className="relative h-[450px] rounded-xl bg-card/40 border border-border/40 shadow-inner px-6 py-10 cursor-pointer overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                 onClick={() => inputRef.current?.focus()}
               >
                 {/* Background Beat Pulse */}
-                <div id="bg-pulse" className="absolute inset-0 bg-primary/5 pointer-events-none" style={{ opacity: 0, transition: 'opacity 0.1s ease-out' }} />
                 
                 <div className="relative z-10">
                   <div className="min-h-[200px]" />
