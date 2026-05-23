@@ -30,15 +30,12 @@ export interface TrackSearchResult {
 }
 
 export async function searchTracks(query: string): Promise<TrackSearchResult[]> {
-  console.log("searchTracks called", query);
   if (!query.trim()) return [];
 
   const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=20`;
   const res = await fetch(url);
-  console.log("fetch done", res.ok);
   if (!res.ok) throw new Error("Search failed");
   const data = (await res.json()) as { results: any[] };
-  console.log("data results length", data.results.length);
 
   return data.results.map((result) => ({
     trackId: result.trackId,

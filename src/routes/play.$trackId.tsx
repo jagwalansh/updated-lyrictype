@@ -132,6 +132,20 @@ function PlayPage() {
     }
   }, [currentLineIdx]);
 
+  const ytOpts = useMemo(() => ({
+    width: '100%', 
+    height: '100%', 
+    playerVars: { 
+      autoplay: 0, 
+      controls: 0, 
+      disablekb: 1, 
+      fs: 0,
+      iv_load_policy: 3,
+      rel: 0,
+      modestbranding: 1
+    } 
+  }), []);
+
   const handleLineComplete = useCallback((forceAdvance = false) => {
     if (!lines) return;
     const currentLine = lines[currentLineIdx]?.text || "";
@@ -206,11 +220,6 @@ function PlayPage() {
           } else {
             progressEl.style.display = 'none';
           }
-        }
-
-        if (pulseEl) {
-           const beat = currentTimeRef.current % 1;
-           pulseEl.style.opacity = beat < 0.15 ? '1' : '0';
         }
 
         // Auto-advance
@@ -355,19 +364,7 @@ function PlayPage() {
                     <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden rounded-xl bg-black">
                         <YouTube 
                           videoId={videoId}
-                          opts={{ 
-                            width: '100%', 
-                            height: '100%', 
-                            playerVars: { 
-                              autoplay: 0, 
-                              controls: 0, 
-                              disablekb: 1, 
-                              fs: 0,
-                              iv_load_policy: 3,
-                              rel: 0,
-                              modestbranding: 1
-                            } 
-                          }}
+                          opts={ytOpts}
                           onReady={(e) => {
                             ytPlayerRef.current = e.target;
                             setAudioReady(true);
@@ -382,7 +379,6 @@ function PlayPage() {
                           className="w-full h-full scale-[1.5]"
                         />
                     </div>
-                    {/* YouTube Center Icon Blur Mask Animation Removed as requested */}
                   </>
                 ) : (
                   <>

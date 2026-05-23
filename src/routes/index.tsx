@@ -32,7 +32,7 @@ function Index() {
   }
 
   return (
-    <main className="flex flex-col justify-center items-center min-h-screen bg-background text-foreground font-sans">
+    <main className="flex flex-col justify-center items-center min-h-screen bg-background text-foreground font-sans" style={{ zoom: 0.8 }}>
       <Navbar />
 
       <div className="flex min-h-[calc(100vh-73px)] flex-col justify-between">

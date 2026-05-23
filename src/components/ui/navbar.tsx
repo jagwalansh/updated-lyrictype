@@ -86,10 +86,10 @@ export function Navbar() {
           </Link>
 
           <div className="flex items-center gap-3">
-            <motion.button
+              <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="group py-1.5 border border-border/40 bg-card/50 hover:bg-card/85 transition-all shadow-sm rounded-md px-3 cursor-pointer"
+              className="group py-1.5 border border-border/40 bg-card/50 hover:bg-card/85 transition-all shadow-sm rounded-md px-3 cursor-pointer relative z-50"
             >
               <Link to="/" className="font-mono text-xl font-medium tracking-tight">
                 <div className="relative w-[18px] h-[18px]">
@@ -100,10 +100,10 @@ export function Navbar() {
                 </div>
               </Link>
             </motion.button>
-            <motion.button
+              <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="group py-1.5 border border-border/40 bg-card/50 hover:bg-card/85 transition-all shadow-sm rounded-md px-3 cursor-pointer"
+              className="group py-1.5 border border-border/40 bg-card/50 hover:bg-card/85 transition-all shadow-sm rounded-md px-3 cursor-pointer relative z-50"
             >
               <Link to="/" className="font-mono text-xl font-medium tracking-tight">
                 <div className="relative w-[18px] h-[18px]">
@@ -118,7 +118,7 @@ export function Navbar() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={toggleTheme}
-              className="group border border-border/40 bg-card/50 shadow-sm hover:bg-accent transition-all rounded-md px-3 h-8 cursor-pointer flex items-center justify-center"
+              className="group border border-border/40 bg-card/50 shadow-sm hover:bg-accent transition-all rounded-md px-3 h-8 cursor-pointer flex items-center justify-center relative z-50"
               title="Toggle Theme"
             >
               <div className="relative w-4 h-4">
@@ -147,7 +147,7 @@ export function Navbar() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setAccountOpen(true)}
-                  className="group border border-input bg-background shadow-sm hover:bg-accent transition-all rounded-md px-3 h-8 cursor-pointer flex items-center justify-center"
+                  className="group border border-input bg-background shadow-sm hover:bg-accent transition-all rounded-md px-3 h-8 cursor-pointer flex items-center justify-center relative z-50"
                 >
                   <div className="relative w-4 h-4">
                     <UserRound className="h-4 w-4 text-foreground transition-colors duration-300" aria-hidden="true" />
@@ -161,7 +161,7 @@ export function Navbar() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setModalOpen(true)}
-                  className="group py-1.5 border border-border/40 bg-card/50 hover:bg-card/85 transition-all shadow-sm rounded-md px-3 cursor-pointer flex items-center justify-center h-8"
+                  className="group py-1.5 border border-border/40 bg-card/50 hover:bg-card/85 transition-all shadow-sm rounded-md px-3 cursor-pointer flex items-center justify-center h-8 relative z-50"
                 >
                   <div className="relative flex items-center gap-1.5">
                     <div className="flex items-center gap-1.5 text-foreground transition-colors duration-300 text-xs font-medium shrink-0">
