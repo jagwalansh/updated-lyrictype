@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Navbar } from "@/components/ui/navbar";
 import { fetchSyncedLyrics, type LyricLine } from "@/lib/lrc";
+import YouTube, { type YouTubePlayer } from "react-youtube";
 
 interface Search {
   artist: string;
@@ -22,36 +23,49 @@ export const Route = createFileRoute("/play/$trackId")({
   component: PlayPage,
 });
 
-function getAudioType(src: string) {
-  const lower = src.split("?")[0].split("#")[0].toLowerCase();
-  if (lower.endsWith(".mp3")) return "audio/mpeg";
-  if (lower.endsWith(".m4a") || lower.endsWith(".mp4") || lower.endsWith(".aac"))
-    return "audio/mp4";
-  if (lower.endsWith(".wav")) return "audio/wav";
-  if (lower.endsWith(".ogg") || lower.endsWith(".oga")) return "audio/ogg";
-  return "";
-}
-
 function PlayPage() {
-  const { artist, track, preview, art } = Route.useSearch();
+  const { artist, track, art } = Route.useSearch(); // We can ignore preview now
   const [lines, setLines] = useState<LyricLine[] | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
 
   const [typed, setTyped] = useState("");
   const [stats, setStats] = useState({ correct: 0, total: 0, started: 0 });
+  
+  // Game state
+  const [combo, setCombo] = useState(0);
+  const [score, setScore] = useState(0);
+  const [hitFeedback, setHitFeedback] = useState<{ id: number, text: string, type: string } | null>(null);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const lyricsRef = useRef<HTMLDivElement | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [audioType, setAudioType] = useState("");
+  
+  const ytPlayerRef = useRef<YouTubePlayer | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const currentTimeRef = useRef(0);
+
   const [playing, setPlaying] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
-  const [audioErr, setAudioErr] = useState<string | null>(null);
-  const [previewSupported, setPreviewSupported] = useState(true);
   const [currentLineIdx, setCurrentLineIdx] = useState(0);
 
+  const [videoId, setVideoId] = useState<string | null>(null);
+  const [ytAuthor, setYtAuthor] = useState<string | null>(null);
+  const [ytLoading, setYtLoading] = useState(true);
+
+  // Prevent multiple triggers in rAF loop
+  const lastCompletedLineRef = useRef(-1);
+
+  // Keep refs for callbacks to avoid dependency cycles
+  const typedRef = useRef(typed);
+  useEffect(() => { typedRef.current = typed; }, [typed]);
+
+  const comboRef = useRef(combo);
+  useEffect(() => { comboRef.current = combo; }, [combo]);
+
+  // Load Lyrics and YouTube ID
   useEffect(() => {
     let cancelled = false;
+    
+    // 1. Fetch Lyrics
     fetchSyncedLyrics(artist, track)
       .then((r) => {
         if (cancelled) return;
@@ -59,21 +73,40 @@ function PlayPage() {
         else setLines(r);
       })
       .catch(() => !cancelled && setLoadErr("Failed to load lyrics."));
+
+    // 2. Fetch YouTube Video ID
+    setYtLoading(true);
+    fetch(`/api/youtube-search?q=${encodeURIComponent(artist + " " + track + " audio")}`)
+      .then(r => r.json())
+      .then(d => {
+        if (cancelled) return;
+        if (d.videoId) {
+           setVideoId(d.videoId);
+           setYtAuthor(d.authorName);
+        } else {
+           setLoadErr("Could not find a YouTube video for this track.");
+        }
+      })
+      .catch(e => {
+         console.error(e);
+         if (!cancelled) setLoadErr("Failed to search YouTube.");
+      })
+      .finally(() => {
+         if (!cancelled) setYtLoading(false);
+      });
+
     return () => {
       cancelled = true;
     };
   }, [artist, track]);
 
-  // Set audio type when preview URL is available
+  // Clear hit feedback automatically
   useEffect(() => {
-    if (preview) {
-      const type = getAudioType(preview);
-      setAudioType(type);
-      setPreviewSupported(!!type);
+    if (hitFeedback) {
+      const t = setTimeout(() => setHitFeedback(null), 1000);
+      return () => clearTimeout(t);
     }
-  }, [preview]);
-
-  // YouTube search has been removed to use fallback audio directly
+  }, [hitFeedback]);
 
   const fullText = useMemo(() => {
     if (!lines) return "";
@@ -83,28 +116,124 @@ function PlayPage() {
   // Scroll to current line
   useEffect(() => {
     if (!lyricsRef.current) return;
-    const lines = lyricsRef.current.querySelectorAll("[data-line-idx]");
-    const currentLine = lines[currentLineIdx] as HTMLElement;
-    if (currentLine) {
-      currentLine.scrollIntoView({ behavior: "smooth", block: "center" });
+    const linesNodes = lyricsRef.current.querySelectorAll("[data-line-idx]");
+    const currentLineNode = linesNodes[currentLineIdx] as HTMLElement;
+    if (currentLineNode) {
+      currentLineNode.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, [currentLineIdx]);
+
+  const handleLineComplete = useCallback((forceAdvance = false) => {
+    if (!lines) return;
+    const currentLine = lines[currentLineIdx]?.text || "";
+    const currentTyped = typedRef.current;
+    
+    let correctChars = 0;
+    const len = Math.min(currentTyped.length, currentLine.length);
+    for (let i = 0; i < len; i++) {
+        if (currentTyped[i]?.toLowerCase() === currentLine[i]?.toLowerCase()) correctChars++;
+    }
+    const lineAccuracy = currentLine.length > 0 ? correctChars / currentLine.length : 0;
+    
+    let type = "miss";
+    let text = "MISS";
+    let scoreAdded = 0;
+
+    if (currentTyped.length > 0 && lineAccuracy >= 0.90) {
+        type = "perfect";
+        text = "PERFECT";
+        scoreAdded = 300 * (1 + comboRef.current * 0.1);
+        setCombo(c => c + 1);
+    } else if (currentTyped.length > 0 && lineAccuracy >= 0.50) {
+        type = "good";
+        text = "GOOD";
+        scoreAdded = 100 * (1 + comboRef.current * 0.1);
+        setCombo(c => c + 1);
+    } else {
+        type = "miss";
+        text = "MISS";
+        setCombo(0);
+    }
+
+    setScore(s => Math.floor(s + scoreAdded));
+    setHitFeedback({ id: Date.now(), text, type });
+
+    setTyped("");
+    setCurrentLineIdx(idx => Math.min(idx + 1, lines.length - 1));
+  }, [lines, currentLineIdx]);
+
+  // High precision time sync and animation loop
+  const updateTime = useCallback(() => {
+    if (ytPlayerRef.current && playing) {
+      currentTimeRef.current = ytPlayerRef.current.getCurrentTime();
+      
+      if (lines && lines[currentLineIdx]) {
+        const line = lines[currentLineIdx];
+        const nextLineTime = lines[currentLineIdx + 1]?.time || line.time + 5;
+        const timeDiff = line.time - currentTimeRef.current;
+        const duration = nextLineTime - line.time;
+
+        // Visual Updates
+        const approachEl = document.getElementById('approach-circle');
+        const progressEl = document.getElementById('progress-circle');
+        const pulseEl = document.getElementById('bg-pulse');
+
+        if (approachEl) {
+          if (timeDiff > 0 && timeDiff < 2.0) {
+            approachEl.style.display = 'block';
+            const size = 48 + (timeDiff * 50); // Shrinks down to 48px
+            approachEl.style.width = `${size}px`;
+            approachEl.style.height = `${size}px`;
+            approachEl.style.opacity = timeDiff > 1.5 ? '0' : `${1 - (timeDiff/1.5)}`;
+          } else {
+            approachEl.style.display = 'none';
+          }
+        }
+
+        if (progressEl) {
+          if (timeDiff <= 0 && timeDiff > -duration) {
+            progressEl.style.display = 'block';
+            const progress = Math.abs(timeDiff) / duration;
+            progressEl.style.strokeDashoffset = `${138.2 * progress}`;
+          } else {
+            progressEl.style.display = 'none';
+          }
+        }
+
+        if (pulseEl) {
+           const beat = currentTimeRef.current % 1;
+           pulseEl.style.opacity = beat < 0.15 ? '1' : '0';
+        }
+
+        // Auto-advance
+        if (currentTimeRef.current > nextLineTime + 0.2) {
+          if (lastCompletedLineRef.current !== currentLineIdx) {
+            lastCompletedLineRef.current = currentLineIdx;
+            handleLineComplete(true);
+          }
+        }
+      }
+      
+      rafRef.current = requestAnimationFrame(updateTime);
+    }
+  }, [playing, lines, currentLineIdx, handleLineComplete]);
+
+  useEffect(() => {
+    if (playing) {
+      rafRef.current = requestAnimationFrame(updateTime);
+    } else if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+    }
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [playing, updateTime]);
 
   function onChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (!fullText || !lines) return;
     const v = e.target.value.toLowerCase();
 
-    // Check if user pressed Enter to move to next line
-    if (e.nativeEvent instanceof KeyboardEvent && e.nativeEvent.key === "Enter") {
-      setTyped("");
-      setCurrentLineIdx((idx) => Math.min(idx + 1, lines.length - 1));
-      return;
-    }
-
-    // Get current line
     const currentLine = lines[currentLineIdx]?.text || "";
-
-    // Check if typed matches current line (allowing some flexibility)
     if (v.length > currentLine.length) return;
 
     if (v.length > typed.length) {
@@ -129,18 +258,13 @@ function PlayPage() {
   const wpm = elapsed > 0 ? Math.round(stats.correct / 5 / elapsed) : 0;
 
   function togglePlay() {
-    const audio = audioRef.current;
-    if (!audio) return;
+    const player = ytPlayerRef.current;
+    if (!player) return;
 
     if (playing) {
-      audio.pause();
-      setPlaying(false);
+      player.pauseVideo();
     } else {
-      audio.play().catch((err) => {
-        console.error("Play error:", err);
-        setAudioErr("Failed to play audio.");
-      });
-      setPlaying(true);
+      player.playVideo();
     }
     inputRef.current?.focus();
   }
@@ -149,13 +273,17 @@ function PlayPage() {
     setTyped("");
     setCurrentLineIdx(0);
     setStats({ correct: 0, total: 0, started: 0 });
+    setCombo(0);
+    setScore(0);
+    setHitFeedback(null);
+    currentTimeRef.current = 0;
+    lastCompletedLineRef.current = -1;
 
-    // Reset audio to beginning
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-      // Auto-play if audio is ready
+    const player = ytPlayerRef.current;
+    if (player) {
+      player.seekTo(0, true);
       if (audioReady) {
-        audioRef.current.play().catch((err) => console.error("Play error:", err));
+        player.playVideo();
       }
     }
 
@@ -175,6 +303,16 @@ function PlayPage() {
 
           <div className="flex items-center gap-6 font-mono text-sm border border-border/40 bg-card/45 backdrop-blur-md shadow-sm rounded-full px-5 py-2">
             <div>
+              <span className="text-primary font-bold text-base">{score.toLocaleString()}</span>{" "}
+              <span className="text-muted-foreground text-xs">score</span>
+            </div>
+            <div className="w-px h-4 bg-border/40" />
+            <div>
+              <span className="text-primary font-bold text-base">{combo}x</span>{" "}
+              <span className="text-muted-foreground text-xs">combo</span>
+            </div>
+            <div className="w-px h-4 bg-border/40" />
+            <div>
               <span className="text-primary font-bold text-base">{wpm}</span>{" "}
               <span className="text-muted-foreground text-xs">wpm</span>
             </div>
@@ -192,88 +330,188 @@ function PlayPage() {
           </div>
         )}
 
-        {!lines && !loadErr && (
+        {(!lines || ytLoading) && !loadErr && (
           <p className="mt-10 text-center font-mono text-sm text-muted-foreground">
-            Loading lyrics…
+            {ytLoading ? "Finding YouTube video..." : "Loading lyrics..."}
           </p>
         )}
 
-        {lines && (
+        {lines && !ytLoading && (
           <div className="mt-10 grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-8 items-start">
-            {/* Left Column: Song Information Card & How to Play */}
+            {/* Left Column: YouTube Video / Song Information Card */}
             <div className="flex flex-col gap-4">
-              <div className="relative w-full  aspect-video rounded-xl overflow-hidden border border-border/40 shadow-lg bg-muted/10 flex flex-col items-center justify-center p-6 text-center">
-                {art ? (
-                  <img src={art} alt="" className="h-28 w-28 rounded-lg shadow-md mb-4" />
+              <div className="relative w-full h-[450px] rounded-xl overflow-hidden border border-border/40 shadow-lg bg-black flex flex-col items-center justify-center p-6 text-center">
+                {videoId ? (
+                  <>
+                    <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden rounded-xl bg-black">
+                        <YouTube 
+                          videoId={videoId}
+                          opts={{ 
+                            width: '100%', 
+                            height: '100%', 
+                            playerVars: { 
+                              autoplay: 0, 
+                              controls: 0, 
+                              disablekb: 1, 
+                              fs: 0,
+                              iv_load_policy: 3,
+                              rel: 0,
+                              modestbranding: 1
+                            } 
+                          }}
+                          onReady={(e) => {
+                            ytPlayerRef.current = e.target;
+                            setAudioReady(true);
+                          }}
+                          onPlay={() => setPlaying(true)}
+                          onPause={() => setPlaying(false)}
+                          onEnd={() => setPlaying(false)}
+                          onError={(e) => {
+                            console.error("YouTube Error", e);
+                            setLoadErr("Failed to load YouTube video.");
+                          }}
+                          className="w-full h-full scale-[1.5]"
+                        />
+                    </div>
+                    {/* Overlay to hide YouTube UI when paused/loading */}
+                    <div className={`absolute inset-0 w-full h-full z-0 transition-opacity duration-500 pointer-events-none ${playing ? 'opacity-0' : 'opacity-100'}`}>
+                      {art ? (
+                        <img src={art} alt="" className="w-full h-full object-cover blur-sm brightness-50" />
+                      ) : (
+                        <div className="w-full h-full bg-black" />
+                      )}
+                    </div>
+                  </>
                 ) : (
-                  <div className="h-28 w-28 rounded-lg bg-muted mb-4 animate-pulse" />
+                  <>
+                    {art ? (
+                      <img src={art} alt="" className="h-48 w-48 rounded-lg shadow-md mb-8 relative z-10" />
+                    ) : (
+                      <div className="h-48 w-48 rounded-lg bg-muted mb-8 animate-pulse relative z-10" />
+                    )}
+                  </>
                 )}
-                <h2 className="text-xl font-bold tracking-tight text-foreground">{track}</h2>
-                <p className="text-sm text-muted-foreground mt-1">{artist}</p>
+                
+                <div className="relative z-10 mt-auto bg-background/80 backdrop-blur-md p-4 rounded-xl shadow-lg border border-border/50">
+                  <h2 className="text-2xl font-bold tracking-tight text-foreground line-clamp-1">{track}</h2>
+                  <p className="text-base text-muted-foreground mt-1">{artist}</p>
+                  {ytAuthor && (
+                    <p className="text-xs text-muted-foreground/60 mt-3 flex items-center justify-center gap-1.5">
+                      <svg className="w-3 h-3 text-red-500/80" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                      {ytAuthor}
+                    </p>
+                  )}
+                </div>
               </div>
-
-              {/* <div className="rounded-xl border border-border/40 bg-card/45 backdrop-blur-md p-4 shadow-sm">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">How to Play</h3>
-                <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                  Start the music by clicking <strong>Play</strong>. Focus the screen and start typing what you hear. Press <strong>Enter</strong> to advance to the next line.
-                </p>
-              </div> */}
             </div>
 
             {/* Right Column: Game and Lyrics */}
-            <div className="flex flex-col gap-6">
-              {/* Spotify-style lyrics display */}
+            <div className="flex flex-col gap-6 relative">
+              {/* Hit Feedback Overlay */}
+              {hitFeedback && (
+                <div key={hitFeedback.id} className={`absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-5xl font-black italic tracking-widest pointer-events-none z-50 animate-bounce drop-shadow-[0_0_15px_rgba(0,0,0,0.5)] ${
+                  hitFeedback.type === 'perfect' ? 'text-blue-400' :
+                  hitFeedback.type === 'good' ? 'text-green-400' : 'text-red-500'
+                }`}>
+                  {hitFeedback.text}
+                </div>
+              )}
+
+              {/* Game Area */}
               <div
                 ref={lyricsRef}
-                className="relative h-[360px] overflow-hidden rounded-xl bg-gradient border border-border/40 shadow-inner px-6 py-10 cursor-pointer"
+                className="relative h-[450px] rounded-xl bg-gradient border border-border/40 shadow-inner px-6 py-10 cursor-pointer overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                 onClick={() => inputRef.current?.focus()}
               >
-                {lines.map((line, idx) => {
-                  const isCurrentLine = idx === currentLineIdx;
-                  const isPassed = idx < currentLineIdx;
-                  const lineText = line.text;
+                {/* Background Beat Pulse */}
+                <div id="bg-pulse" className="absolute inset-0 bg-primary/5 pointer-events-none" style={{ opacity: 0, transition: 'opacity 0.1s ease-out' }} />
+                
+                <div className="relative z-10">
+                  <div className="min-h-[200px]" />
+                  
+                  {lines.map((line, idx) => {
+                    const isCurrentLine = idx === currentLineIdx;
+                    const isPassed = idx < currentLineIdx;
+                    const lineText = line.text;
 
-                  return (
-                    <div
-                      key={idx}
-                      data-line-idx={idx}
-                      className={`mb-8 text-center transition-all duration-300 ${
-                        isCurrentLine ? "scale-105" : "scale-95"
-                      } ${isPassed ? "opacity-35" : "opacity-100"}`}
-                    >
-                      <div className="text-2xl font-bold leading-relaxed">
-                        {isCurrentLine
-                          ? // Display current line with character-by-character feedback
-                            lineText.split("").map((ch, charIdx) => {
-                              const typedChar = typed[charIdx];
-                              let className = "text-muted-foreground";
+                    return (
+                      <div
+                        key={idx}
+                        data-line-idx={idx}
+                        className={`flex items-center gap-6 mb-8 transition-all duration-300 p-2 rounded-xl hover:bg-muted/10 ${
+                          isCurrentLine ? "scale-105 opacity-100" : 
+                          isPassed ? "opacity-30 scale-95" : "opacity-50 scale-95"
+                        }`}
+                      >
+                        {/* osu! Style Note Indicator */}
+                        <div className="relative w-12 h-12 flex-shrink-0 flex items-center justify-center">
+                          {/* Fixed Target Ring */}
+                          <div className={`absolute inset-0 rounded-full border-2 transition-colors duration-300 ${isCurrentLine ? 'border-primary' : 'border-muted-foreground/30'}`} />
+                          
+                          {/* Inner Note */}
+                          <div className={`absolute w-4 h-4 rounded-full transition-colors duration-300 ${isPassed ? 'bg-primary/50' : isCurrentLine ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
 
-                              if (charIdx < typed.length) {
-                                const isCorrect = typedChar?.toLowerCase() === ch.toLowerCase();
-                                if (isCorrect) {
-                                  className = "text-correct font-semibold";
-                                } else if (!SHOW_TYPING_ERRORS) {
-                                  className = "text-correct font-semibold";
-                                } else if (SHOW_TYPING_ERRORS) {
-                                  className =
-                                    "text-incorrect underline decoration-incorrect font-semibold";
+                          {/* DOM Elements for rAF updates */}
+                          {isCurrentLine && (
+                            <>
+                              <div 
+                                id="approach-circle"
+                                className="absolute rounded-full border-2 border-primary -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 pointer-events-none"
+                                style={{ display: 'none' }}
+                              />
+                              <svg 
+                                id="progress-circle"
+                                className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" 
+                                viewBox="0 0 48 48"
+                                style={{ display: 'none' }}
+                              >
+                                <circle 
+                                  cx="24" cy="24" r="22" 
+                                  fill="none" 
+                                  stroke="currentColor" 
+                                  strokeWidth="4" 
+                                  className="text-primary"
+                                  strokeDasharray="138.2"
+                                />
+                              </svg>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Lyric Text */}
+                        <div className="text-2xl font-bold leading-relaxed text-left flex-1">
+                          {isCurrentLine
+                            ? lineText.split("").map((ch, charIdx) => {
+                                const typedChar = typed[charIdx];
+                                let className = "text-muted-foreground";
+
+                                if (charIdx < typed.length) {
+                                  const isCorrect = typedChar?.toLowerCase() === ch.toLowerCase();
+                                  if (isCorrect) {
+                                    className = "text-correct font-semibold";
+                                  } else if (!SHOW_TYPING_ERRORS) {
+                                    className = "text-correct font-semibold";
+                                  } else if (SHOW_TYPING_ERRORS) {
+                                    className = "text-incorrect underline decoration-incorrect font-semibold";
+                                  }
+                                } else if (charIdx === typed.length) {
+                                  className = "text-foreground animate-pulse";
                                 }
-                              } else if (charIdx === typed.length) {
-                                className = "text-foreground animate-pulse";
-                              }
 
-                              return (
-                                <span key={charIdx} className={className}>
-                                  {ch}
-                                </span>
-                              );
-                            })
-                          : // Display other lines as-is
-                            lineText}
+                                return (
+                                  <span key={charIdx} className={className}>
+                                    {ch}
+                                  </span>
+                                );
+                              })
+                            : lineText}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                  
+                  <div className="min-h-[200px]" />
+                </div>
               </div>
 
               {/* Hidden input for capturing keyboard events */}
@@ -284,8 +522,10 @@ function PlayPage() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    setTyped("");
-                    setCurrentLineIdx((idx) => Math.min(idx + 1, lines.length - 1));
+                    // Force wait if video is loaded and playing
+                    if (!videoId) {
+                      handleLineComplete(false);
+                    }
                   }
                 }}
                 autoFocus
@@ -299,7 +539,7 @@ function PlayPage() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={togglePlay}
-                  disabled={!preview || !previewSupported || !audioReady}
+                  disabled={!videoId || !audioReady}
                   className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-40 cursor-pointer flex items-center justify-center"
                 >
                   {playing ? "Pause" : "Play"}
@@ -312,50 +552,8 @@ function PlayPage() {
                 </button>
               </div>
 
-              {/* Render fallback html audio element if no youtube video is playing */}
-              {preview && previewSupported && (
-                <>
-                  <audio
-                    ref={audioRef}
-                    src={preview}
-                    type={audioType}
-                    preload="auto"
-                    onPlay={() => setPlaying(true)}
-                    onPause={() => setPlaying(false)}
-                    onEnded={() => setPlaying(false)}
-                    onError={(e) => {
-                      console.log("audio error", e);
-                      setAudioErr("Audio preview failed to load.");
-                      setAudioReady(false);
-                      setPlaying(false);
-                    }}
-                    onLoadedData={() => {
-                      setAudioErr(null);
-                      setAudioReady(true);
-                    }}
-                    onCanPlayThrough={() => {
-                      setAudioReady(true);
-                    }}
-                  />
-                  {audioErr && (
-                    <p className="text-center text-xs text-incorrect">{audioErr}</p>
-                  )}
-                  {!audioReady && !audioErr && (
-                    <p className="text-center text-xs text-muted-foreground animate-pulse">
-                      Loading audio preview…
-                    </p>
-                  )}
-                </>
-              )}
-
-              {!preview && (
-                <p className="text-center text-xs text-incorrect">
-                  No audio preview available — type at your own pace.
-                </p>
-              )}
-
               <p className="text-center font-mono text-xs text-muted-foreground leading-relaxed">
-                Just start typing — press <span className="font-bold border border-border/40 px-1 py-0.5 rounded shadow-sm bg-muted/40">Enter</span> to go to the next line.
+                Just start typing — you can't skip ahead, stay on the beat!
               </p>
             </div>
           </div>

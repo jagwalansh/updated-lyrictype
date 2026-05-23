@@ -110,9 +110,12 @@ export default {
         }
 
         try {
-          // Fallback: return empty video ID
-          // YouTube search requires authentication, so we'll skip it for now
-          return new Response(JSON.stringify({ videoId: null }), {
+          const yts = (await import("yt-search")).default;
+          const r = await yts(query);
+          const videoId = r.videos.length > 0 ? r.videos[0].videoId : null;
+          const authorName = r.videos.length > 0 ? r.videos[0].author.name : null;
+
+          return new Response(JSON.stringify({ videoId, authorName }), {
             status: 200,
             headers: { "content-type": "application/json" },
           });
