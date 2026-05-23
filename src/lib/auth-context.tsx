@@ -17,6 +17,8 @@ interface AuthContextType {
   resendConfirmation: (email: string) => Promise<void>;
   refreshProfile: () => Promise<Profile | null>;
   updateProfile: (username: string) => Promise<Profile>;
+  authError: string | null;
+  clearAuthError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,6 +28,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const clearAuthError = useCallback(() => {
+    setAuthError(null);
+  }, []);
+
+  // Check URL parameters for authentication errors (e.g. from Google OAuth)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      // OAuth redirects often return error info in the URL hash instead of query parameters
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      
+      const error = searchParams.get("error") || hashParams.get("error");
+      const errorDescription = searchParams.get("error_description") || hashParams.get("error_description");
+      
+      if (error || errorDescription) {
+        let displayMessage = errorDescription || error || "Authentication error occurred.";
+        const msgLower = displayMessage.toLowerCase();
+        if (msgLower.includes("provider google not found") || msgLower.includes("signup provider google not found")) {
+          displayMessage = "Google Sign-in is not enabled in your Supabase Auth Providers. Please check Step 5 in SUPABASE_SETUP.md.";
+        } else if (msgLower.includes("client_id_not_found") || msgLower.includes("client id")) {
+          displayMessage = "Google Client ID is not configured correctly in your Supabase dashboard.";
+        }
+        setAuthError(decodeURIComponent(displayMessage.replace(/\+/g, " ")));
+        
+        // Clean up the URL query/hash parameters so they don't persist
+        const cleanSearch = window.location.search.replace(/[?&]error[^&]*/g, "").replace(/^&/, "?");
+        const cleanHash = window.location.hash.replace(/[#&]error[^&]*/g, "");
+        const newUrl = window.location.pathname + (cleanSearch === "?" ? "" : cleanSearch) + cleanHash;
+        window.history.replaceState({}, document.title, newUrl);
+      }
+    }
+  }, []);
 
   const loadProfile = useCallback(async (currentUser: User | null) => {
     if (!currentUser) {
@@ -100,7 +136,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
-    const redirectTo = typeof window !== "undefined" ? window.location.href : undefined;
+    // Redirect to the current origin (e.g. http://localhost:5173) which matches typical Supabase site URL setup
+    const redirectTo = typeof window !== "undefined" ? window.location.origin : undefined;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: redirectTo ? { redirectTo } : undefined,
@@ -180,6 +217,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         resendConfirmation,
         refreshProfile,
         updateProfile,
+        authError,
+        clearAuthError,
       }}
     >
       {children}

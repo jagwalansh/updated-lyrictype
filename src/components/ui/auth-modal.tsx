@@ -1,7 +1,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Tabs from "@radix-ui/react-tabs";
 import { Chrome, X } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useModal } from "@/lib/modal-context";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,17 @@ type AuthMode = "signIn" | "signUp";
 
 export function AuthModal() {
   const { modalOpen, setModalOpen } = useModal();
-  const { signIn, signUp, signInWithGoogle, resendConfirmation } = useAuth();
+  const { signIn, signUp, signInWithGoogle, resendConfirmation, authError, clearAuthError } = useAuth();
   const [authMode, setAuthMode] = useState<AuthMode>("signIn");
+
+  // Automatically open modal and display error if redirected back with an OAuth error
+  useEffect(() => {
+    if (authError) {
+      setModalOpen(true);
+      setError(authError);
+      clearAuthError();
+    }
+  }, [authError, setModalOpen, clearAuthError]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
