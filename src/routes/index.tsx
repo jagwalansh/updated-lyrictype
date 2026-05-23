@@ -10,7 +10,7 @@ import { useModal } from "@/lib/modal-context";
 import { motion } from "motion/react";
 const Home = () => {
   return (
-    <div>
+    <div className="flex items-center justify-center">
       <svg
         width="18px"
         height="18px"
@@ -20,7 +20,7 @@ const Home = () => {
       >
         <path
           d="M1 6V15H6V11C6 9.89543 6.89543 9 8 9C9.10457 9 10 9.89543 10 11V15H15V6L8 0L1 6Z"
-          fill="#000000"
+          fill="currentColor"
         />
       </svg>
     </div>
@@ -67,16 +67,17 @@ function Index() {
 
   return (
     <main className="flex flex-col justify-center items-center min-h-screen bg-background text-foreground font-sans">
-      <nav className="text-md shadow-sm rounded-2xl min-w-lg my-8 bg-background">
+      <nav className="text-md backdrop-blur-md border border-border/40 shadow-[0_8px_32px_rgba(0,0,0,0.05)] rounded-2xl min-w-lg my-8 bg-card/60 dark:bg-card/40">
         <div className="flex items-center justify-between gap-4 px-6 py-4">
-          <Link to="/" className="font-mono text-xl font-medium tracking-tight">
-            lyric<span className="border-b-2">type</span>
+          <Link to="/" className="font-mono text-xl font-medium tracking-tight hover:opacity-90 transition-opacity">
+            lyric<span className="border-b-2 border-primary text-primary">type</span>
           </Link>
 
           <div className="flex min-w-40 justify-around items-center ">
             <motion.button
-              whileHover={{ scale: 1.1 }}
-              className="py-1.5 border shadow-sm rounded-md px-3 cursor-pointer "
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="py-1.5 border border-border/40 bg-card/50 hover:bg-card/85 hover:text-primary transition-all shadow-sm rounded-md px-3 cursor-pointer"
             >
               <Link to="/" className="font-mono text-xl font-medium tracking-tight">
                 <Home />
