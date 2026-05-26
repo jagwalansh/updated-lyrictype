@@ -51,11 +51,14 @@ const LeaderboardIcon = ({ className }: { className?: string }) => {
   );
 };
 
-export function Navbar() {
+export function Navbar({ disableEntranceAnimation = false }: { disableEntranceAnimation?: boolean }) {
   const { setModalOpen } = useModal();
   const { user, profile, loading: authLoading } = useAuth();
   const [accountOpen, setAccountOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const [isEntranceDone, setIsEntranceDone] = useState(disableEntranceAnimation);
+  const [scrollY, setScrollY] = useState(0);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
 
   useEffect(() => {
     const dark = document.documentElement.classList.contains("dark") || localStorage.getItem("theme") === "dark";
@@ -64,6 +67,46 @@ export function Navbar() {
       document.documentElement.classList.add("dark");
     }
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleResize);
+
+    // Initial check
+    handleScroll();
+    handleResize();
+
+    // Trigger entrance expansion after a small delay if not disabled
+    let timer: NodeJS.Timeout | undefined;
+    if (!disableEntranceAnimation) {
+      timer = setTimeout(() => {
+        setIsEntranceDone(true);
+      }, 450);
+    }
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleResize);
+      if (timer) clearTimeout(timer);
+    };
+  }, [disableEntranceAnimation]);
+
+  const baseWidth = Math.min(896, windowWidth - 32);
+  const shrinkWidth = Math.max(360, baseWidth * 0.6);
+  const isScrolled = scrollY > 20;
+  const targetWidth = isEntranceDone
+    ? (isScrolled ? shrinkWidth : baseWidth)
+    : 160;
 
   const toggleTheme = () => {
     if (isDark) {
@@ -79,13 +122,32 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-8 z-50 text-md backdrop-blur-md border border-border/40 shadow-[0_8px_32px_rgba(0,0,0,0.05)] rounded-2xl min-w-lg my-8 bg-card/60 dark:bg-card/40">
-        <div className="flex items-center justify-between gap-4 px-6 py-4">
-          <Link to="/" className="font-mono text-xl font-medium tracking-tight hover:opacity-90 transition-opacity">
+      <motion.nav
+        initial={disableEntranceAnimation ? false : { opacity: 0, scale: 0.9, y: -20 }}
+        animate={{
+          opacity: 1,
+          scale: 1,
+          y: 0,
+          width: targetWidth,
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 120,
+          damping: 18,
+        }}
+        className="sticky top-8 z-50 mx-auto text-md backdrop-blur-md border border-border/40 shadow-[0_8px_32px_rgba(0,0,0,0.05)] dark:shadow-[0_8px_32px_oklch(0_0_0_/_40%),_0_0_16px_oklch(0.680_0.116_200.7_/_15%)] rounded-2xl my-8 bg-card/60 dark:bg-card/40 flex items-center overflow-hidden h-[60px]"
+      >
+        <div className="flex items-center justify-between gap-4 px-6 py-4 w-full">
+          <Link to="/" className="font-mono text-xl font-medium tracking-tight hover:opacity-90 transition-opacity shrink-0">
             lyric<span className="border-b-2 border-primary text-primary">type</span>
           </Link>
 
-          <div className="flex items-center gap-3">
+          <motion.div
+            initial={disableEntranceAnimation ? false : { opacity: 0, scale: 0.8 }}
+            animate={isEntranceDone ? { opacity: 1, scale: 1, pointerEvents: "auto" } : { opacity: 0, scale: 0.8, pointerEvents: "none" }}
+            transition={{ duration: 0.3, delay: disableEntranceAnimation ? 0 : 0.15 }}
+            className="flex items-center gap-3 shrink-0"
+          >
               <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -176,9 +238,9 @@ export function Navbar() {
                 </motion.button>
               )}
             </div>
-          </div>
+          </motion.div>
         </div>
-      </nav>
+      </motion.nav>
 
       <AuthModal />
       <AccountModal open={accountOpen} onOpenChange={setAccountOpen} />

@@ -17,18 +17,4 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  server: {
-    proxy: {
-      "/api/lyrics": {
-        target: "https://lrclib.net",
-        changeOrigin: true,
-        rewrite: (path) => {
-          const url = new URL("http://example.com" + path);
-          const artist = url.searchParams.get("artist");
-          const track = url.searchParams.get("track");
-          return `/api/get?artist_name=${encodeURIComponent(artist || "")}&track_name=${encodeURIComponent(track || "")}`;
-        },
-      },
-    },
-  },
 });

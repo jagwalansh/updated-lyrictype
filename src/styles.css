@@ -66,6 +66,10 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+html {
+  overflow-y: scroll;
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(0.95 0.02 85);
@@ -106,38 +110,38 @@
 }
 
 .dark {
-  --background: oklch(0.08 0.005 70);
-  --foreground: oklch(0.91 0.008 80);
-  --card: oklch(0.15 0.015 65);
-  --card-foreground: oklch(0.91 0.008 80);
-  --popover: oklch(0.15 0.015 65);
-  --popover-foreground: oklch(0.91 0.008 80);
-  --primary: oklch(0.75 0.12 70);
-  --primary-foreground: oklch(0.15 0.015 65);
-  --secondary: oklch(0.27 0.026 65);
-  --secondary-foreground: oklch(0.91 0.008 80);
-  --muted: oklch(0.27 0.026 65);
-  --muted-foreground: oklch(0.65 0.015 70);
-  --accent: oklch(0.27 0.026 65);
-  --accent-foreground: oklch(0.91 0.008 80);
+  --background: oklch(0.275 0.019 258.4);
+  --foreground: oklch(0.949 0.000 3.3);
+  --card: oklch(0.362 0.015 259.8);
+  --card-foreground: oklch(0.949 0.000 3.3);
+  --popover: oklch(0.362 0.015 259.8);
+  --popover-foreground: oklch(0.949 0.000 3.3);
+  --primary: oklch(0.680 0.116 200.7);
+  --primary-foreground: oklch(0.275 0.019 258.4);
+  --secondary: oklch(0.362 0.015 259.8);
+  --secondary-foreground: oklch(0.949 0.000 3.3);
+  --muted: oklch(0.362 0.015 259.8);
+  --muted-foreground: oklch(0.700 0.015 259.8);
+  --accent: oklch(0.362 0.015 259.8);
+  --accent-foreground: oklch(0.680 0.116 200.7);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.27 0.026 65 / 50%);
-  --input: oklch(0.27 0.026 65 / 60%);
-  --ring: oklch(0.75 0.12 70);
+  --border: oklch(0.362 0.015 259.8 / 50%);
+  --input: oklch(0.362 0.015 259.8 / 60%);
+  --ring: oklch(0.680 0.116 200.7);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.15 0.015 65);
-  --sidebar-foreground: oklch(0.91 0.008 80);
-  --sidebar-primary: oklch(0.75 0.12 70);
-  --sidebar-primary-foreground: oklch(0.15 0.015 65);
-  --sidebar-accent: oklch(0.27 0.026 65);
-  --sidebar-accent-foreground: oklch(0.91 0.008 80);
-  --sidebar-border: oklch(0.27 0.026 65 / 50%);
-  --sidebar-ring: oklch(0.75 0.12 70);
+  --sidebar: oklch(0.362 0.015 259.8);
+  --sidebar-foreground: oklch(0.949 0.000 3.3);
+  --sidebar-primary: oklch(0.680 0.116 200.7);
+  --sidebar-primary-foreground: oklch(0.275 0.019 258.4);
+  --sidebar-accent: oklch(0.362 0.015 259.8);
+  --sidebar-accent-foreground: oklch(0.949 0.000 3.3);
+  --sidebar-border: oklch(0.362 0.015 259.8 / 40%);
+  --sidebar-ring: oklch(0.680 0.116 200.7);
 }
 
 @layer base {
@@ -149,4 +153,101 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    oklch(0.88 0.03 120) 25%,
+    oklch(0.92 0.02 120) 50%,
+    oklch(0.88 0.03 120) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite linear;
+}
+
+.dark .animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    oklch(0.30 0.015 259.8) 25%,
+    oklch(0.35 0.015 259.8) 50%,
+    oklch(0.30 0.015 259.8) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite linear;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes waveMove {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-24px);
+  }
+}
+
+.animate-wave {
+  animation: waveMove 1.2s linear infinite;
+}
+
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; border-bottom-color: var(--color-primary); }
+  50% { opacity: 0.3; border-bottom-color: transparent; }
+}
+
+.animate-cursor-blink {
+  animation: cursorBlink 1s ease-in-out infinite;
+}
+
+@keyframes missShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+.animate-miss-shake {
+  animation: missShake 0.3s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes floatUpFade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.8);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -10px) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -40px) scale(0.9);
+  }
+}
+
+.animate-float-up-fade {
+  animation: floatUpFade 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }

@@ -22,27 +22,29 @@ export function parseLrc(lrc: string): LyricLine[] {
 }
 
 export interface TrackSearchResult {
-  trackId: number;
+  id: number;
   trackName: string;
   artistName: string;
+  albumName?: string;
+  duration?: number;
   artworkUrl100?: string;
-  previewUrl?: string;
 }
 
 export async function searchTracks(query: string): Promise<TrackSearchResult[]> {
   if (!query.trim()) return [];
 
-  const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=20`;
-  const res = await fetch(url);
+  const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=30`;
+  const res = await fetch(itunesUrl);
   if (!res.ok) throw new Error("Search failed");
-  const data = (await res.json()) as { results: any[] };
+  const data = await res.json();
 
-  return data.results.map((result) => ({
-    trackId: result.trackId,
-    trackName: result.trackName,
-    artistName: result.artistName,
-    artworkUrl100: result.artworkUrl100,
-    previewUrl: result.previewUrl,
+  return (data.results || []).map((item: any) => ({
+    id: item.trackId,
+    trackName: item.trackName || "Unknown",
+    artistName: item.artistName || "Unknown",
+    albumName: item.collectionName,
+    duration: item.trackTimeMillis ? Math.floor(item.trackTimeMillis / 1000) : undefined,
+    artworkUrl100: item.artworkUrl100,
   }));
 }
 
@@ -54,15 +56,24 @@ export interface LyricsResult {
 export async function fetchSyncedLyrics(
   artist: string,
   track: string,
+  duration?: number,
 ): Promise<LyricsResult | null> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+
   try {
-    const url = `/api/lyrics?artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(track)}`;
-    const res = await fetch(url);
+    let url = `/api/lyrics?artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(track)}`;
+    if (duration) {
+      url += `&duration=${duration}`;
+    }
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
     if (!res.ok) return null;
     const data = (await res.json()) as { syncedLyrics?: string | null, duration?: number };
     if (!data.syncedLyrics) return null;
-    return { lines: parseLrc(data.syncedLyrics), duration: data.duration || 0 };
+    return { lines: parseLrc(data.syncedLyrics), duration: data.duration || duration || 0 };
   } catch (error) {
+    clearTimeout(timeoutId);
     console.error("Failed to fetch lyrics:", error);
     return null;
   }
