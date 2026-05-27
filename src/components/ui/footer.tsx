@@ -4,7 +4,7 @@ import { Github, Heart, Coffee, ExternalLink, Youtube, Instagram } from "lucide-
 
 export function Footer() {
   return (
-    <div className="w-full max-w-4xl mx-auto mt-24 px-6">
+    <div className="w-full max-w-4xl mx-auto mt-auto px-6 pt-12 pb-8">
       {/* Glassmorphic Footer Wrapper */}
       <footer className="w-full border border-border/40 bg-card/65 dark:bg-card/45 py-10 px-8 rounded-2xl backdrop-blur-md shadow-sm dark:shadow-[0_8px_32px_oklch(0_0_0_/_20%)]">
         <div className="flex flex-col gap-8">
@@ -90,7 +90,7 @@ export function Footer() {
           </div>
 
           {/* Bottom copyright row */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border/20 pt-6 text-[10px] text-muted-foreground font-mono">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border pt-6 text-[10px] text-muted-foreground font-mono">
             <div>
               &copy; {new Date().getFullYear()} lyrictype. All rights reserved.
             </div>

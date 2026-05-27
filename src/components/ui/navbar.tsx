@@ -176,7 +176,7 @@ export function Navbar({ disableEntranceAnimation = false }: { disableEntranceAn
               <div className="relative w-[18px] h-[18px]">
                 <Search className="h-[18px] w-[18px] text-foreground transition-colors duration-300" />
                 <div className="absolute inset-0 w-0 overflow-hidden transition-all duration-300 group-hover:w-full">
-                  <Search className="h-[18px] w-[18px] text-primary max-w-none" />
+                  <Search className="h-[18px] w-[18px] text-primary max-w-none" fill="currentColor" />
                 </div>
               </div>
             </motion.button>
@@ -206,14 +206,14 @@ export function Navbar({ disableEntranceAnimation = false }: { disableEntranceAn
                   <>
                     <Sun className="h-4 w-4 text-foreground transition-colors duration-300" />
                     <div className="absolute inset-0 w-0 overflow-hidden transition-all duration-300 group-hover:w-full">
-                      <Sun className="h-4 w-4 text-primary max-w-none" />
+                      <Sun className="h-4 w-4 text-primary max-w-none" fill="currentColor" />
                     </div>
                   </>
                 ) : (
                   <>
                     <Moon className="h-4 w-4 text-foreground transition-colors duration-300" />
                     <div className="absolute inset-0 w-0 overflow-hidden transition-all duration-300 group-hover:w-full">
-                      <Moon className="h-4 w-4 text-primary max-w-none" />
+                      <Moon className="h-4 w-4 text-primary max-w-none" fill="currentColor" />
                     </div>
                   </>
                 )}

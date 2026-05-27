@@ -1,8 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Navbar } from "@/components/ui/navbar";
-import { Footer } from "@/components/ui/footer";
-import { motion } from "motion/react";
+import { createFileRoute } from '@tanstack/react-router'
 import { ArrowLeft, Play } from "lucide-react";
+import { DeflectCard } from "@/components/ui/deflect-card";
 
 export const Route = createFileRoute("/recommended")({
   component: Recommended,
@@ -104,7 +102,7 @@ function Recommended() {
     <main className="flex flex-col justify-start items-center min-h-screen bg-background text-foreground font-sans">
       <Navbar />
 
-      <div className="w-full max-w-4xl mx-auto px-6 py-28 flex flex-col gap-8 min-h-[calc(100vh-73px)] justify-start">
+      <div className="w-full max-w-4xl mx-auto px-6 py-28 flex flex-col gap-8 flex-1 justify-start">
         {/* Header section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border/20 pb-6">
           <div className="text-left">
@@ -130,87 +128,82 @@ function Recommended() {
 
         {/* Songs Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-2">
-          {RECOMMENDED_SONGS.map((song) => (
-            <motion.div
-              key={song.id}
-              whileHover={{ y: -4, scale: 1.01 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              className="group relative flex flex-col justify-between p-5 rounded-2xl border border-border/40 bg-card/45 backdrop-blur-sm hover:border-primary/30 transition-colors shadow-sm overflow-hidden"
-            >
-              {/* Backlighting effect on hover */}
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-350 pointer-events-none" />
+            <DeflectCard key={song.id} className="w-full rounded-2xl">
+              <div className="group relative flex flex-col justify-between p-5 rounded-2xl border border-border/40 bg-card/45 backdrop-blur-sm hover:border-primary/30 transition-colors w-full h-full overflow-hidden text-left">
+                {/* Backlighting effect on hover */}
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-350 pointer-events-none" />
 
-              <div className="flex gap-4 relative z-10">
-                {/* Artwork */}
-                <div className="relative h-16 w-16 rounded-xl overflow-hidden shrink-0 border border-border/20 shadow-inner">
-                  {song.artworkUrl100 ? (
-                    <img
-                      src={song.artworkUrl100}
-                      alt={song.trackName}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                      ♪
+                <div className="flex gap-4 relative z-10">
+                  {/* Artwork */}
+                  <div className="relative h-16 w-16 rounded-xl overflow-hidden shrink-0 border border-border/20 shadow-inner">
+                    {song.artworkUrl100 ? (
+                      <img
+                        src={song.artworkUrl100}
+                        alt={song.trackName}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="h-full w-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                        ♪
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Details */}
+                  <div className="min-w-0 flex-1 text-left flex flex-col justify-between">
+                    <div>
+                      <h3 className="truncate font-semibold text-sm text-foreground group-hover:text-primary transition-colors">
+                        {song.trackName}
+                      </h3>
+                      <p className="truncate text-xs text-muted-foreground mt-0.5">
+                        {song.artistName}
+                      </p>
                     </div>
-                  )}
-                </div>
 
-                {/* Details */}
-                <div className="min-w-0 flex-1 text-left flex flex-col justify-between">
-                  <div>
-                    <h3 className="truncate font-semibold text-sm text-foreground group-hover:text-primary transition-colors">
-                      {song.trackName}
-                    </h3>
-                    <p className="truncate text-xs text-muted-foreground mt-0.5">
-                      {song.artistName}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                    {/* Difficulty Badge */}
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-mono font-bold tracking-wide rounded border uppercase ${song.difficultyColor}`}>
-                      {song.difficulty}
-                    </span>
-
-                    {/* Tag Badges */}
-                    {song.tags.map((tag) => (
-                      <span key={tag} className="inline-flex px-2 py-0.5 text-[9px] font-mono text-muted-foreground bg-muted/60 border border-border/20 rounded">
-                        {tag}
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                      {/* Difficulty Badge */}
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-mono font-bold tracking-wide rounded border uppercase ${song.difficultyColor}`}>
+                        {song.difficulty}
                       </span>
-                    ))}
+
+                      {/* Tag Badges */}
+                      {song.tags.map((tag) => (
+                        <span key={tag} className="inline-flex px-2 py-0.5 text-[9px] font-mono text-muted-foreground bg-muted/60 border border-border/20 rounded">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
+
+                {/* Description */}
+                <p className="text-[11px] text-muted-foreground mt-4 text-left leading-relaxed relative z-10 min-h-[32px] group-hover:text-foreground/90 transition-colors">
+                  {song.description}
+                </p>
+
+                {/* Action row */}
+                <div className="flex items-center justify-between border-t border-border/20 mt-4 pt-3 relative z-10">
+                  <span className="text-[10px] font-mono text-muted-foreground">
+                    Duration: {Math.floor(song.duration / 60)}m {song.duration % 60}s
+                  </span>
+
+                  <Link
+                    to="/play/$trackId"
+                    params={{ trackId: String(song.id) }}
+                    search={{
+                      artist: song.artistName,
+                      track: song.trackName,
+                      art: song.artworkUrl100,
+                      duration: song.duration
+                    }}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-mono font-bold bg-primary text-primary-foreground hover:opacity-90 rounded-lg shadow-sm transition-all cursor-pointer"
+                  >
+                    <Play className="h-3 w-3 fill-current shrink-0" />
+                    PLAY
+                  </Link>
+                </div>
               </div>
-
-              {/* Description */}
-              <p className="text-[11px] text-muted-foreground mt-4 text-left leading-relaxed relative z-10 min-h-[32px] group-hover:text-foreground/90 transition-colors">
-                {song.description}
-              </p>
-
-              {/* Action row */}
-              <div className="flex items-center justify-between border-t border-border/20 mt-4 pt-3 relative z-10">
-                <span className="text-[10px] font-mono text-muted-foreground">
-                  Duration: {Math.floor(song.duration / 60)}m {song.duration % 60}s
-                </span>
-
-                <Link
-                  to="/play/$trackId"
-                  params={{ trackId: String(song.id) }}
-                  search={{
-                    artist: song.artistName,
-                    track: song.trackName,
-                    art: song.artworkUrl100,
-                    duration: song.duration
-                  }}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-mono font-bold bg-primary text-primary-foreground hover:opacity-90 rounded-lg shadow-sm transition-all cursor-pointer"
-                >
-                  <Play className="h-3 w-3 fill-current shrink-0" />
-                  PLAY
-                </Link>
-              </div>
-            </motion.div>
-          ))}
+            </DeflectCard>
         </div>
 
         <Footer />

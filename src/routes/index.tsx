@@ -6,6 +6,7 @@ import { motion } from "motion/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Footer } from "@/components/ui/footer";
 import { Play } from "lucide-react";
+import { DeflectCard } from "@/components/ui/deflect-card";
 
 type SearchParams = {
   q?: string;
@@ -186,7 +187,7 @@ function Index() {
     <main className="flex flex-col justify-start items-center min-h-screen bg-background text-foreground font-sans relative">
       <Navbar disableEntranceAnimation={disableAnimation} />
 
-      <div className="w-full max-w-4xl mx-auto px-6 py-28 flex flex-col items-center text-center justify-start min-h-[calc(100vh-73px)] gap-10 relative">
+      <div className="w-full max-w-4xl mx-auto px-6 py-28 flex flex-col items-center text-center justify-start flex-1 gap-10 relative">
         {/* Floating background music notes and keycaps */}
         {floatingElements.map((el, idx) => (
           <motion.div
@@ -379,40 +380,41 @@ function Index() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {RECOMMENDED_SONGS_HOMEPAGE.map((song) => (
-                <Link
-                  key={song.id}
-                  to="/play/$trackId"
-                  params={{ trackId: String(song.id) }}
-                  search={{
-                    artist: song.artistName,
-                    track: song.trackName,
-                    art: song.artworkUrl100,
-                    duration: song.duration
-                  }}
-                  className="group relative flex items-center justify-between p-4 rounded-xl border border-border/40 bg-card/45 backdrop-blur-sm hover:border-primary/30 transition-all hover:-translate-y-0.5 shadow-sm text-left"
-                >
-                  {/* Subtle backlighting on card hover */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-xl" />
-                  
-                  <div className="flex items-center gap-3 relative z-10">
-                    <img src={song.artworkUrl100} className="h-12 w-12 rounded-lg object-cover border border-border/10 shrink-0" />
-                    <div className="min-w-0">
-                      <h3 className="truncate font-semibold text-xs text-foreground group-hover:text-primary transition-colors">
-                        {song.trackName}
-                      </h3>
-                      <p className="truncate text-[10px] text-muted-foreground mt-0.5">
-                        {song.artistName}
-                      </p>
-                      <span className={`inline-flex px-1.5 py-0.5 text-[8px] font-mono font-bold tracking-wide rounded border uppercase mt-1.5 ${song.difficultyColor}`}>
-                        {song.difficulty}
-                      </span>
+                <DeflectCard key={song.id} className="w-full rounded-xl">
+                  <Link
+                    to="/play/$trackId"
+                    params={{ trackId: String(song.id) }}
+                    search={{
+                      artist: song.artistName,
+                      track: song.trackName,
+                      art: song.artworkUrl100,
+                      duration: song.duration
+                    }}
+                    className="group relative flex items-center justify-between p-4 rounded-xl border border-border/40 bg-card/45 backdrop-blur-sm hover:border-primary/30 w-full h-full text-left"
+                  >
+                    {/* Subtle backlighting on card hover */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-xl" />
+                    
+                    <div className="flex items-center gap-3 relative z-10">
+                      <img src={song.artworkUrl100} className="h-12 w-12 rounded-lg object-cover border border-border/10 shrink-0" />
+                      <div className="min-w-0">
+                        <h3 className="truncate font-semibold text-xs text-foreground group-hover:text-primary transition-colors">
+                          {song.trackName}
+                        </h3>
+                        <p className="truncate text-[10px] text-muted-foreground mt-0.5">
+                          {song.artistName}
+                        </p>
+                        <span className={`inline-flex px-1.5 py-0.5 text-[8px] font-mono font-bold tracking-wide rounded border uppercase mt-1.5 ${song.difficultyColor}`}>
+                          {song.difficulty}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <span className="text-[10px] font-mono font-bold text-primary group-hover:translate-x-1 transition-transform relative z-10 flex items-center gap-1">
-                    <Play className="h-2.5 w-2.5 fill-current" />
-                    PLAY
-                  </span>
-                </Link>
+                    <span className="text-[10px] font-mono font-bold text-primary group-hover:translate-x-1 transition-transform relative z-10 flex items-center gap-1">
+                      <Play className="h-2.5 w-2.5 fill-current" />
+                      PLAY
+                    </span>
+                  </Link>
+                </DeflectCard>
               ))}
             </div>
           </motion.div>

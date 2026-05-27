@@ -18,6 +18,15 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
   const [err, setErr] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 4;
+  const totalPages = Math.ceil(results.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedResults = results.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [q]);
 
   // Focus input on mount
   useEffect(() => {
@@ -105,7 +114,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
           </div>
 
           {/* Results Area */}
-          <div className="min-h-[220px] max-h-[360px] overflow-y-auto pr-1">
+          <div className="min-h-[220px] max-h-[360px] overflow-hidden pr-1">
             {loading ? (
               <ul className="space-y-3">
                 {Array.from({ length: 4 }).map((_, idx) => (
@@ -124,7 +133,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
               </div>
             ) : results.length > 0 ? (
               <ul className="divide-y divide-border/20">
-                {results.map((t) => (
+                {paginatedResults.map((t) => (
                   <li key={t.id}>
                     <button
                       onClick={() => handlePlayClick(t)}
@@ -166,6 +175,29 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
               </div>
             )}
           </div>
+
+          {/* Pagination Controls */}
+          {results.length > ITEMS_PER_PAGE && (
+            <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/20 font-mono text-[10px] text-muted-foreground">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-2.5 py-1 rounded-md border border-border/40 hover:bg-muted/60 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer transition-colors"
+              >
+                &larr; Prev
+              </button>
+              <span>
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-2.5 py-1 rounded-md border border-border/40 hover:bg-muted/60 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer transition-colors"
+              >
+                Next &rarr;
+              </button>
+            </div>
+          )}
 
         </Dialog.Content>
       </Dialog.Portal>

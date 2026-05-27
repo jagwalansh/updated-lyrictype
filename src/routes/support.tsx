@@ -13,7 +13,7 @@ function Support() {
     <main className="flex flex-col justify-start items-center min-h-screen bg-background text-foreground font-sans relative">
       <Navbar />
 
-      <div className="w-full max-w-4xl mx-auto px-6 py-28 flex flex-col gap-10 min-h-[calc(100vh-73px)] justify-start relative z-20">
+      <div className="w-full max-w-4xl mx-auto px-6 py-28 flex flex-col gap-10 flex-1 justify-start relative z-20">
         {/* Header Section */}
         <div className="flex flex-col border-b border-border/20 pb-6 text-left">
           <div className="flex items-center gap-2 text-xs font-mono text-primary font-semibold tracking-wider uppercase mb-1">

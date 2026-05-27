@@ -68,6 +68,7 @@
 
 html {
   overflow-y: scroll;
+  overflow-x: hidden;
 }
 
 :root {
@@ -126,7 +127,7 @@ html {
   --accent-foreground: oklch(0.680 0.116 200.7);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.362 0.015 259.8 / 50%);
+  --border: oklch(0.48 0.015 259.8 / 60%);
   --input: oklch(0.362 0.015 259.8 / 60%);
   --ring: oklch(0.680 0.116 200.7);
   --chart-1: oklch(0.488 0.243 264.376);
@@ -152,7 +153,6 @@ html {
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    overflow-x: hidden;
   }
 }
 
