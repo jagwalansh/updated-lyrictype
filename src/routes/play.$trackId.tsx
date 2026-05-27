@@ -31,8 +31,8 @@ function findLineIdxForTime(time: number, lyricLines: LyricLine[]): number {
   return targetIdx;
 }
 
-const SHOW_TYPING_ERRORS = true;
-const GOD_MODE = false ; // Set to true to always score PERFECT regardless of input
+// const SHOW_TYPING_ERRORS = true;
+const GOD_MODE = true ; // Set to true to always score PERFECT regardless of input
 
 export const Route = createFileRoute("/play/$trackId")({
   validateSearch: (s: Record<string, unknown>): Search => ({

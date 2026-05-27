@@ -247,6 +247,7 @@ function Index() {
               </div>
             </form>
 
+            {/*
             {results.length === 0 && !loading && (
               <motion.div
                 initial={{ opacity: 0, y: 5 }}
@@ -308,6 +309,7 @@ function Index() {
                 </Link>
               </motion.div>
             )}
+            */}
 
             {err && <p className="mt-4 text-sm text-incorrect">{err}</p>}
 
