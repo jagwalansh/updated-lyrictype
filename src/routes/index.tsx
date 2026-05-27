@@ -5,11 +5,13 @@ import { searchTracks, type TrackSearchResult } from "@/lib/lrc";
 import { motion } from "motion/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Footer } from "@/components/ui/footer";
-import { Star, Play, Sparkles } from "lucide-react";
+import { Play, Sparkles } from "lucide-react";
 
 type SearchParams = {
   q?: string;
 };
+
+let hasVisitedHome = false;
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): SearchParams => ({
@@ -101,6 +103,42 @@ const RECOMMENDED_SONGS_HOMEPAGE = [
     duration: 202,
     difficulty: "Medium",
     difficultyColor: "bg-amber-500/10 text-amber-500 border-amber-500/20"
+  },
+  {
+    id: 1674691586,
+    trackName: "Flowers",
+    artistName: "Miley Cyrus",
+    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/8c/67/ff/8c67ff91-31c3-3fef-1884-ce3ec89f3af4/196589946874.jpg/100x100bb.jpg",
+    duration: 201,
+    difficulty: "Easy",
+    difficultyColor: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+  },
+  {
+    id: 1508562516,
+    trackName: "Heat Waves",
+    artistName: "Glass Animals",
+    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/da/8b/77/da8b7731-6f4f-eacf-5e74-8b23389eefa1/20UMGIM03371.rgb.jpg/100x100bb.jpg",
+    duration: 239,
+    difficulty: "Easy",
+    difficultyColor: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+  },
+  {
+    id: 1434371887,
+    trackName: "Shallow",
+    artistName: "Lady Gaga & Bradley Cooper",
+    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/b1/9f/ef/b19fef51-79de-a940-e8ab-9e4e07b04d96/18UMGIM53752.rgb.jpg/100x100bb.jpg",
+    duration: 216,
+    difficulty: "Very Easy",
+    difficultyColor: "bg-teal-500/10 text-teal-500 border-teal-500/20"
+  },
+  {
+    id: 1571330212,
+    trackName: "Bad Habits",
+    artistName: "Ed Sheeran",
+    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/63/45/cc/6345cc98-aa83-ad6e-e3c9-1a36ff9838a4/190296614316.jpg/100x100bb.jpg",
+    duration: 231,
+    difficulty: "Medium",
+    difficultyColor: "bg-amber-500/10 text-amber-500 border-amber-500/20"
   }
 ];
 
@@ -110,6 +148,11 @@ function Index() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [disableAnimation, setDisableAnimation] = useState(hasVisitedHome);
+
+  useEffect(() => {
+    hasVisitedHome = true;
+  }, []);
 
   useEffect(() => {
     const query = routeQuery ?? "";
@@ -141,7 +184,7 @@ function Index() {
 
   return (
     <main className="flex flex-col justify-start items-center min-h-screen bg-background text-foreground font-sans relative overflow-x-hidden">
-      <Navbar />
+      <Navbar disableEntranceAnimation={disableAnimation} />
 
       <div className="w-full max-w-4xl mx-auto px-6 py-28 flex flex-col items-center text-center justify-start min-h-[calc(100vh-73px)] gap-10 relative">
         {/* Floating background music notes and keycaps */}
@@ -176,7 +219,7 @@ function Index() {
           <header className="mb-2">
             <motion.h1
               variants={titleContainerVariants}
-              initial="hidden"
+              initial={disableAnimation ? "visible" : "hidden"}
               animate="visible"
               className="text-5xl md:text-6xl font-bold tracking-tight leading-tight text-foreground mb-6"
             >
@@ -200,7 +243,7 @@ function Index() {
             
             <motion.p
               variants={paragraphVariants}
-              initial="hidden"
+              initial={disableAnimation ? "visible" : "hidden"}
               animate="visible"
               className="text-sm text-muted-foreground leading-relaxed max-w-xl mx-auto"
             >
@@ -317,9 +360,9 @@ function Index() {
         ) : (
           /* Recommended Songs Grid (Default Homepage state) */
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
+            initial={disableAnimation ? { opacity: 1, y: 0 } : { opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8, duration: 0.5 }}
+            transition={disableAnimation ? { duration: 0 } : { delay: 0.8, duration: 0.5 }}
             className="w-full max-w-2xl mt-4 flex flex-col gap-6 z-20"
           >
             <div className="flex items-center justify-between border-b border-border/20 pb-4">

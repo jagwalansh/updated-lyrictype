@@ -3,6 +3,7 @@ import { LogIn, UserRound, Moon, Sun, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { AccountModal } from "@/components/ui/account-modal";
 import { AuthModal } from "@/components/ui/auth-modal";
+import { SearchModal } from "@/components/ui/search-modal";
 import { useAuth } from "@/lib/auth-context";
 import { useModal } from "@/lib/modal-context";
 import { motion } from "motion/react";
@@ -60,24 +61,7 @@ export function Navbar({ disableEntranceAnimation = false }: { disableEntranceAn
   const [scrollY, setScrollY] = useState(0);
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
 
-  const navigate = useNavigate();
-  const router = useRouter();
-  const [searchVal, setSearchVal] = useState("");
-  const [searchFocused, setSearchFocused] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    setSearchVal(params.get("q") || "");
-  }, [router.state.location.href]);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    navigate({
-      to: "/",
-      search: { q: searchVal.trim() || undefined }
-    });
-  };
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     const dark = document.documentElement.classList.contains("dark") || localStorage.getItem("theme") === "dark";
@@ -154,30 +138,13 @@ export function Navbar({ disableEntranceAnimation = false }: { disableEntranceAn
           stiffness: 120,
           damping: 18,
         }}
-        className="sticky top-8 z-50 mx-auto text-md backdrop-blur-md border border-border/40 shadow-[0_8px_32px_rgba(0,0,0,0.05)] dark:shadow-[0_8px_32px_oklch(0_0_0_/_40%),_0_0_16px_oklch(0.680_0.116_200.7_/_15%)] rounded-2xl my-8 bg-card/60 dark:bg-card/40 flex items-center overflow-hidden h-[60px]"
+        className="fixed top-8 left-1/2 -translate-x-1/2 z-50 text-md backdrop-blur-md border border-border/40 shadow-[0_8px_32px_rgba(0,0,0,0.05)] dark:shadow-[0_8px_32px_oklch(0_0_0_/_40%),_0_0_16px_oklch(0.680_0.116_200.7_/_15%)] rounded-2xl bg-card/60 dark:bg-card/40 flex items-center overflow-hidden h-[60px]"
       >
         <div className="flex items-center justify-between gap-4 px-6 py-4 w-full">
           <Link to="/" className="font-mono text-xl font-medium tracking-tight hover:opacity-90 transition-opacity shrink-0">
             lyric<span className="border-b-2 border-primary text-primary">type</span>
           </Link>
 
-          {isEntranceDone && (
-            <form
-              onSubmit={handleSearchSubmit}
-              className="relative hidden sm:flex items-center min-w-0 mx-2 z-50"
-            >
-              <input
-                type="text"
-                value={searchVal}
-                onChange={(e) => setSearchVal(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setSearchFocused(false)}
-                placeholder="Search songs..."
-                className="w-28 focus:w-44 md:w-44 md:focus:w-64 bg-background/50 hover:bg-background/80 focus:bg-background/95 border border-border/40 focus:border-primary/50 text-[11px] font-mono rounded-lg pl-8 pr-3 py-1.5 outline-none transition-all duration-300 h-8 text-foreground"
-              />
-              <Search className={`absolute left-2.5 h-3.5 w-3.5 transition-colors ${searchFocused ? "text-primary" : "text-muted-foreground"}`} />
-            </form>
-          )}
 
           <motion.div
             initial={disableEntranceAnimation ? false : { opacity: 0, scale: 0.8 }}
@@ -198,6 +165,20 @@ export function Navbar({ disableEntranceAnimation = false }: { disableEntranceAn
                   </div>
                 </div>
               </Link>
+             </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setSearchOpen(true)}
+              className="group py-1.5 border border-border/40 bg-card/50 hover:bg-card/85 transition-all shadow-sm rounded-md px-3 cursor-pointer relative z-50 h-8 flex items-center justify-center"
+              title="Search Songs"
+            >
+              <div className="relative w-[18px] h-[18px]">
+                <Search className="h-[18px] w-[18px] text-foreground transition-colors duration-300" />
+                <div className="absolute inset-0 w-0 overflow-hidden transition-all duration-300 group-hover:w-full">
+                  <Search className="h-[18px] w-[18px] text-primary max-w-none" />
+                </div>
+              </div>
             </motion.button>
               <motion.button
               whileHover={{ scale: 1.05 }}
@@ -280,6 +261,7 @@ export function Navbar({ disableEntranceAnimation = false }: { disableEntranceAn
       </motion.nav>
 
       <AuthModal />
+      <SearchModal open={searchOpen} onOpenChange={setSearchOpen} />
       <AccountModal open={accountOpen} onOpenChange={setAccountOpen} />
     </>
   );

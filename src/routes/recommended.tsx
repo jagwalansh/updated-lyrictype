@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
 import { motion } from "motion/react";
-import { ArrowLeft, Play, Sparkles, Star } from "lucide-react";
+import { ArrowLeft, Play, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/recommended")({
   component: Recommended,
@@ -171,7 +171,6 @@ function Recommended() {
                   <div className="flex flex-wrap items-center gap-1.5 mt-2">
                     {/* Difficulty Badge */}
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-mono font-bold tracking-wide rounded border uppercase ${song.difficultyColor}`}>
-                      <Star className="h-2.5 w-2.5 fill-current shrink-0" />
                       {song.difficulty}
                     </span>
 
