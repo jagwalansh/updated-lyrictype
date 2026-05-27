@@ -1,5 +1,5 @@
-import { Link } from "@tanstack/react-router";
-import { LogIn, UserRound, Moon, Sun } from "lucide-react";
+import { Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { LogIn, UserRound, Moon, Sun, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { AccountModal } from "@/components/ui/account-modal";
 import { AuthModal } from "@/components/ui/auth-modal";
@@ -59,6 +59,25 @@ export function Navbar({ disableEntranceAnimation = false }: { disableEntranceAn
   const [isEntranceDone, setIsEntranceDone] = useState(disableEntranceAnimation);
   const [scrollY, setScrollY] = useState(0);
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
+
+  const navigate = useNavigate();
+  const router = useRouter();
+  const [searchVal, setSearchVal] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setSearchVal(params.get("q") || "");
+  }, [router.state.location.href]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    navigate({
+      to: "/",
+      search: { q: searchVal.trim() || undefined }
+    });
+  };
 
   useEffect(() => {
     const dark = document.documentElement.classList.contains("dark") || localStorage.getItem("theme") === "dark";
@@ -141,6 +160,24 @@ export function Navbar({ disableEntranceAnimation = false }: { disableEntranceAn
           <Link to="/" className="font-mono text-xl font-medium tracking-tight hover:opacity-90 transition-opacity shrink-0">
             lyric<span className="border-b-2 border-primary text-primary">type</span>
           </Link>
+
+          {isEntranceDone && (
+            <form
+              onSubmit={handleSearchSubmit}
+              className="relative hidden sm:flex items-center min-w-0 mx-2 z-50"
+            >
+              <input
+                type="text"
+                value={searchVal}
+                onChange={(e) => setSearchVal(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                placeholder="Search songs..."
+                className="w-28 focus:w-44 md:w-44 md:focus:w-64 bg-background/50 hover:bg-background/80 focus:bg-background/95 border border-border/40 focus:border-primary/50 text-[11px] font-mono rounded-lg pl-8 pr-3 py-1.5 outline-none transition-all duration-300 h-8 text-foreground"
+              />
+              <Search className={`absolute left-2.5 h-3.5 w-3.5 transition-colors ${searchFocused ? "text-primary" : "text-muted-foreground"}`} />
+            </form>
+          )}
 
           <motion.div
             initial={disableEntranceAnimation ? false : { opacity: 0, scale: 0.8 }}
