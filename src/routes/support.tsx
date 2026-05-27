@@ -10,7 +10,7 @@ export const Route = createFileRoute("/support")({
 
 function Support() {
   return (
-    <main className="flex flex-col justify-start items-center min-h-screen bg-background text-foreground font-sans relative overflow-x-hidden">
+    <main className="flex flex-col justify-start items-center min-h-screen bg-background text-foreground font-sans relative">
       <Navbar />
 
       <div className="w-full max-w-4xl mx-auto px-6 py-28 flex flex-col gap-10 min-h-[calc(100vh-73px)] justify-start relative z-20">

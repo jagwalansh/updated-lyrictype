@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
 import { motion } from "motion/react";
-import { ArrowLeft, Play, Sparkles } from "lucide-react";
+import { ArrowLeft, Play } from "lucide-react";
 
 export const Route = createFileRoute("/recommended")({
   component: Recommended,
@@ -108,8 +108,7 @@ function Recommended() {
         {/* Header section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border/20 pb-6">
           <div className="text-left">
-            <div className="flex items-center gap-2 text-xs font-mono text-primary font-semibold tracking-wider uppercase mb-1">
-              <Sparkles className="h-4.5 w-4.5" />
+            <div className="text-xs font-mono text-primary font-semibold tracking-wider uppercase mb-1">
               Curated Tracklist
             </div>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">

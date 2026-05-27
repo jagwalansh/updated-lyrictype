@@ -5,7 +5,7 @@ import { searchTracks, type TrackSearchResult } from "@/lib/lrc";
 import { motion } from "motion/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Footer } from "@/components/ui/footer";
-import { Play, Sparkles } from "lucide-react";
+import { Play } from "lucide-react";
 
 type SearchParams = {
   q?: string;
@@ -183,7 +183,7 @@ function Index() {
   const paginatedResults = results.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   return (
-    <main className="flex flex-col justify-start items-center min-h-screen bg-background text-foreground font-sans relative overflow-x-hidden">
+    <main className="flex flex-col justify-start items-center min-h-screen bg-background text-foreground font-sans relative">
       <Navbar disableEntranceAnimation={disableAnimation} />
 
       <div className="w-full max-w-4xl mx-auto px-6 py-28 flex flex-col items-center text-center justify-start min-h-[calc(100vh-73px)] gap-10 relative">
@@ -366,8 +366,7 @@ function Index() {
             className="w-full max-w-2xl mt-4 flex flex-col gap-6 z-20"
           >
             <div className="flex items-center justify-between border-b border-border/20 pb-4">
-              <h2 className="text-sm font-bold tracking-wider text-muted-foreground font-mono uppercase flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-bold tracking-wider text-muted-foreground font-mono uppercase">
                 Featured Songs
               </h2>
               <Link

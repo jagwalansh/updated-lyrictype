@@ -138,7 +138,7 @@ export function Navbar({ disableEntranceAnimation = false }: { disableEntranceAn
           stiffness: 120,
           damping: 18,
         }}
-        className="fixed top-8 left-1/2 -translate-x-1/2 z-50 text-md backdrop-blur-md border border-border/40 shadow-[0_8px_32px_rgba(0,0,0,0.05)] dark:shadow-[0_8px_32px_oklch(0_0_0_/_40%),_0_0_16px_oklch(0.680_0.116_200.7_/_15%)] rounded-2xl bg-card/60 dark:bg-card/40 flex items-center overflow-hidden h-[60px]"
+        className="sticky top-8 z-50 mx-auto text-md backdrop-blur-md border border-border/40 shadow-[0_8px_32px_rgba(0,0,0,0.05)] dark:shadow-[0_8px_32px_oklch(0_0_0_/_40%),_0_0_16px_oklch(0.680_0.116_200.7_/_15%)] rounded-2xl my-8 bg-card/60 dark:bg-card/40 flex items-center overflow-hidden h-[60px]"
       >
         <div className="flex items-center justify-between gap-4 px-6 py-4 w-full">
           <Link to="/" className="font-mono text-xl font-medium tracking-tight hover:opacity-90 transition-opacity shrink-0">
