@@ -1,7 +1,10 @@
 {
   "name": "tanstack_start_ts",
   "private": true,
-  "sideEffects": false,
+  "sideEffects": [
+    "src/lib/error-capture.ts",
+    "src/styles.css"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vite dev",
