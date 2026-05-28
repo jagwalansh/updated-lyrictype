@@ -15,7 +15,7 @@ export function Footer() {
             {/* Col 1: Brand details */}
             <div className="flex flex-col gap-3">
               <h3 className="font-mono text-sm font-semibold tracking-wider text-foreground">
-                lyric<span className="text-primary border-b border-primary">type</span>
+                key<span className="text-primary border-b border-primary">Verse</span>
               </h3>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 A clean, minimal rhythm typing game built for music lovers. Test your speed and accuracy in sync with the beat.
