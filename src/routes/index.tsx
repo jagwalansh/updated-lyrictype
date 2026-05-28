@@ -176,11 +176,9 @@ function Index() {
   const [err, setErr] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [disableAnimation, setDisableAnimation] = useState(hasVisitedHome);
-  const [useEditVideo, setUseEditVideo] = useState(false);
 
   useEffect(() => {
     hasVisitedHome = true;
-    setUseEditVideo(localStorage.getItem("useEditVideo") === "true");
   }, []);
 
   useEffect(() => {
@@ -428,27 +426,6 @@ function Index() {
               </h2>
               
               <div className="flex items-center gap-6">
-                {/* Edit Video Toggle Switch */}
-                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
-                  <div className="relative">
-                    <input 
-                      type="checkbox" 
-                      className="sr-only peer"
-                      checked={useEditVideo}
-                      onChange={(e) => {
-                        setUseEditVideo(e.target.checked);
-                        localStorage.setItem("useEditVideo", e.target.checked ? "true" : "false");
-                      }}
-                    />
-                    <div className="w-9 h-5 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary border border-border/40"></div>
-                  </div>
-                  <span className="text-xs font-mono font-semibold text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5">
-                    🎬 Play Edit Videos
-                  </span>
-                </label>
-
-                <div className="hidden sm:block w-px h-4 bg-border/45" />
-
                 <Link
                   to="/recommended"
                   className="text-xs font-mono text-primary hover:text-primary/80 transition-colors font-semibold border-b border-primary/20 hover:border-primary"

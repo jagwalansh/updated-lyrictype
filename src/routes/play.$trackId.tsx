@@ -137,8 +137,7 @@ function PlayPage() {
 
         // 2. Fetch YouTube Video ID
         setYtLoading(true);
-        const useEditVideo = typeof window !== "undefined" ? localStorage.getItem("useEditVideo") === "true" : false;
-        const searchQuery = artist + " " + track + (useEditVideo ? " edit" : " audio");
+        const searchQuery = artist + " " + track + " edit";
         const ytResponse = await fetch(`/api/youtube-search?q=${encodeURIComponent(searchQuery)}&duration=${expectedDuration}`);
         const d = await ytResponse.json();
         
