@@ -13,7 +13,6 @@ export async function POST(req: Request) {
       personalizations: [
         {
           to: [{ email: "support@keyverse.me", name: "KeyVerse Support" }],
-          "dkim_domain": "keyverse.me",
         },
       ],
       from: {
@@ -39,7 +38,7 @@ export async function POST(req: Request) {
     if (!res.ok) {
       const text = await res.text();
       console.error("MailChannels error:", res.status, text);
-      return new Response(JSON.stringify({ error: "Failed to send email" }), {
+      return new Response(JSON.stringify({ error: `MailChannels error (${res.status}): ${text}` }), {
         status: 500,
         headers: { "content-type": "application/json" },
       });
