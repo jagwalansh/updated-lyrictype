@@ -396,16 +396,7 @@ function PlayPage() {
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     // Prevent default actions for certain keys to avoid navigation/scrolling
-    if (e.key === "ArrowRight") {
-        e.preventDefault();
-        if (ytPlayerRef.current) {
-            const currentTime = ytPlayerRef.current.getCurrentTime();
-            ytPlayerRef.current.seekTo(Math.min(currentTime + 10, ytPlayerRef.current.getDuration()), true);
-        }
-        return;
-    }
-
-    if (e.key === "Delete" || e.key === "ArrowLeft" || e.key === "Enter") {
+    if (e.key === "Delete" || e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "Enter") {
         e.preventDefault();
         return;
     }
@@ -1125,10 +1116,22 @@ function PlayPage() {
                     >
                       Restart
                     </button>
+                    <button
+                      onClick={() => {
+                        const player = ytPlayerRef.current;
+                        if (player) {
+                          player.seekTo(Math.min(player.getCurrentTime() + 10, player.getDuration()), true);
+                        }
+                        inputRef.current?.focus();
+                      }}
+                      className="rounded-lg border border-border/40 bg-card/45 backdrop-blur-sm py-2.5 px-4 text-sm font-semibold hover:bg-muted transition-colors cursor-pointer"
+                    >
+                      +10s
+                    </button>
                   </div>
 
                   <p className="text-center font-mono text-xs text-muted-foreground leading-relaxed">
-                    Just start typing — you can't skip ahead, stay on the beat!
+                    Type the lyrics in sync with the music
                   </p>
 
               {/* Hidden input for capturing keyboard events */}
