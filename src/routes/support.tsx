@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
 import { motion } from "motion/react";
-import { Mail, Github, MessageSquare, Loader2, Send, CheckCircle, AlertCircle, X } from "lucide-react";
+import { Mail, Github, Loader2, Send, CheckCircle, AlertCircle, X } from "lucide-react";
 import { DeflectCard } from "@/components/ui/deflect-card";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useState } from "react";
@@ -176,18 +176,18 @@ function Support() {
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-350 pointer-events-none rounded-2xl" />
 
               <div className="relative z-10 text-left">
-                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4">
-                  <MessageSquare className="h-5 w-5" />
+                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-5">
+                  <span className="text-lg font-bold font-mono">R</span>
                 </div>
-                <h2 className="font-mono text-base font-bold tracking-wide text-foreground">
+                <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
                   Report a Bug & Feedback
                 </h2>
-                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
                   Found a mistake in the lyric sync? Or did the player fail to load a video? We are constantly improving KeyVerse and would love to hear from you.
                 </p>
               </div>
 
-              <div className="relative z-10 flex flex-col gap-3 mt-5">
+              <div className="relative z-10 flex flex-col gap-3 mt-6">
                 <motion.button
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
@@ -232,28 +232,18 @@ function Support() {
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-350 pointer-events-none rounded-2xl" />
 
               <div className="relative z-10 text-left">
-                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4">
-                  <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="32" cy="28" r="20"/>
-                    <polyline points="8 48 8 56 56 56 56 48"/>
-                    <path d="M30 28a4 4 0 0 1 0-8"/>
-                    <path d="M34 28a4 4 0 0 1 0 8"/>
-                    <line x1="32" y1="16" x2="32" y2="20"/>
-                    <line x1="32" y1="36" x2="32" y2="40"/>
-                    <line x1="30" y1="28" x2="34" y2="28"/>
-                    <path d="M38 22s-2-2-4-2h-4"/>
-                    <path d="M26 34s2 2 4 2h4"/>
-                  </svg>
+                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-5">
+                  <span className="text-lg font-bold font-mono">S</span>
                 </div>
-                <h2 className="font-mono text-base font-bold tracking-wide text-foreground">
+                <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
                   Support the Project
                 </h2>
-                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
                   KeyVerse is completely free and open-source. Help support server hosting costs and motivate future feature development by sponsoring!
                 </p>
               </div>
 
-              <div className="relative z-10 flex flex-col gap-3 mt-5">
+              <div className="relative z-10 flex flex-col gap-3 mt-6">
                 <motion.a
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
