@@ -171,7 +171,7 @@ function Support() {
           >
             <DeflectCard
               className="w-full h-full"
-              cardClassName="group relative p-10 rounded-2xl border border-border/40 bg-card/45 backdrop-blur-sm hover:border-primary/30 transition-all duration-150 flex flex-col justify-between h-full text-left"
+              cardClassName="group relative p-10 rounded-2xl border border-border/40 bg-card/45 backdrop-blur-sm hover:border-primary/30 transition-all duration-150 flex flex-col justify-between h-full min-h-[320px] text-left"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-350 pointer-events-none rounded-2xl" />
 
@@ -184,7 +184,7 @@ function Support() {
                 </p>
               </div>
 
-              <div className="relative z-10 flex flex-col gap-4 mt-8">
+              <div className="relative z-10 flex flex-col gap-3 mt-5">
                 <motion.button
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
@@ -224,7 +224,7 @@ function Support() {
           >
             <DeflectCard
               className="w-full h-full"
-              cardClassName="group relative p-10 rounded-2xl border border-border/40 bg-card/45 backdrop-blur-sm hover:border-primary/30 transition-all duration-150 flex flex-col justify-between h-full text-left"
+              cardClassName="group relative p-10 rounded-2xl border border-border/40 bg-card/45 backdrop-blur-sm hover:border-primary/30 transition-all duration-150 flex flex-col justify-between h-full min-h-[320px] text-left"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-350 pointer-events-none rounded-2xl" />
 
@@ -237,7 +237,7 @@ function Support() {
                 </p>
               </div>
 
-              <div className="relative z-10 flex flex-col gap-4 mt-8">
+              <div className="relative z-10 flex flex-col gap-3 mt-5">
                 <motion.a
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
