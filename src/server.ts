@@ -365,34 +365,96 @@ export default {
         }
 
         try {
-          const yts = (await import("yt-search")).default;
-          const r = await yts(query);
-          
-          let bestVideo = r.videos.length > 0 ? r.videos[0] : null;
+          const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+          const ytRes = await fetch(searchUrl, {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+              "Accept-Language": "en-US,en;q=0.9",
+            }
+          });
 
-          if (expectedDuration > 0 && r.videos.length > 0) {
-            let bestDiff = Infinity;
-            // Only look at the top 10 results to ensure high relevance
-            const candidates = r.videos.slice(0, 10);
-            for (const video of candidates) {
-               const diff = Math.abs(video.seconds - expectedDuration);
-               if (diff < bestDiff) {
-                 bestDiff = diff;
-                 bestVideo = video;
-               }
+          if (!ytRes.ok) {
+            throw new Error(`YouTube request failed with status: ${ytRes.status}`);
+          }
+
+          const html = await ytRes.text();
+          const videos: Array<{ videoId: string; title?: string; author?: string; seconds?: number }> = [];
+
+          // Try parsing initial data first
+          const dataMatch = html.match(/(?:ytInitialData\s*=\s*|window\["ytInitialData"\]\s*=\s*)({.+?});\s*<\/script>/);
+          if (dataMatch) {
+            try {
+              const data = JSON.parse(dataMatch[1]);
+              const contents = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents;
+              const results = contents?.find((c: any) => c.itemSectionRenderer)?.itemSectionRenderer?.contents || [];
+              for (const item of results) {
+                const info = item.videoRenderer;
+                if (info && info.videoId) {
+                  const title = info.title?.runs?.[0]?.text || "";
+                  const author = info.ownerText?.runs?.[0]?.text || "";
+                  const durationText = info.lengthText?.simpleText || "";
+                  const parts = durationText.split(":").map(Number);
+                  let seconds = 0;
+                  if (parts.length === 2) seconds = parts[0] * 60 + parts[1];
+                  else if (parts.length === 3) seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+                  
+                  videos.push({
+                    videoId: info.videoId,
+                    title,
+                    author,
+                    seconds
+                  });
+                }
+              }
+            } catch (err) {
+              console.error("Error parsing ytInitialData JSON:", err);
             }
           }
 
-          const videoId = bestVideo ? bestVideo.videoId : null;
-          const authorName = bestVideo ? bestVideo.author.name : null;
+          // Fallback: extract raw video IDs via Regex if JSON parsing yields nothing
+          if (videos.length === 0) {
+            const videoIdRegex = /"videoId":"([^"]+)"/g;
+            const seen = new Set<string>();
+            let m;
+            while ((m = videoIdRegex.exec(html)) !== null) {
+              const id = m[1];
+              if (id && id.length === 11 && !seen.has(id)) {
+                seen.add(id);
+                videos.push({ videoId: id });
+              }
+            }
+          }
 
-          return new Response(JSON.stringify({ videoId, authorName }), {
+          if (videos.length === 0) {
+            return new Response(JSON.stringify({ error: "Could not find a YouTube video for this track" }), {
+              status: 404,
+              headers: { "content-type": "application/json" },
+            });
+          }
+
+          let bestVideo = videos[0];
+          if (expectedDuration > 0) {
+            let bestDiff = Infinity;
+            // Only look at the top 10 results to ensure high relevance
+            const candidates = videos.slice(0, 10);
+            for (const video of candidates) {
+              if (video.seconds !== undefined) {
+                const diff = Math.abs(video.seconds - expectedDuration);
+                if (diff < bestDiff) {
+                  bestDiff = diff;
+                  bestVideo = video;
+                }
+              }
+            }
+          }
+
+          return new Response(JSON.stringify({ videoId: bestVideo.videoId, authorName: bestVideo.author || "YouTube" }), {
             status: 200,
             headers: { "content-type": "application/json" },
           });
-        } catch (error) {
+        } catch (error: any) {
           console.error("YouTube search error:", error);
-          return new Response(JSON.stringify({ error: "Failed to search YouTube" }), {
+          return new Response(JSON.stringify({ error: error.message || "Failed to search YouTube" }), {
             status: 500,
             headers: { "content-type": "application/json" },
           });

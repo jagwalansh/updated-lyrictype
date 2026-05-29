@@ -119,26 +119,40 @@ function PlayPage() {
     setSongEnded(false);
     showBlurOverlayRef.current = false;
     setShowBlurOverlay(false);
+    setLoadErr(null);
+    setLines(null);
+
+    // Guard: Don't fetch if search parameters are not yet resolved or are empty
+    if (!artist.trim() || !track.trim()) {
+      setYtLoading(true);
+      return;
+    }
     
     async function loadData() {
       try {
-        // 1. Fetch Lyrics
-        const lyricsRes = await fetchSyncedLyrics(artist, track, duration);
-        if (cancelled) return;
+        setYtLoading(true);
+        const searchQuery = artist + " " + track + " edit";
         
+        // Fetch both lyrics and YouTube search in parallel to optimize loading speed / LCP
+        const [lyricsRes, ytResponse] = await Promise.all([
+          fetchSyncedLyrics(artist, track, duration),
+          fetch(`/api/youtube-search?q=${encodeURIComponent(searchQuery)}&duration=${duration || 0}`)
+        ]);
+
+        if (cancelled) return;
+
+        // 1. Process lyrics
         if (!lyricsRes || lyricsRes.lines.length === 0) {
           setLoadErr("No synced lyrics found for this song.");
           setYtLoading(false);
           return;
         }
-        
         setLines(lyricsRes.lines);
-        const expectedDuration = lyricsRes.duration;
 
-        // 2. Fetch YouTube Video ID
-        setYtLoading(true);
-        const searchQuery = artist + " " + track + " edit";
-        const ytResponse = await fetch(`/api/youtube-search?q=${encodeURIComponent(searchQuery)}&duration=${expectedDuration}`);
+        // 2. Process YouTube response
+        if (!ytResponse.ok) {
+          throw new Error("Failed to fetch YouTube video search results");
+        }
         const d = await ytResponse.json();
         
         if (cancelled) return;
@@ -162,7 +176,7 @@ function PlayPage() {
     return () => {
       cancelled = true;
     };
-  }, [artist, track]);
+  }, [artist, track, duration]);
 
   // Clear hit feedback automatically
   useEffect(() => {

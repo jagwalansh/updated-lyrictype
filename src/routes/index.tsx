@@ -244,41 +244,11 @@ function Index() {
         {/* Hero Header Section */}
         <div className="w-full max-w-2xl flex flex-col items-center text-center relative z-20">
           <header className="mb-2">
-            <motion.h1
-              variants={titleContainerVariants}
-              initial={disableAnimation ? "visible" : "hidden"}
-              animate="visible"
-              className="text-5xl md:text-6xl font-bold tracking-tight leading-tight text-foreground mb-6"
-            >
-              {"Feel the rhythm in every".split(" ").map((word, wordIdx, arr) => (
-                <Fragment key={wordIdx}>
-                  <span className="inline-block whitespace-nowrap">
-                    {word.split("").map((char, charIdx) => (
-                      <motion.span
-                        key={`word-${wordIdx}-${charIdx}`}
-                        variants={titleCharVariants}
-                        className="inline-block cursor-default select-none origin-bottom"
-                      >
-                        {char}
-                      </motion.span>
-                    ))}
-                  </span>
-                  {wordIdx < arr.length - 1 && " "}
-                </Fragment>
-              ))}
-              {" "}
+            <h1 className={`text-5xl md:text-6xl font-bold tracking-tight leading-tight text-foreground mb-6 ${disableAnimation ? "" : "animate-fade-in-up"}`}>
+              Feel the rhythm in every{" "}
               <span className="inline-block whitespace-nowrap relative py-2">
-                {"keystroke.".split("").map((char, charIdx) => (
-                  <motion.span
-                    key={`key-${charIdx}`}
-                    variants={titleCharVariants}
-                    className="inline-block cursor-default select-none origin-bottom playwrite-mx-regular text-primary italic"
-                  >
-                    {char}
-                  </motion.span>
-                ))}
-                <motion.svg
-                  variants={titleCharVariants}
+                <span className="playwrite-mx-regular text-primary italic">keystroke.</span>
+                <svg
                   className="absolute -bottom-2 left-0 w-full h-3 text-primary opacity-80"
                   viewBox="0 0 100 20"
                   preserveAspectRatio="none"
@@ -290,16 +260,11 @@ function Index() {
                     strokeWidth="4"
                     strokeLinecap="round"
                   />
-                </motion.svg>
+                </svg>
               </span>
-            </motion.h1>
+            </h1>
             
-            <motion.p
-              variants={paragraphVariants}
-              initial={disableAnimation ? "visible" : "hidden"}
-              animate="visible"
-              className="text-sm text-muted-foreground leading-relaxed max-w-xl mx-auto"
-            >
+            <p className={`text-sm text-muted-foreground leading-relaxed max-w-xl mx-auto ${disableAnimation ? "" : "animate-fade-in-up [animation-delay:200ms] opacity-0 [animation-fill-mode:forwards]"}`}>
               Search your{" "}
               <span className="inline-block text-foreground font-medium underline decoration-primary/30 decoration-2 underline-offset-4 cursor-default">
                 favorite tracks
@@ -313,7 +278,7 @@ function Index() {
                 perfect sync
               </span>
               . A clean, minimal typing game built for music lovers.
-            </motion.p>
+            </p>
           </header>
         </div>
 
