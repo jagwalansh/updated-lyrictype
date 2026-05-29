@@ -96,7 +96,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       {
         rel: "icon",
-        href: "/favicon.png",
+        href: "/android-chrome-512x512.png",
         type: "image/png",
       },
       {
