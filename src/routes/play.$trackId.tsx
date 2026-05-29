@@ -396,7 +396,16 @@ function PlayPage() {
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     // Prevent default actions for certain keys to avoid navigation/scrolling
-    if (e.key === "Delete" || e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "Enter") {
+    if (e.key === "ArrowRight") {
+        e.preventDefault();
+        if (ytPlayerRef.current) {
+            const currentTime = ytPlayerRef.current.getCurrentTime();
+            ytPlayerRef.current.seekTo(Math.min(currentTime + 10, ytPlayerRef.current.getDuration()), true);
+        }
+        return;
+    }
+
+    if (e.key === "Delete" || e.key === "ArrowLeft" || e.key === "Enter") {
         e.preventDefault();
         return;
     }
