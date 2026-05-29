@@ -18,6 +18,7 @@ import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/500.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { ModalProvider } from "@/lib/modal-context";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -139,6 +140,7 @@ function RootComponent() {
       <AuthProvider>
         <ModalProvider>
           <Outlet />
+          <Toaster />
         </ModalProvider>
       </AuthProvider>
     </QueryClientProvider>

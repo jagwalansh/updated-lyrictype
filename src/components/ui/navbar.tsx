@@ -52,6 +52,51 @@ const LeaderboardIcon = ({ className }: { className?: string }) => {
   );
 };
 
+function LatencyIndicator() {
+  const [latency, setLatency] = useState<number | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const measure = async () => {
+      try {
+        const start = performance.now();
+        const res = await fetch("/api/ping");
+        if (res.ok && active) {
+          const end = performance.now();
+          setLatency(Math.round(end - start));
+        }
+      } catch (e) {
+        console.error("Latency check failed", e);
+      }
+    };
+
+    measure();
+    const interval = setInterval(measure, 20000); // Check every 20 seconds
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  if (latency === null) return null;
+
+  const colorClass = 
+    latency < 100 ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" :
+    latency < 250 ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" :
+    "bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]";
+
+  return (
+    <div 
+      className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border/40 bg-card/45 backdrop-blur-sm text-[10px] font-mono text-muted-foreground select-none shrink-0"
+      title="Server Latency"
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${colorClass}`} />
+      <span>{latency}ms</span>
+    </div>
+  );
+}
+
 export function Navbar({ disableEntranceAnimation = false }: { disableEntranceAnimation?: boolean }) {
   const { setModalOpen } = useModal();
   const { user, profile, loading: authLoading } = useAuth();
@@ -201,6 +246,7 @@ export function Navbar({ disableEntranceAnimation = false }: { disableEntranceAn
             transition={{ duration: 0.3, delay: disableEntranceAnimation ? 0 : 0.15 }}
             className="flex items-center gap-3 shrink-0"
           >
+              <LatencyIndicator />
               <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

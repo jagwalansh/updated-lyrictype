@@ -110,6 +110,12 @@ export default {
       if (url.pathname === "/api/profile") {
         return await profileHandler();
       }
+      if (url.pathname === "/api/ping") {
+        return new Response(JSON.stringify({ status: "ok" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
 
       if (url.pathname === "/api/lyrics") {
         const rawArtist = url.searchParams.get("artist");

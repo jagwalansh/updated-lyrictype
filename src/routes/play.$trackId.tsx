@@ -8,7 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { useModal } from "@/lib/modal-context";
 import { supabase } from "@/lib/supabase";
-import { Music, RotateCcw, Trophy, Home, Award, CheckCircle2, AlertCircle, Loader2, Sparkles, FastForward } from "lucide-react";
+import { Music, RotateCcw, Trophy, Home, Award, CheckCircle2, AlertCircle, Loader2, Sparkles, Share2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Search {
   artist: string;
@@ -38,7 +39,7 @@ function findLineIdxForTime(time: number, lyricLines: LyricLine[]): number {
 }
 
 // const SHOW_TYPING_ERRORS = true;
-const GOD_MODE = true ; // Set to true to always score PERFECT regardless of input
+
 
 export const Route = createFileRoute("/play/$trackId")({
   validateSearch: (s: Record<string, unknown>): Search => ({
@@ -248,7 +249,7 @@ function PlayPage() {
     }
     const lineAccuracy = currentLine.length > 0 ? correctChars / currentLine.length : 0;
     
-    const effectiveAccuracy = GOD_MODE ? 1 : lineAccuracy;
+    const effectiveAccuracy = lineAccuracy;
 
     let type = "miss";
     let text = "MISS";
@@ -437,7 +438,7 @@ function PlayPage() {
     const expectedChar = line.text[charIdx];
     const typedChar = e.key;
 
-    const isHit = GOD_MODE || typedChar.toLowerCase() === expectedChar.toLowerCase();
+    const isHit = typedChar.toLowerCase() === expectedChar.toLowerCase();
     
     const newResults = [...charResults];
     newResults[charIdx] = { status: isHit ? 'hit' : 'miss', char: typedChar };
@@ -561,6 +562,26 @@ function PlayPage() {
     }
     inputRef.current?.focus();
   }
+
+  const handleShare = useCallback(() => {
+    const text = `🎮 keyVerse Play Results 🎮\n` +
+      `🎵 Song: ${track}\n` +
+      `👤 Artist: ${artist}\n` +
+      `🏆 Score: ${score.toLocaleString()}\n` +
+      `🎯 Accuracy: ${accuracy}%\n` +
+      `⚡ Speed: ${wpm} WPM\n` +
+      `🔥 Max Combo: ${maxCombo}x\n\n` +
+      `Play and type along at keyverse.me!`;
+
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        toast.success("Results copied to clipboard!");
+      })
+      .catch((err) => {
+        console.error("Failed to copy results", err);
+        toast.error("Failed to copy results");
+      });
+  }, [track, artist, score, accuracy, wpm, maxCombo]);
 
   function restart() {
     setCharIdx(0);
@@ -865,7 +886,110 @@ function PlayPage() {
                     className="relative h-[360px] rounded-xl bg-card/40 border border-border/40 shadow-inner px-5 py-8 cursor-pointer overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                     onClick={() => inputRef.current?.focus()}
                   >
-                    <div className="relative z-10">
+                    {songEnded ? (
+                      /* ── Result Card (replaces lyrics when song ends) ── */
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                        className="flex flex-col items-center justify-center h-full gap-6 text-center"
+                      >
+                        {/* Song Title */}
+                        <div>
+                          <h2 className="text-xl font-bold tracking-tight text-foreground">{track}</h2>
+                          <p className="text-sm text-muted-foreground mt-0.5">{artist}</p>
+                        </div>
+
+                        {/* Stats Grid — Score, Accuracy, Speed, Max Combo */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-md">
+                          <div className="rounded-xl border border-border/30 bg-card/50 backdrop-blur-sm p-3 flex flex-col items-center justify-center">
+                            <span className="text-[9px] font-bold tracking-widest text-muted-foreground/60 uppercase mb-0.5">Score</span>
+                            <span className="text-lg font-black text-primary font-mono">{score.toLocaleString()}</span>
+                          </div>
+                          <div className="rounded-xl border border-border/30 bg-card/50 backdrop-blur-sm p-3 flex flex-col items-center justify-center">
+                            <span className="text-[9px] font-bold tracking-widest text-muted-foreground/60 uppercase mb-0.5">Accuracy</span>
+                            <span className="text-lg font-black text-foreground font-mono">{accuracy}%</span>
+                          </div>
+                          <div className="rounded-xl border border-border/30 bg-card/50 backdrop-blur-sm p-3 flex flex-col items-center justify-center">
+                            <span className="text-[9px] font-bold tracking-widest text-muted-foreground/60 uppercase mb-0.5">Speed</span>
+                            <span className="text-lg font-black text-foreground font-mono">{wpm} <span className="text-xs font-medium text-muted-foreground">WPM</span></span>
+                          </div>
+                          <div className="rounded-xl border border-border/30 bg-card/50 backdrop-blur-sm p-3 flex flex-col items-center justify-center">
+                            <span className="text-[9px] font-bold tracking-widest text-muted-foreground/60 uppercase mb-0.5">Max Combo</span>
+                            <span className="text-lg font-black text-foreground font-mono">{maxCombo}x</span>
+                          </div>
+                        </div>
+
+                        {/* Save status / Guest CTA */}
+                        <div className="w-full max-w-md">
+                          {user ? (
+                            <div className="flex items-center justify-center gap-2 p-3 rounded-xl border border-border/20 bg-card/30 text-sm">
+                              {savingScore ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                                  <span className="text-muted-foreground text-xs">Submitting score…</span>
+                                </>
+                              ) : scoreSaved ? (
+                                <>
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                                  <span className="text-emerald-500 text-xs font-medium">Score saved to leaderboard!</span>
+                                </>
+                              ) : saveError ? (
+                                <>
+                                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                                  <span className="text-rose-500 text-xs font-medium">Failed to save: {saveError}</span>
+                                </>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">Preparing to save…</span>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="rounded-xl border border-primary/15 bg-primary/[0.03] p-3 text-center">
+                              <p className="text-xs text-muted-foreground mb-2.5">
+                                You are playing as a <strong className="text-foreground">Guest</strong>. Sign in to save your score!
+                              </p>
+                              <button
+                                onClick={() => setModalOpen(true)}
+                                className="inline-flex items-center gap-2 px-4 py-1.5 text-xs font-bold bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity cursor-pointer shadow-sm"
+                              >
+                                Sign In to Save
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-2.5 w-full max-w-md">
+                          <button
+                            onClick={restart}
+                            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground font-semibold rounded-xl hover:opacity-95 shadow-sm transition-all cursor-pointer text-sm"
+                          >
+                            <RotateCcw className="w-4 h-4" /> Play Again
+                          </button>
+                          <button
+                            onClick={handleShare}
+                            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-border/40 bg-card/50 hover:bg-muted/60 text-foreground font-semibold rounded-xl transition-all cursor-pointer text-sm"
+                          >
+                            <Share2 className="w-4 h-4 text-primary" /> Share
+                          </button>
+                          <Link
+                            to="/leaderboard"
+                            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-border/40 bg-card/50 hover:bg-muted/60 text-foreground font-semibold rounded-xl transition-all text-sm"
+                          >
+                            <Trophy className="w-4 h-4 text-primary" />
+                          </Link>
+                          <Link
+                            to={from === "/recommended" ? "/recommended" : "/"}
+                            search={from !== "/recommended" && q ? { q } : undefined}
+                            className="inline-flex items-center justify-center px-4 py-2.5 border border-border/40 bg-card/50 hover:bg-muted/60 text-muted-foreground hover:text-foreground font-semibold rounded-xl transition-all text-sm"
+                          >
+                            <Home className="w-4 h-4" />
+                          </Link>
+                        </div>
+                      </motion.div>
+                    ) : (
+                      /* ── Normal Lyrics Display ── */
+                      <div className="relative z-10">
                       <div className="min-h-[200px]" />
                       
                       {lines.map((line, idx) => {
@@ -974,6 +1098,7 @@ function PlayPage() {
                       
                       <div className="min-h-[200px]" />
                     </div>
+                    )}
                   </div>
 
                   {/* Standard Playback controls */}
@@ -990,25 +1115,6 @@ function PlayPage() {
                       className="rounded-lg border border-border/40 bg-card/45 backdrop-blur-sm py-2.5 px-6 text-sm font-semibold hover:bg-muted transition-colors cursor-pointer"
                     >
                       Restart
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (ytPlayerRef.current && lines) {
-                          const cur = ytPlayerRef.current.getCurrentTime();
-                          const newTime = cur + 10;
-                          ytPlayerRef.current.seekTo(newTime, true);
-                          const targetIdx = findLineIdxForTime(newTime, lines);
-                          setCurrentLineIdx(targetIdx);
-                          setCharIdx(0);
-                          setCharResults([]);
-                          setLineComplete(false);
-                          setWaitingForNext(null);
-                        }
-                        inputRef.current?.focus();
-                      }}
-                      className="rounded-lg border border-border/40 bg-card/45 backdrop-blur-sm py-2.5 px-5 text-sm font-semibold hover:bg-muted transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-                    >
-                      <FastForward className="w-4 h-4 text-primary" /> +10s
                     </button>
                   </div>
 
@@ -1035,167 +1141,7 @@ function PlayPage() {
         )}
       </div>
 
-      {/* Premium Game Results Modal Overlay */}
-      <AnimatePresence>
-        {songEnded && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xl"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1, transition: { type: "spring", duration: 0.4 } }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-md rounded-3xl border border-white/[0.08] dark:border-white/[0.03] bg-card/45 backdrop-blur-2xl shadow-2xl p-6 md:p-8 flex flex-col items-center overflow-hidden"
-            >
-              {/* Backlight color glow based on grade */}
-              <div className={`absolute -top-24 -left-24 w-48 h-48 rounded-full blur-3xl opacity-25 ${
-                grade.letter === 'S' ? 'bg-amber-400' :
-                grade.letter === 'A' ? 'bg-emerald-400' :
-                grade.letter === 'B' ? 'bg-blue-400' :
-                grade.letter === 'C' ? 'bg-purple-400' :
-                grade.letter === 'D' ? 'bg-orange-400' : 'bg-rose-400'
-              }`} />
-              <div className={`absolute -bottom-24 -right-24 w-48 h-48 rounded-full blur-3xl opacity-25 ${
-                grade.letter === 'S' ? 'bg-amber-400' :
-                grade.letter === 'A' ? 'bg-emerald-400' :
-                grade.letter === 'B' ? 'bg-blue-400' :
-                grade.letter === 'C' ? 'bg-purple-400' :
-                grade.letter === 'D' ? 'bg-orange-400' : 'bg-rose-400'
-              }`} />
 
-              <h2 className="text-2xl md:text-3xl font-black tracking-tight text-foreground mb-1 z-10 bg-clip-text text-transparent bg-gradient-to-b from-foreground via-foreground to-foreground/80">
-                Song Completed!
-              </h2>
-              <p className="text-xs text-muted-foreground font-medium mb-8 z-10 tracking-wide uppercase">
-                {track} • {artist}
-              </p>
-
-              {/* Large Grade Circle */}
-              <motion.div
-                initial={{ scale: 0, rotate: -45 }}
-                animate={{ scale: 1, rotate: 0, transition: { type: "spring", delay: 0.15, stiffness: 120 } }}
-                className={`relative w-28 h-28 md:w-32 md:h-32 rounded-full flex items-center justify-center mb-8 select-none z-10 border border-white/10 ${grade.color}`}
-              >
-                <span className="text-5xl md:text-6xl font-black italic tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
-                  {grade.letter}
-                </span>
-                
-                {/* Concentric premium animation rings */}
-                <div className="absolute inset-0 rounded-full border border-current/10 animate-ping opacity-25" />
-                <div className="absolute inset-1.5 rounded-full border border-current/5 animate-spin-slow" />
-                <div className="absolute inset-3 rounded-full border-t border-b border-current/25 animate-spin-reverse opacity-45" />
-              </motion.div>
-
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-3.5 w-full mb-8 z-10">
-                <div className="rounded-2xl border border-white/[0.04] bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/[0.08] p-4 flex flex-col items-center justify-center transition-all duration-350 shadow-sm relative group overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                  <span className="text-[9px] font-bold tracking-widest text-muted-foreground/50 mb-1 z-10 uppercase">
-                    Score
-                  </span>
-                  <span className="text-xl md:text-2xl font-black text-foreground font-mono z-10">
-                    {score.toLocaleString()}
-                  </span>
-                </div>
-                
-                <div className="rounded-2xl border border-white/[0.04] bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/[0.08] p-4 flex flex-col items-center justify-center transition-all duration-350 shadow-sm relative group overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                  <span className="text-[9px] font-bold tracking-widest text-muted-foreground/50 mb-1 z-10 uppercase">
-                    Accuracy
-                  </span>
-                  <span className="text-xl md:text-2xl font-black text-foreground font-mono z-10">
-                    {accuracy}%
-                  </span>
-                </div>
-
-                <div className="rounded-2xl border border-white/[0.04] bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/[0.08] p-4 flex flex-col items-center justify-center transition-all duration-350 shadow-sm relative group overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                  <span className="text-[9px] font-bold tracking-widest text-muted-foreground/50 mb-1 z-10 uppercase">
-                    Speed (WPM)
-                  </span>
-                  <span className="text-xl md:text-2xl font-black text-foreground font-mono z-10">
-                    {wpm}
-                  </span>
-                </div>
-
-                <div className="rounded-2xl border border-white/[0.04] bg-white/[0.01] hover:bg-white/[0.03] hover:border-white/[0.08] p-4 flex flex-col items-center justify-center transition-all duration-350 shadow-sm relative group overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                  <span className="text-[9px] font-bold tracking-widest text-muted-foreground/50 mb-1 z-10 uppercase">
-                    Max Combo
-                  </span>
-                  <span className="text-xl md:text-2xl font-black text-foreground font-mono z-10">
-                    {maxCombo}x
-                  </span>
-                </div>
-              </div>
-
-              {/* Leaderboard saving status or Guest CTA */}
-              <div className="w-full mb-8 z-10">
-                {user ? (
-                  <div className="flex items-center justify-center gap-2 p-3.5 rounded-xl border border-white/[0.05] bg-white/[0.01] text-sm">
-                    {savingScore ? (
-                      <>
-                        <Loader2 className="w-4 h-4 text-primary animate-spin" />
-                        <span className="text-muted-foreground">Submitting score to leaderboard...</span>
-                      </>
-                    ) : scoreSaved ? (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                        <span className="text-emerald-500 font-medium">Score saved to leaderboard!</span>
-                      </>
-                    ) : saveError ? (
-                      <>
-                        <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-                        <span className="text-rose-500 text-xs font-medium">Failed to save score: {saveError}</span>
-                      </>
-                    ) : (
-                      <span className="text-muted-foreground">Preparing to save score...</span>
-                    )}
-                  </div>
-                ) : (
-                  <div className="rounded-2xl border border-primary/15 bg-primary/[0.02] p-4 text-center">
-                    <p className="text-xs text-muted-foreground mb-3.5 leading-relaxed">
-                      You are playing as a <strong className="text-foreground">Guest</strong>. Sign in to save your score of <strong className="text-primary font-mono">{score.toLocaleString()}</strong> to the leaderboard!
-                    </p>
-                    <button
-                      onClick={() => setModalOpen(true)}
-                      className="inline-flex items-center gap-2 px-4.5 py-2 text-xs font-bold bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity cursor-pointer shadow-md shadow-primary/10"
-                    >
-                      Sign In to Save
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Actions Grid */}
-              <div className="flex flex-col sm:flex-row gap-3 w-full z-10">
-                <button
-                  onClick={restart}
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 bg-primary text-primary-foreground font-semibold rounded-xl hover:opacity-95 shadow-md shadow-primary/20 transition-all cursor-pointer text-sm"
-                >
-                  <RotateCcw className="w-4 h-4" /> Play Again
-                </button>
-                <Link
-                  to="/leaderboard"
-                  className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 border border-white/[0.08] hover:border-white/[0.15] bg-white/[0.02] hover:bg-white/[0.05] text-foreground font-semibold rounded-xl transition-all text-sm"
-                >
-                  <Trophy className="w-4 h-4 text-primary" /> Leaderboard
-                </Link>
-                <Link
-                  to={from === "/recommended" ? "/recommended" : "/"}
-                  search={from !== "/recommended" && q ? { q } : undefined}
-                  className="px-4 py-3 border border-white/[0.08] hover:border-white/[0.15] bg-white/[0.02] hover:bg-white/[0.05] text-muted-foreground hover:text-foreground font-semibold rounded-xl transition-all text-sm flex items-center justify-center"
-                >
-                  <Home className="w-4 h-4" />
-                </Link>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </main>
   );
 }

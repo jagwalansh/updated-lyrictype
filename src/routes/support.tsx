@@ -55,14 +55,14 @@ function Support() {
             <div className="relative z-10 flex flex-col gap-3 mt-8">
               {/* Email Link */}
               <a
-                href="mailto:bugs@keyverse.com"
+                href="mailto:ansh@keyverse.me"
                 className="flex items-center justify-between p-3 rounded-xl border border-border/20 bg-background/30 hover:bg-background/80 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <Mail className="h-4 w-4 text-primary" />
                   <span className="text-xs font-mono font-medium">Mail</span>
                 </div>
-                <span className="text-[10px] font-mono text-primary border-b border-primary/20">bugs@keyverse.com</span>
+                <span className="text-[10px] font-mono text-primary border-b border-primary/20">ansh@keyverse.me</span>
               </a>
 
               {/* GitHub Issues */}
@@ -121,7 +121,7 @@ function Support() {
                 <motion.a
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
-                  href="https://buymeacoffee.com"
+                  href="https://buymeacoffee.com/anshjagwal"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-between p-3 rounded-xl border border-border/20 bg-background/30 hover:bg-background/80 transition-colors text-foreground"
@@ -155,7 +155,7 @@ function Support() {
                 <motion.a
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
-                  href="https://paypal.me"
+                  href="https://paypal.me/anshjagwal"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-between p-3 rounded-xl border border-border/20 bg-background/30 hover:bg-background/80 transition-colors text-foreground"
