@@ -1090,25 +1090,26 @@ function PlayPage() {
                     >
                       Restart
                     </button>
-                    
+                  </div>
+
                   <p className="text-center font-mono text-xs text-muted-foreground leading-relaxed">
                     Type the lyrics in sync with the music
                   </p>
 
-              {/* Hidden input for capturing keyboard events */}
-              <input
-                ref={inputRef}
-                value=""
-                onChange={() => {}}
-                onKeyDown={onKeyDown}
-                onPaste={(e) => e.preventDefault()}
-                autoFocus
-                spellCheck={false}
-                autoComplete="off"
-                autoCapitalize="off"
-                autoCorrect="off"
-                className="sr-only"
-              />
+                  {/* Hidden input for capturing keyboard events */}
+                  <input
+                    ref={inputRef}
+                    value=""
+                    onChange={() => {}}
+                    onKeyDown={onKeyDown}
+                    onPaste={(e) => e.preventDefault()}
+                    autoFocus
+                    spellCheck={false}
+                    autoComplete="off"
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    className="sr-only"
+                  />
             </div>
           </div>
         )}
