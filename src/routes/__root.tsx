@@ -4,9 +4,11 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 import "@fontsource/inter/300.css";
@@ -127,11 +129,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
             `,
           }}
         />
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4059858414395489"
-          crossOrigin="anonymous"
-        />
         <HeadContent />
       </head>
       <body>
@@ -147,6 +144,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <AdSenseLoader />
       <AuthProvider>
         <ModalProvider>
           <Outlet />
@@ -155,4 +153,39 @@ function RootComponent() {
       </AuthProvider>
     </QueryClientProvider>
   );
+}
+
+function AdSenseLoader() {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const isPlayRoute = pathname.startsWith("/play/");
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    if (isPlayRoute) {
+      document.querySelectorAll<HTMLElement>(
+        [
+          "ins.adsbygoogle",
+          ".google-auto-placed",
+          "iframe[id^='google_ads_iframe_']",
+          "iframe[src*='googlesyndication.com']",
+        ].join(","),
+      ).forEach((element) => element.remove());
+      return;
+    }
+
+    if (document.querySelector("script[data-keyverse-adsense='true']")) return;
+
+    const script = document.createElement("script");
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    script.dataset.keyverseAdsense = "true";
+    script.src =
+      "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4059858414395489";
+    document.head.appendChild(script);
+  }, [isPlayRoute]);
+
+  return null;
 }
