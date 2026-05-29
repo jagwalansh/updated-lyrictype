@@ -39,9 +39,9 @@ export function AccountModal({ open, onOpenChange }: AccountModalProps) {
     setPb(undefined);
     void refreshProfile();
     fetch("/api/user-best")
-      .then((r) => r.ok ? r.json() : null)
+      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
       .then((d) => setPb(d?.pb ?? null))
-      .catch(() => setPb(null));
+      .catch((e) => { console.error("PB fetch failed", e); setPb(null); });
   }, [open, refreshProfile]);
 
   useEffect(() => {

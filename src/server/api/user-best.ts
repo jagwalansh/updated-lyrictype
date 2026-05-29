@@ -14,18 +14,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("scores")
-    .select(`
-      score,
-      accuracy,
-      consistency,
-      created_at,
-      song_id,
-      songs!inner (
-        artist,
-        track,
-        art_url
-      )
-    `)
+    .select("score, accuracy, consistency, song_id")
     .eq("user_id", user.id)
     .order("score", { ascending: false })
     .limit(1)
@@ -37,5 +26,15 @@ export async function GET() {
     });
   }
 
-  return new Response(JSON.stringify({ pb: data }), { status: 200 });
+  if (!data) {
+    return new Response(JSON.stringify({ pb: null }), { status: 200 });
+  }
+
+  const { data: song } = await supabase
+    .from("songs")
+    .select("artist, track, art_url")
+    .eq("id", data.song_id)
+    .single();
+
+  return new Response(JSON.stringify({ pb: { ...data, songs: song } }), { status: 200 });
 }
