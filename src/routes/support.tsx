@@ -14,11 +14,13 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSending(true);
     setStatus("idle");
+    setErrorMessage("");
 
     try {
       const res = await fetch("/api/contact", {
@@ -27,7 +29,10 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
         body: JSON.stringify({ name, email, subject, message }),
       });
 
-      if (!res.ok) throw new Error("Failed to send");
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "Failed to send");
+      }
 
       setStatus("success");
       setName("");
@@ -35,7 +40,9 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
       setSubject("");
       setMessage("");
       setTimeout(() => onOpenChange(false), 1500);
-    } catch {
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(error instanceof Error ? error.message : "Failed to send");
       setStatus("error");
     } finally {
       if (status !== "success") setSending(false);
@@ -124,7 +131,7 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
 
             {status === "error" && (
               <p className="flex items-center gap-1.5 text-sm text-red-500">
-                <AlertCircle className="h-4 w-4" /> Failed to send. Try emailing support@keyverse.me directly.
+                <AlertCircle className="h-4 w-4" /> {errorMessage || "Failed to send."} Try emailing support@keyverse.me directly.
               </p>
             )}
           </form>

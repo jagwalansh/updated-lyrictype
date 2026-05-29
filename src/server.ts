@@ -116,7 +116,7 @@ export default {
         return await userBestHandler();
       }
       if (url.pathname === "/api/contact" && request.method === "POST") {
-        return await contactHandler(request);
+        return await contactHandler(request, env);
       }
       if (url.pathname === "/api/ping") {
         return new Response(JSON.stringify({ status: "ok" }), {
