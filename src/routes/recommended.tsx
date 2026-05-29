@@ -284,7 +284,7 @@ function Recommended() {
             className="flex items-center gap-2 self-start md:self-auto px-4 py-2 text-xs font-mono font-semibold border border-border/40 hover:border-primary/50 bg-card/45 backdrop-blur-sm hover:bg-muted/60 text-muted-foreground hover:text-foreground rounded-lg transition-all shadow-sm"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Search
+            Back to Home
           </Link>
         </div>
 

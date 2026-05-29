@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
 import { motion } from "motion/react";
-import { Mail, Github, Loader2, Send, CheckCircle, AlertCircle, X } from "lucide-react";
+import { Mail, Github, Loader2, Send, CheckCircle, AlertCircle, X, ArrowLeft } from "lucide-react";
 import { DeflectCard } from "@/components/ui/deflect-card";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useState } from "react";
@@ -147,16 +147,25 @@ function Support() {
 
       <div className="w-full max-w-5xl mx-auto px-6 py-28 flex flex-col gap-10 flex-1 justify-start relative z-20">
         {/* Header Section */}
-        <div className="flex flex-col border-b border-border/20 pb-6 text-left">
-          <div className="flex items-center gap-2 text-xs font-mono text-primary font-semibold tracking-wider uppercase mb-1">
-            Support Center
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 border-b border-border/20 pb-6 text-left">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-mono text-primary font-semibold tracking-wider uppercase mb-1">
+              Support Center
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
+              Support & Feedback
+            </h1>
+            <p className="text-xs text-muted-foreground mt-2 leading-relaxed max-w-xl">
+              Have questions, encountered a bug, or want to support the project's growth? You can find all the resources to contact us or support development here.
+            </p>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-            Support & Feedback
-          </h1>
-          <p className="text-xs text-muted-foreground mt-2 leading-relaxed max-w-xl">
-            Have questions, encountered a bug, or want to support the project's growth? You can find all the resources to contact us or support development here.
-          </p>
+          <Link
+            to="/"
+            className="flex items-center gap-2 self-start shrink-0 px-4 py-2 text-xs font-mono font-semibold border border-border/40 hover:border-primary/50 bg-card/45 backdrop-blur-sm hover:bg-muted/60 text-muted-foreground hover:text-foreground rounded-lg transition-all shadow-sm"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Home
+          </Link>
         </div>
 
         {/* Content Grid */}
