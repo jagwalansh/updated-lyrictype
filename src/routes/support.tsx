@@ -2,8 +2,98 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
 import { motion } from "motion/react";
-import { Mail, Github, MessageSquare } from "lucide-react";
+import { Mail, Github, MessageSquare, Loader2, Send, CheckCircle, AlertCircle } from "lucide-react";
 import { DeflectCard } from "@/components/ui/deflect-card";
+import { useState } from "react";
+
+function ContactForm() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSending(true);
+    setStatus("idle");
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name, email, subject, message }),
+      });
+
+      if (!res.ok) throw new Error("Failed to send");
+
+      setStatus("success");
+      setName("");
+      setEmail("");
+      setSubject("");
+      setMessage("");
+    } catch {
+      setStatus("error");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <input
+        type="text"
+        placeholder="Your name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        required
+        className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-border/20 bg-background/30 focus:outline-none focus:border-primary/50 transition-colors placeholder:text-muted-foreground/50"
+      />
+      <input
+        type="email"
+        placeholder="Your email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+        className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-border/20 bg-background/30 focus:outline-none focus:border-primary/50 transition-colors placeholder:text-muted-foreground/50"
+      />
+      <input
+        type="text"
+        placeholder="Subject (optional)"
+        value={subject}
+        onChange={(e) => setSubject(e.target.value)}
+        className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-border/20 bg-background/30 focus:outline-none focus:border-primary/50 transition-colors placeholder:text-muted-foreground/50"
+      />
+      <textarea
+        placeholder="Your message"
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        required
+        rows={4}
+        className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-border/20 bg-background/30 focus:outline-none focus:border-primary/50 transition-colors placeholder:text-muted-foreground/50 resize-none"
+      />
+      <button
+        type="submit"
+        disabled={sending}
+        className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-primary text-primary-foreground text-xs font-mono font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+      >
+        {sending ? (
+          <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Sending...</>
+        ) : status === "success" ? (
+          <><CheckCircle className="h-3.5 w-3.5" /> Sent! We'll get back to you soon.</>
+        ) : (
+          <><Send className="h-3.5 w-3.5" /> Send Message</>
+        )}
+      </button>
+      {status === "error" && (
+        <p className="flex items-center gap-1.5 text-xs text-red-500 font-mono">
+          <AlertCircle className="h-3 w-3" /> Failed to send. Try emailing support@keyverse.me directly.
+        </p>
+      )}
+    </form>
+  );
+}
 
 export const Route = createFileRoute("/support")({
   component: Support,
@@ -52,20 +142,11 @@ function Support() {
               </p>
             </div>
 
-            <div className="relative z-10 flex flex-col gap-3 mt-8">
-              {/* Email Link */}
-              <a
-                href="mailto:support@keyverse.me"
-                className="flex items-center justify-between p-3 rounded-xl border border-border/20 bg-background/30 hover:bg-background/80 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 text-primary" />
-                  <span className="text-xs font-mono font-medium">Mail</span>
-                </div>
-                <span className="text-[10px] font-mono text-primary border-b border-primary/20">support@keyverse.me</span>
-              </a>
+              <div className="relative z-10 flex flex-col gap-3 mt-8">
+                {/* Contact Form */}
+                <ContactForm />
 
-              {/* GitHub Issues */}
+                {/* GitHub Issues */}
               <a
                 href="https://github.com/jagwalansh/updated-lyrictype/issues"
                 target="_blank"

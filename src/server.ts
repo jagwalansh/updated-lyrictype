@@ -6,6 +6,7 @@ import { CUSTOM_LYRICS } from "./lib/custom-lyrics";
 import { POST as saveScoreHandler } from "./server/api/save-score";
 import { GET as leaderboardHandler } from "./server/api/leaderboard";
 import { GET as profileHandler } from "./server/api/profile";
+import { POST as contactHandler } from "./server/api/contact";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -109,6 +110,9 @@ export default {
       }
       if (url.pathname === "/api/profile") {
         return await profileHandler();
+      }
+      if (url.pathname === "/api/contact" && request.method === "POST") {
+        return await contactHandler(request);
       }
       if (url.pathname === "/api/ping") {
         return new Response(JSON.stringify({ status: "ok" }), {
