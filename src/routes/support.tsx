@@ -146,7 +146,7 @@ function Support() {
                 </p>
               </div>
 
-              <div className="relative z-10 flex flex-col gap-3 mt-8">
+              <div className="relative z-10 flex flex-col gap-3 mt-5">
                 <ContactForm />
                 <motion.a
                   whileHover={{ y: -2 }}
@@ -201,7 +201,7 @@ function Support() {
                 </p>
               </div>
 
-              <div className="relative z-10 flex flex-col gap-3 mt-8">
+              <div className="relative z-10 flex flex-col gap-3 mt-5">
                 {/* PayPal */}
                 <motion.a
                   whileHover={{ y: -2 }}
