@@ -1090,20 +1090,7 @@ function PlayPage() {
                     >
                       Restart
                     </button>
-                    <button
-                      onClick={() => {
-                        const player = ytPlayerRef.current;
-                        if (player) {
-                          player.seekTo(Math.min(player.getCurrentTime() + 10, player.getDuration()), true);
-                        }
-                        inputRef.current?.focus();
-                      }}
-                      className="rounded-lg border border-border/40 bg-card/45 backdrop-blur-sm py-2.5 px-4 text-sm font-semibold hover:bg-muted transition-colors cursor-pointer"
-                    >
-                      +10s
-                    </button>
-                  </div>
-
+                    
                   <p className="text-center font-mono text-xs text-muted-foreground leading-relaxed">
                     Type the lyrics in sync with the music
                   </p>

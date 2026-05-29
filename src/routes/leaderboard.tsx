@@ -5,7 +5,7 @@ import { Footer } from "@/components/ui/footer";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "motion/react";
-import { Trophy, Calendar, Clock, Flame, ArrowLeft, Music } from "lucide-react";
+import { Trophy, Calendar, Clock, ArrowLeft, Music } from "lucide-react";
 
 export const Route = createFileRoute("/leaderboard")({
   component: LeaderboardPage,
@@ -95,7 +95,7 @@ function LeaderboardPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-border/20 pb-6">
           <div className="text-left">
             <div className="text-xs font-mono text-primary font-semibold tracking-wider uppercase mb-1 flex items-center gap-1.5">
-              <Flame className="h-3.5 w-3.5 fill-current animate-pulse text-amber-500" /> Global Rankings
+              Global Rankings
             </div>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground bg-clip-text">
               Leaderboard
