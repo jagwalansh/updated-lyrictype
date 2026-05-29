@@ -2,11 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
 import { motion } from "motion/react";
-import { Mail, Github, MessageSquare, Loader2, Send, CheckCircle, AlertCircle } from "lucide-react";
+import { Mail, Github, MessageSquare, Loader2, Send, CheckCircle, AlertCircle, X } from "lucide-react";
 import { DeflectCard } from "@/components/ui/deflect-card";
+import * as Dialog from "@radix-ui/react-dialog";
 import { useState } from "react";
 
-function ContactForm() {
+function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
@@ -33,65 +34,103 @@ function ContactForm() {
       setEmail("");
       setSubject("");
       setMessage("");
+      setTimeout(() => onOpenChange(false), 1500);
     } catch {
       setStatus("error");
     } finally {
-      setSending(false);
+      if (status !== "success") setSending(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-      <input
-        type="text"
-        placeholder="Your name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        required
-        className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-border/20 bg-background/30 focus:outline-none focus:border-primary/50 transition-colors placeholder:text-muted-foreground/50"
-      />
-      <input
-        type="email"
-        placeholder="Your email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-        className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-border/20 bg-background/30 focus:outline-none focus:border-primary/50 transition-colors placeholder:text-muted-foreground/50"
-      />
-      <input
-        type="text"
-        placeholder="Subject (optional)"
-        value={subject}
-        onChange={(e) => setSubject(e.target.value)}
-        className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-border/20 bg-background/30 focus:outline-none focus:border-primary/50 transition-colors placeholder:text-muted-foreground/50"
-      />
-      <textarea
-        placeholder="Your message"
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        required
-        rows={4}
-        className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-border/20 bg-background/30 focus:outline-none focus:border-primary/50 transition-colors placeholder:text-muted-foreground/50 resize-none"
-      />
-      <button
-        type="submit"
-        disabled={sending}
-        className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-primary text-primary-foreground text-xs font-mono font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-      >
-        {sending ? (
-          <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Sending...</>
-        ) : status === "success" ? (
-          <><CheckCircle className="h-3.5 w-3.5" /> Sent! We'll get back to you soon.</>
-        ) : (
-          <><Send className="h-3.5 w-3.5" /> Send Message</>
-        )}
-      </button>
-      {status === "error" && (
-        <p className="flex items-center gap-1.5 text-xs text-red-500 font-mono">
-          <AlertCircle className="h-3 w-3" /> Failed to send. Try emailing support@keyverse.me directly.
-        </p>
-      )}
-    </form>
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border/40 bg-background/80 backdrop-blur-md p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95">
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <Dialog.Title className="text-xl font-semibold tracking-tight">
+                Send a Message
+              </Dialog.Title>
+              <Dialog.Description className="mt-1 text-sm text-muted-foreground">
+                Have a bug or feedback? Send us a message and we'll get back to you.
+              </Dialog.Description>
+            </div>
+            <Dialog.Close asChild>
+              <button className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent h-8 w-8 shrink-0">
+                <X className="h-4 w-4" />
+              </button>
+            </Dialog.Close>
+          </div>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="contact-name">Name</label>
+              <input
+                id="contact-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="contact-email">Email</label>
+              <input
+                id="contact-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="contact-subject">Subject (optional)</label>
+              <input
+                id="contact-subject"
+                type="text"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="contact-message">Message</label>
+              <textarea
+                id="contact-message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                required
+                rows={4}
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={sending}
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {sending ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Sending...</>
+              ) : status === "success" ? (
+                <><CheckCircle className="h-4 w-4" /> Sent!</>
+              ) : (
+                <><Send className="h-4 w-4" /> Send Message</>
+              )}
+            </button>
+
+            {status === "error" && (
+              <p className="flex items-center gap-1.5 text-sm text-red-500">
+                <AlertCircle className="h-4 w-4" /> Failed to send. Try emailing support@keyverse.me directly.
+              </p>
+            )}
+          </form>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 
@@ -100,6 +139,8 @@ export const Route = createFileRoute("/support")({
 });
 
 function Support() {
+  const [contactOpen, setContactOpen] = useState(false);
+
   return (
     <main className="flex flex-col justify-start items-center min-h-screen bg-background text-foreground font-sans relative">
       <Navbar />
@@ -120,7 +161,7 @@ function Support() {
 
         {/* Content Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-2">
-          
+
           {/* Card 1: Bug Reports & Feedback */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
@@ -147,7 +188,18 @@ function Support() {
               </div>
 
               <div className="relative z-10 flex flex-col gap-3 mt-5">
-                <ContactForm />
+                <motion.button
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setContactOpen(true)}
+                  className="flex items-center justify-between p-3 rounded-xl border border-border/20 bg-background/30 hover:bg-background/80 transition-colors text-foreground text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-primary" />
+                    <span className="text-xs font-mono font-medium">Send a Message</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-muted-foreground">Contact &rarr;</span>
+                </motion.button>
                 <motion.a
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
@@ -202,7 +254,6 @@ function Support() {
               </div>
 
               <div className="relative z-10 flex flex-col gap-3 mt-5">
-                {/* PayPal */}
                 <motion.a
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
@@ -220,7 +271,6 @@ function Support() {
                   <span className="text-[10px] font-mono text-muted-foreground">PayPal &rarr;</span>
                 </motion.a>
 
-                {/* GitHub Sponsors */}
                 <motion.a
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
@@ -241,6 +291,7 @@ function Support() {
         </div>
       </div>
 
+      <ContactModal open={contactOpen} onOpenChange={setContactOpen} />
       <Footer />
     </main>
   );
