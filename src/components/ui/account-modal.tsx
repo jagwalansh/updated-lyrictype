@@ -4,17 +4,15 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
 
 type PersonalBest = {
   score: number;
   accuracy: number;
-  consistency: number;
   song_id: string;
-  songs: {
-    artist: string;
-    track: string;
-    art_url: string;
-  };
+  artist: string;
+  track: string;
+  art_url: string;
 };
 
 interface AccountModalProps {
@@ -32,17 +30,32 @@ export function AccountModal({ open, onOpenChange }: AccountModalProps) {
   const [pb, setPb] = useState<PersonalBest | null | undefined>(undefined);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !user) return;
 
     setError(null);
     setMessage(null);
     setPb(undefined);
     void refreshProfile();
-    fetch("/api/user-best")
-      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
-      .then((d) => setPb(d?.pb ?? null))
-      .catch((e) => { console.error("PB fetch failed", e); setPb(null); });
-  }, [open, refreshProfile]);
+    supabase
+      .from("scores")
+      .select("score, accuracy, song_id")
+      .eq("user_id", user.id)
+      .order("score", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error || !data) { setPb(null); return; }
+        supabase
+          .from("songs")
+          .select("artist, track, art_url")
+          .eq("id", data.song_id)
+          .single()
+          .then(({ data: song }) => {
+            if (song) setPb({ ...data, artist: song.artist, track: song.track, art_url: song.art_url });
+            else setPb(null);
+          });
+      });
+  }, [open, user, refreshProfile]);
 
   useEffect(() => {
     if (!open) return;
@@ -145,12 +158,12 @@ export function AccountModal({ open, onOpenChange }: AccountModalProps) {
                   <span className="text-xs font-mono font-semibold text-foreground">Personal Best</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  {pb.songs.art_url && (
-                    <img src={pb.songs.art_url} alt="" className="h-10 w-10 rounded-lg object-cover border border-border/10" />
+                  {pb.art_url && (
+                    <img src={pb.art_url} alt="" className="h-10 w-10 rounded-lg object-cover border border-border/10" />
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold truncate text-foreground">{pb.songs.track}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{pb.songs.artist}</p>
+                    <p className="text-xs font-semibold truncate text-foreground">{pb.track}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{pb.artist}</p>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm font-bold text-primary">{pb.score.toLocaleString()}</p>
