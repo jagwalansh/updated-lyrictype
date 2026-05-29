@@ -125,12 +125,12 @@ function Support() {
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.4 }}
+            transition={{ delay: 0.1, duration: 0.25 }}
             className="w-full h-full"
           >
             <DeflectCard
               className="w-full h-full"
-              cardClassName="group relative p-6 rounded-2xl border border-border/40 bg-card/45 backdrop-blur-sm hover:border-primary/30 transition-all duration-300 flex flex-col justify-between h-full text-left"
+              cardClassName="group relative p-6 rounded-2xl border border-border/40 bg-card/45 backdrop-blur-sm hover:border-primary/30 transition-all duration-150 flex flex-col justify-between h-full text-left"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-350 pointer-events-none rounded-2xl" />
 
@@ -170,12 +170,12 @@ function Support() {
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.4 }}
+            transition={{ delay: 0.15, duration: 0.25 }}
             className="w-full h-full"
           >
             <DeflectCard
               className="w-full h-full"
-              cardClassName="group relative p-6 rounded-2xl border border-border/40 bg-card/45 backdrop-blur-sm hover:border-primary/30 transition-all duration-300 flex flex-col justify-between h-full text-left"
+              cardClassName="group relative p-6 rounded-2xl border border-border/40 bg-card/45 backdrop-blur-sm hover:border-primary/30 transition-all duration-150 flex flex-col justify-between h-full text-left"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-350 pointer-events-none rounded-2xl" />
 
