@@ -11,116 +11,6 @@ export const Route = createFileRoute("/leaderboard")({
   component: LeaderboardPage,
 });
 
-// Fallback demo/temp data to ensure the leaderboard is populated with active targets to beat
-const DEMO_SCORES: Record<"daily" | "weekly" | "alltime", any[]> = {
-  daily: [
-    {
-      user_id: "demo-1",
-      song_id: "demo-song-1",
-      username: "TypeGod99",
-      track: "Love Me Not",
-      artist: "Ravyn Lenae",
-      art_url: "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/07/8c/6c/078c6c94-d38d-0451-d57b-23e957b569f8/075679660893.jpg/100x100bb.jpg",
-      best_score: 18450,
-      best_accuracy: 99.4,
-    },
-    {
-      user_id: "demo-2",
-      song_id: "demo-song-2",
-      username: "LyricalMaster",
-      track: "STAY",
-      artist: "The Kid LAROI & Justin Bieber",
-      art_url: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/a8/3a/22/a83a22f7-af18-7ef6-a7de-74816c532a44/886449475421.jpg/100x100bb.jpg",
-      best_score: 16200,
-      best_accuracy: 97.8,
-    },
-    {
-      user_id: "demo-3",
-      song_id: "demo-song-3",
-      username: "FingerSpeed",
-      track: "Blinding Lights",
-      artist: "The Weeknd",
-      art_url: "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/a6/6e/bf/a66ebf79-5008-8948-b352-a790fc87446b/19UM1IM04638.rgb.jpg/100x100bb.jpg",
-      best_score: 14890,
-      best_accuracy: 96.2,
-    },
-  ],
-  weekly: [
-    {
-      user_id: "demo-1",
-      song_id: "demo-song-1",
-      username: "TypeGod99",
-      track: "Love Me Not",
-      artist: "Ravyn Lenae",
-      art_url: "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/07/8c/6c/078c6c94-d38d-0451-d57b-23e957b569f8/075679660893.jpg/100x100bb.jpg",
-      best_score: 18450,
-      best_accuracy: 99.4,
-    },
-    {
-      user_id: "demo-4",
-      song_id: "demo-song-4",
-      username: "SwiftKeys",
-      track: "Flowers",
-      artist: "Miley Cyrus",
-      art_url: "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/8c/67/ff/8c67ff91-31c3-3fef-1884-ce3ec89f3af4/196589946874.jpg/100x100bb.jpg",
-      best_score: 17100,
-      best_accuracy: 98.1,
-    },
-    {
-      user_id: "demo-2",
-      song_id: "demo-song-2",
-      username: "LyricalMaster",
-      track: "STAY",
-      artist: "The Kid LAROI & Justin Bieber",
-      art_url: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/a8/3a/22/a83a22f7-af18-7ef6-a7de-74816c532a44/886449475421.jpg/100x100bb.jpg",
-      best_score: 16200,
-      best_accuracy: 97.8,
-    },
-  ],
-  alltime: [
-    {
-      user_id: "demo-1",
-      song_id: "demo-song-1",
-      username: "TypeGod99",
-      track: "Love Me Not",
-      artist: "Ravyn Lenae",
-      art_url: "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/07/8c/6c/078c6c94-d38d-0451-d57b-23e957b569f8/075679660893.jpg/100x100bb.jpg",
-      best_score: 19800,
-      best_accuracy: 99.8,
-    },
-    {
-      user_id: "demo-4",
-      song_id: "demo-song-4",
-      username: "SwiftKeys",
-      track: "Flowers",
-      artist: "Miley Cyrus",
-      art_url: "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/8c/67/ff/8c67ff91-31c3-3fef-1884-ce3ec89f3af4/196589946874.jpg/100x100bb.jpg",
-      best_score: 18500,
-      best_accuracy: 98.9,
-    },
-    {
-      user_id: "demo-2",
-      song_id: "demo-song-2",
-      username: "LyricalMaster",
-      track: "STAY",
-      artist: "The Kid LAROI & Justin Bieber",
-      art_url: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/a8/3a/22/a83a22f7-af18-7ef6-a7de-74816c532a44/886449475421.jpg/100x100bb.jpg",
-      best_score: 18100,
-      best_accuracy: 98.5,
-    },
-    {
-      user_id: "demo-3",
-      song_id: "demo-song-3",
-      username: "FingerSpeed",
-      track: "Blinding Lights",
-      artist: "The Weeknd",
-      art_url: "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/a6/6e/bf/a66ebf79-5008-8948-b352-a790fc87446b/19UM1IM04638.rgb.jpg/100x100bb.jpg",
-      best_score: 16900,
-      best_accuracy: 97.4,
-    },
-  ],
-};
-
 async function fetchLeaderboard(period: "daily" | "weekly" | "alltime") {
   const viewName = `${period}_leaderboard`;
   const { data, error } = await supabase
@@ -173,41 +63,22 @@ function LeaderboardPage() {
     refetchInterval: 10000, // Auto-refetch every 10 seconds for real-time feel
   });
 
-  // Combine database scores with fallback/temporary demo scores
   const scores = useMemo(() => {
     if (isLoading || error) return [];
 
-    const formattedDbScores = dbScores.map((score: any) => ({
-      user_id: score.user_id,
-      song_id: score.song_id,
-      username: score.username,
-      track: score.track,
-      artist: score.artist,
-      art_url: score.art_url,
-      best_score: score.best_score,
-      best_accuracy: score.best_accuracy,
-      isReal: true,
-    }));
-
-    // Use a Map to resolve duplicates (prefer real database score or highest score)
-    const combinedMap = new Map<string, any>();
-
-    // Load demo values
-    DEMO_SCORES[period].forEach((score) => {
-      combinedMap.set(`${score.username}-${score.track}`, score);
-    });
-
-    // Merge database scores (will overwrite duplicates if score is better)
-    formattedDbScores.forEach((score: any) => {
-      const key = `${score.username}-${score.track}`;
-      const existing = combinedMap.get(key);
-      if (!existing || score.best_score >= existing.best_score) {
-        combinedMap.set(key, score);
-      }
-    });
-
-    return Array.from(combinedMap.values()).sort((a, b) => b.best_score - a.best_score);
-  }, [dbScores, period, isLoading, error]);
+    return dbScores
+      .map((score: any) => ({
+        user_id: score.user_id,
+        song_id: score.song_id,
+        username: score.username,
+        track: score.track,
+        artist: score.artist,
+        art_url: score.art_url,
+        best_score: score.best_score,
+        best_accuracy: score.best_accuracy,
+      }))
+      .sort((a: any, b: any) => b.best_score - a.best_score);
+  }, [dbScores, isLoading, error]);
 
   const periodOptions = [
     { id: "daily", label: "Daily", icon: Clock, desc: "Last 24 Hours" },
@@ -344,16 +215,9 @@ function LeaderboardPage() {
 
                           {/* Player Username */}
                           <td className="py-4 px-4 font-semibold text-sm">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-foreground group-hover:text-primary transition-colors">
-                                {row.username}
-                              </span>
-                              {!row.isReal && (
-                                <span className="text-[9px] font-mono font-medium text-muted-foreground/60 border border-border/30 bg-muted/20 px-1 py-0.25 rounded shrink-0">
-                                  Demo
-                                </span>
-                              )}
-                            </div>
+                            <span className="text-foreground group-hover:text-primary transition-colors">
+                              {row.username}
+                            </span>
                           </td>
 
                           {/* Song with Art */}

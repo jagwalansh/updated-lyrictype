@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { useModal } from "@/lib/modal-context";
 import { supabase } from "@/lib/supabase";
-import { Music, RotateCcw, Trophy, Home, Award, CheckCircle2, AlertCircle, Loader2, Sparkles, Share2 } from "lucide-react";
+import { Music, RotateCcw, Trophy, Home, Award, CheckCircle2, AlertCircle, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 interface Search {
@@ -563,26 +563,6 @@ function PlayPage() {
     inputRef.current?.focus();
   }
 
-  const handleShare = useCallback(() => {
-    const text = `🎮 keyVerse Play Results 🎮\n` +
-      `🎵 Song: ${track}\n` +
-      `👤 Artist: ${artist}\n` +
-      `🏆 Score: ${score.toLocaleString()}\n` +
-      `🎯 Accuracy: ${accuracy}%\n` +
-      `⚡ Speed: ${wpm} WPM\n` +
-      `🔥 Max Combo: ${maxCombo}x\n\n` +
-      `Play and type along at keyverse.me!`;
-
-    navigator.clipboard.writeText(text)
-      .then(() => {
-        toast.success("Results copied to clipboard!");
-      })
-      .catch((err) => {
-        console.error("Failed to copy results", err);
-        toast.error("Failed to copy results");
-      });
-  }, [track, artist, score, accuracy, wpm, maxCombo]);
-
   function restart() {
     setCharIdx(0);
     setCharResults([]);
@@ -965,12 +945,6 @@ function PlayPage() {
                             className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground font-semibold rounded-xl hover:opacity-95 shadow-sm transition-all cursor-pointer text-sm"
                           >
                             <RotateCcw className="w-4 h-4" /> Play Again
-                          </button>
-                          <button
-                            onClick={handleShare}
-                            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 border border-border/40 bg-card/50 hover:bg-muted/60 text-foreground font-semibold rounded-xl transition-all cursor-pointer text-sm"
-                          >
-                            <Share2 className="w-4 h-4 text-primary" /> Share
                           </button>
                           <Link
                             to="/leaderboard"

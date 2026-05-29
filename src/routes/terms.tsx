@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
 import { motion } from "motion/react";
-import { Scale, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/terms")({
   component: Terms,
@@ -49,7 +49,7 @@ function Terms() {
           {/* Section 1 */}
           <div className="relative z-10">
             <h2 className="font-mono text-base font-bold tracking-wide text-foreground flex items-center gap-2 mb-3">
-              <Scale className="h-4 w-4 text-primary" /> 1. Acceptance of Terms
+              1. Acceptance of Terms
             </h2>
             <p className="text-xs text-muted-foreground leading-relaxed">
               By accessing or using KeyVerse (keyverse.me), you agree to be bound by these Terms of Service. If you do not agree to all of these terms, please do not access or use our services.
