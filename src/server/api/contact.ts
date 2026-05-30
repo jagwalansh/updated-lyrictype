@@ -1,12 +1,8 @@
+import { EmailMessage } from "cloudflare:email";
+
 type ContactEnv = {
   CONTACT_EMAIL?: {
-    send: (message: {
-      from: string;
-      to: string;
-      subject: string;
-      text: string;
-      replyTo?: string;
-    }) => Promise<void>;
+    send: (message: EmailMessage) => Promise<void>;
   };
   CONTACT_FROM_EMAIL?: string;
   CONTACT_TO_EMAIL?: string;
@@ -21,6 +17,10 @@ function jsonResponse(body: unknown, status: number) {
 
 function asString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function asHeader(value: unknown): string {
+  return asString(value)?.replace(/[\r\n]+/g, " ") ?? "";
 }
 
 export async function POST(req: Request, env: ContactEnv = {}) {
@@ -39,13 +39,26 @@ export async function POST(req: Request, env: ContactEnv = {}) {
     const toEmail = asString(env.CONTACT_TO_EMAIL) ?? "support@keyverse.me";
     const fromEmail = asString(env.CONTACT_FROM_EMAIL) ?? "support@keyverse.me";
 
-    await env.CONTACT_EMAIL.send({
-      from: fromEmail,
-      to: toEmail,
-      subject: `[KeyVerse Feedback] ${subject || "No subject"}`,
-      text: `Name: ${name}\nEmail: ${email}\nSubject: ${subject || "N/A"}\n\nMessage:\n${message}`,
-      replyTo: email,
-    });
+    const safeName = asHeader(name);
+    const safeEmail = asHeader(email);
+    const safeSubject = asHeader(subject) || "No subject";
+    const rawEmail = [
+      `From: KeyVerse Contact <${fromEmail}>`,
+      `To: KeyVerse Support <${toEmail}>`,
+      `Reply-To: ${safeName} <${safeEmail}>`,
+      `Subject: [KeyVerse Feedback] ${safeSubject}`,
+      "MIME-Version: 1.0",
+      "Content-Type: text/plain; charset=UTF-8",
+      "",
+      `Name: ${safeName}`,
+      `Email: ${safeEmail}`,
+      `Subject: ${safeSubject}`,
+      "",
+      "Message:",
+      String(message),
+    ].join("\r\n");
+
+    await env.CONTACT_EMAIL.send(new EmailMessage(fromEmail, toEmail, rawEmail));
 
     return jsonResponse({ success: true }, 200);
   } catch (err) {
