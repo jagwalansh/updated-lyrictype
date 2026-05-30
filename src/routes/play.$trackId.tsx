@@ -39,6 +39,7 @@ function findLineIdxForTime(time: number, lyricLines: LyricLine[]): number {
 }
 
 // const SHOW_TYPING_ERRORS = true;
+const GOD_MODE = import.meta.env.DEV;
 
 
 export const Route = createFileRoute("/play/$trackId")({
@@ -113,6 +114,15 @@ function PlayPage() {
 
   const comboRef = useRef(combo);
   useEffect(() => { comboRef.current = combo; }, [combo]);
+
+  const resetActiveLineState = useCallback(() => {
+    charIdxRef.current = 0;
+    charResultsRef.current = [];
+    setCharIdx(0);
+    setCharResults([]);
+    setLineComplete(false);
+    setWaitingForNext(null);
+  }, []);
 
   // Load Lyrics and YouTube ID
   useEffect(() => {
@@ -218,11 +228,8 @@ function PlayPage() {
 
   // Reset line state whenever the active line changes
   useEffect(() => {
-    setCharIdx(0);
-    setCharResults([]);
-    setLineComplete(false);
-    setWaitingForNext(null);
-  }, [currentLineIdx]);
+    resetActiveLineState();
+  }, [currentLineIdx, resetActiveLineState]);
 
   const ytOpts = useMemo(() => ({
     width: '100%', 
@@ -249,7 +256,7 @@ function PlayPage() {
     }
     const lineAccuracy = currentLine.length > 0 ? correctChars / currentLine.length : 0;
     
-    const effectiveAccuracy = lineAccuracy;
+    const effectiveAccuracy = GOD_MODE ? 1 : lineAccuracy;
 
     let type = "miss";
     let text = "MISS";
@@ -267,8 +274,9 @@ function PlayPage() {
 
     setHitFeedback({ id: Date.now(), text, type });
 
+    resetActiveLineState();
     setCurrentLineIdx(idx => Math.min(idx + 1, lines.length - 1));
-  }, [lines, currentLineIdx]);
+  }, [lines, currentLineIdx, resetActiveLineState]);
 
   const endSong = useCallback(() => {
     setPlaying(false);
@@ -360,6 +368,7 @@ function PlayPage() {
               }
             }
             if (modified) {
+              charResultsRef.current = currentResults;
               setCharResults(currentResults);
               setCombo(0);
             }
@@ -412,15 +421,27 @@ function PlayPage() {
     if (e.key === "Backspace") {
         e.preventDefault();
         if (charIdx > 0) {
-            const prevIdx = charIdx - 1;
+            let prevIdx = charIdx - 1;
+
+            if (e.metaKey) {
+                prevIdx = 0;
+            } else if (e.ctrlKey || e.altKey) {
+                prevIdx = charIdx;
+                while (prevIdx > 0 && /\s/.test(line.text[prevIdx - 1])) prevIdx--;
+                while (prevIdx > 0 && !/\s/.test(line.text[prevIdx - 1])) prevIdx--;
+            }
             
             // Reset combo on backspace to prevent score farming
             setCombo(0); 
             
             const newResults = [...charResults];
-            newResults[prevIdx] = { status: 'pending' };
+            for (let i = prevIdx; i < charIdx; i++) {
+                newResults[i] = { status: 'pending' };
+            }
+            charResultsRef.current = newResults;
             setCharResults(newResults);
             
+            charIdxRef.current = prevIdx;
             setCharIdx(prevIdx);
             setLineComplete(false);
         }
@@ -438,10 +459,11 @@ function PlayPage() {
     const expectedChar = line.text[charIdx];
     const typedChar = e.key;
 
-    const isHit = typedChar.toLowerCase() === expectedChar.toLowerCase();
+    const isHit = GOD_MODE || typedChar.toLowerCase() === expectedChar.toLowerCase();
     
     const newResults = [...charResults];
     newResults[charIdx] = { status: isHit ? 'hit' : 'miss', char: typedChar };
+    charResultsRef.current = newResults;
     setCharResults(newResults);
 
     if (isHit) {
@@ -482,6 +504,7 @@ function PlayPage() {
     }
 
     const nextIdx = charIdx + 1;
+    charIdxRef.current = nextIdx;
     setCharIdx(nextIdx);
 
     if (nextIdx >= line.text.length) {
@@ -564,10 +587,7 @@ function PlayPage() {
   }
 
   function restart() {
-    setCharIdx(0);
-    setCharResults([]);
-    setLineComplete(false);
-    setWaitingForNext(null);
+    resetActiveLineState();
     setCurrentLineIdx(0);
     setStats({ correct: 0, total: 0, started: 0 });
     setCombo(0);

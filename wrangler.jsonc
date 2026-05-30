@@ -11,5 +11,11 @@
   ],
   "assets": {
     "directory": "dist/client"
-  }
+  },
+  "send_email": [
+    {
+      "name": "CONTACT_EMAIL",
+      "destination_address": "support@keyverse.me"
+    }
+  ]
 }

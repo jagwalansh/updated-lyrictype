@@ -1,5 +1,13 @@
 type ContactEnv = {
-  MAILCHANNELS_API_KEY?: string;
+  CONTACT_EMAIL?: {
+    send: (message: {
+      from: string;
+      to: string;
+      subject: string;
+      text: string;
+      replyTo?: string;
+    }) => Promise<void>;
+  };
   CONTACT_FROM_EMAIL?: string;
   CONTACT_TO_EMAIL?: string;
 };
@@ -23,49 +31,21 @@ export async function POST(req: Request, env: ContactEnv = {}) {
       return jsonResponse({ error: "Name, email, and message are required" }, 400);
     }
 
-    const apiKey = asString(env.MAILCHANNELS_API_KEY);
-    if (!apiKey) {
-      console.error("Contact API is missing MAILCHANNELS_API_KEY");
+    if (!env.CONTACT_EMAIL) {
+      console.error("Contact API is missing CONTACT_EMAIL binding");
       return jsonResponse({ error: "Contact form email provider is not configured yet." }, 503);
     }
 
     const toEmail = asString(env.CONTACT_TO_EMAIL) ?? "support@keyverse.me";
     const fromEmail = asString(env.CONTACT_FROM_EMAIL) ?? "support@keyverse.me";
 
-    const mailPayload = {
-      personalizations: [
-        {
-          to: [{ email: toEmail, name: "KeyVerse Support" }],
-        },
-      ],
-      from: {
-        email: fromEmail,
-        name: "KeyVerse Contact",
-      },
-      reply_to: { email, name },
+    await env.CONTACT_EMAIL.send({
+      from: fromEmail,
+      to: toEmail,
       subject: `[KeyVerse Feedback] ${subject || "No subject"}`,
-      content: [
-        {
-          type: "text/plain",
-          value: `Name: ${name}\nEmail: ${email}\nSubject: ${subject || "N/A"}\n\nMessage:\n${message}`,
-        },
-      ],
-    };
-
-    const res = await fetch("https://api.mailchannels.net/tx/v1/send", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "X-Api-Key": apiKey,
-      },
-      body: JSON.stringify(mailPayload),
+      text: `Name: ${name}\nEmail: ${email}\nSubject: ${subject || "N/A"}\n\nMessage:\n${message}`,
+      replyTo: email,
     });
-
-    if (!res.ok) {
-      const text = await res.text();
-      console.error("MailChannels error:", res.status, text);
-      return jsonResponse({ error: "Email provider rejected the message. Check MailChannels API key and Domain Lockdown DNS." }, 502);
-    }
 
     return jsonResponse({ success: true }, 200);
   } catch (err) {
