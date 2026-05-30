@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Mail, Github, Loader2, Send, CheckCircle, AlertCircle, X, ArrowLeft } from "lucide-react";
 import { DeflectCard } from "@/components/ui/deflect-card";
 import * as Dialog from "@radix-ui/react-dialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [name, setName] = useState("");
@@ -14,7 +14,14 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [sentAnimationDone, setSentAnimationDone] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    if (status !== "success") return;
+    const timer = setTimeout(() => setSentAnimationDone(true), 900);
+    return () => clearTimeout(timer);
+  }, [status]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
@@ -24,6 +31,7 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
       setMessage("");
       setSending(false);
       setStatus("idle");
+      setSentAnimationDone(false);
       setErrorMessage("");
     }
     onOpenChange(nextOpen);
@@ -33,6 +41,7 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
     e.preventDefault();
     setSending(true);
     setStatus("idle");
+    setSentAnimationDone(false);
     setErrorMessage("");
 
     try {
@@ -126,49 +135,52 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
             <button
               type="submit"
               disabled={sending || status === "success"}
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
+              className="relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-default"
             >
-              {sending ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Sending...</>
-              ) : status === "success" ? (
-                <><CheckCircle className="h-4 w-4" /> Sent!</>
-              ) : (
-                <><Send className="h-4 w-4" /> Send Message</>
-              )}
+              <AnimatePresence mode="wait">
+                {sending ? (
+                  <motion.span
+                    key="sending"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="inline-flex items-center gap-2"
+                  >
+                    <Loader2 className="h-4 w-4 animate-spin" /> Sending...
+                  </motion.span>
+                ) : status === "success" && !sentAnimationDone ? (
+                  <motion.span
+                    key="plane"
+                    initial={{ x: -80, y: 7, rotate: -18, opacity: 0 }}
+                    animate={{ x: 80, y: -7, rotate: -4, opacity: [0, 1, 1, 0] }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.85, ease: "easeOut" }}
+                    className="absolute"
+                  >
+                    <Send className="h-5 w-5" />
+                  </motion.span>
+                ) : status === "success" ? (
+                  <motion.span
+                    key="sent"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="inline-flex items-center gap-2"
+                  >
+                    <CheckCircle className="h-4 w-4" /> Sent!
+                  </motion.span>
+                ) : (
+                  <motion.span
+                    key="idle"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="inline-flex items-center gap-2"
+                  >
+                    <Send className="h-4 w-4" /> Send Message
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </button>
-
-            <AnimatePresence>
-              {status === "success" && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  className="relative overflow-hidden rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-4 py-3"
-                >
-                  <div className="relative h-12">
-                    <motion.div
-                      initial={{ x: -28, y: 20, rotate: -18, opacity: 0 }}
-                      animate={{ x: 230, y: -10, rotate: -4, opacity: [0, 1, 1, 0] }}
-                      transition={{ duration: 1.1, ease: "easeOut" }}
-                      className="absolute left-0 top-0 text-emerald-500"
-                    >
-                      <Send className="h-7 w-7" />
-                    </motion.div>
-                    <motion.div
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ delay: 0.75, type: "spring", stiffness: 260, damping: 16 }}
-                      className="absolute inset-0 flex items-center justify-center text-emerald-500"
-                    >
-                      <CheckCircle className="h-9 w-9" />
-                    </motion.div>
-                  </div>
-                  <p className="text-center text-sm font-medium text-emerald-600">
-                    Message sent successfully.
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
 
             {status === "error" && (
               <p className="flex items-center gap-1.5 text-sm text-red-500">
