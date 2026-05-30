@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { Mail, Github, Loader2, Send, CheckCircle, AlertCircle, X, ArrowLeft } from "lucide-react";
 import { DeflectCard } from "@/components/ui/deflect-card";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -15,6 +15,19 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      setName("");
+      setEmail("");
+      setSubject("");
+      setMessage("");
+      setSending(false);
+      setStatus("idle");
+      setErrorMessage("");
+    }
+    onOpenChange(nextOpen);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,22 +48,17 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
       }
 
       setStatus("success");
-      setName("");
-      setEmail("");
-      setSubject("");
-      setMessage("");
-      setTimeout(() => onOpenChange(false), 1500);
     } catch (error) {
       console.error(error);
       setErrorMessage(error instanceof Error ? error.message : "Failed to send");
       setStatus("error");
     } finally {
-      if (status !== "success") setSending(false);
+      setSending(false);
     }
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border/40 bg-background/80 backdrop-blur-md p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95">
@@ -117,7 +125,7 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
 
             <button
               type="submit"
-              disabled={sending}
+              disabled={sending || status === "success"}
               className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {sending ? (
@@ -128,6 +136,39 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
                 <><Send className="h-4 w-4" /> Send Message</>
               )}
             </button>
+
+            <AnimatePresence>
+              {status === "success" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="relative overflow-hidden rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-4 py-3"
+                >
+                  <div className="relative h-12">
+                    <motion.div
+                      initial={{ x: -28, y: 20, rotate: -18, opacity: 0 }}
+                      animate={{ x: 230, y: -10, rotate: -4, opacity: [0, 1, 1, 0] }}
+                      transition={{ duration: 1.1, ease: "easeOut" }}
+                      className="absolute left-0 top-0 text-emerald-500"
+                    >
+                      <Send className="h-7 w-7" />
+                    </motion.div>
+                    <motion.div
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 0.75, type: "spring", stiffness: 260, damping: 16 }}
+                      className="absolute inset-0 flex items-center justify-center text-emerald-500"
+                    >
+                      <CheckCircle className="h-9 w-9" />
+                    </motion.div>
+                  </div>
+                  <p className="text-center text-sm font-medium text-emerald-600">
+                    Message sent successfully.
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {status === "error" && (
               <p className="flex items-center gap-1.5 text-sm text-red-500">
