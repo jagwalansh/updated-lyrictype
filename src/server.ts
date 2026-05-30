@@ -144,7 +144,7 @@ function putSharedCache(
 }
 
 export default {
-  async fetch(request: Request, env: WorkerEnv, ctx: ExecutionContext) {
+  async fetch(request: Request, env: WorkerEnv = {}, ctx: ExecutionContext = {}) {
     try {
       // Handle API proxy requests
       const url = new URL(request.url);
