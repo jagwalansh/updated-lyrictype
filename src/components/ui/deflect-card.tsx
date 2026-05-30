@@ -1,4 +1,4 @@
-import { useState, useRef, MouseEvent } from "react";
+import { useRef, MouseEvent } from "react";
 import { motion, useSpring } from "motion/react";
 
 interface DeflectCardProps {
@@ -9,15 +9,13 @@ interface DeflectCardProps {
 
 export function DeflectCard({ children, className = "", cardClassName = "" }: DeflectCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const shadowRef = useRef<HTMLDivElement>(null);
   
   // Smooth spring motion values for natural physics
   const rotateX = useSpring(0, { stiffness: 180, damping: 22 });
   const rotateY = useSpring(0, { stiffness: 180, damping: 22 });
   const scale = useSpring(1, { stiffness: 180, damping: 22 });
   
-  const [shadowStyle, setShadowStyle] = useState<string>("");
-  const [isHovered, setIsHovered] = useState(false);
-
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
     const card = cardRef.current;
     if (!card) return;
@@ -45,15 +43,15 @@ export function DeflectCard({ children, className = "", cardClassName = "" }: De
     
     // Create a dark overlay shadow centered on the cursor
     // Mix-blend-multiply on light mode / overlay on dark mode will naturally darken the area
-    setShadowStyle(`radial-gradient(circle 100px at ${x}px ${y}px, rgba(0, 0, 0, 0.16) 0%, transparent 80%)`);
-    setIsHovered(true);
+    if (shadowRef.current) {
+      shadowRef.current.style.background = `radial-gradient(circle 100px at ${x}px ${y}px, rgba(0, 0, 0, 0.16) 0%, transparent 80%)`;
+    }
   };
 
   const handleMouseLeave = () => {
     rotateX.set(0);
     rotateY.set(0);
     scale.set(1);
-    setIsHovered(false);
   };
 
   return (
@@ -68,15 +66,12 @@ export function DeflectCard({ children, className = "", cardClassName = "" }: De
           scale,
           transformStyle: "preserve-3d",
         }}
-        className={`relative h-full w-full cursor-pointer transition-all duration-300 ${isHovered ? "shadow-2xl shadow-foreground/10" : "shadow-sm"} ${cardClassName ? cardClassName : "rounded-xl bg-card"}`}
+        className={`group relative h-full w-full cursor-pointer shadow-sm transition-all duration-300 hover:shadow-2xl hover:shadow-foreground/10 ${cardClassName ? cardClassName : "rounded-xl bg-card"}`}
       >
         {children}
         <div
-          className="absolute inset-0 pointer-events-none rounded-[inherit] z-20 transition-opacity duration-300"
-          style={{
-            background: shadowStyle,
-            opacity: isHovered ? 1 : 0,
-          }}
+          ref={shadowRef}
+          className="absolute inset-0 pointer-events-none rounded-[inherit] z-20 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
         />
       </motion.div>
     </div>

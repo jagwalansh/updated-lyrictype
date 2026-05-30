@@ -58,7 +58,7 @@ export function Navbar({ disableEntranceAnimation = false }: { disableEntranceAn
   const [accountOpen, setAccountOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [isEntranceDone, setIsEntranceDone] = useState(disableEntranceAnimation);
-  const [scrollY, setScrollY] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
 
   const [searchOpen, setSearchOpen] = useState(false);
@@ -75,7 +75,10 @@ export function Navbar({ disableEntranceAnimation = false }: { disableEntranceAn
     if (typeof window === "undefined") return;
 
     const handleScroll = () => {
-      setScrollY(window.scrollY);
+      const nextIsScrolled = window.scrollY > 20;
+      setIsScrolled((currentIsScrolled) =>
+        currentIsScrolled === nextIsScrolled ? currentIsScrolled : nextIsScrolled,
+      );
     };
 
     const handleResize = () => {
@@ -106,7 +109,6 @@ export function Navbar({ disableEntranceAnimation = false }: { disableEntranceAn
 
   const baseWidth = Math.min(896, windowWidth - 32);
   const shrinkWidth = Math.max(360, baseWidth * 0.6);
-  const isScrolled = scrollY > 20;
   const targetWidth = isEntranceDone
     ? (isScrolled ? shrinkWidth : baseWidth)
     : 160;
