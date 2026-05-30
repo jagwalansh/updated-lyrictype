@@ -13,6 +13,19 @@ type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
 
+type KVNamespace = {
+  get: (key: string) => Promise<string | null>;
+  put: (key: string, value: string, options?: { expirationTtl?: number }) => Promise<void>;
+};
+
+type WorkerEnv = {
+  API_CACHE?: KVNamespace;
+};
+
+type ExecutionContext = {
+  waitUntil?: (promise: Promise<unknown>) => void;
+};
+
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
 async function getServerEntry(): Promise<ServerEntry> {
@@ -96,9 +109,42 @@ function cleanArtist(artist: string): string {
 }
 
 const lyricsCache = new Map<string, { data: any, timestamp: number }>();
+const youtubeCache = new Map<string, { data: any, timestamp: number }>();
+const LYRICS_CACHE_TTL_SECONDS = 30 * 60;
+const YOUTUBE_CACHE_TTL_SECONDS = 6 * 60 * 60;
+
+async function getSharedCache<T>(env: WorkerEnv, key: string): Promise<T | null> {
+  if (!env.API_CACHE) return null;
+
+  try {
+    const value = await env.API_CACHE.get(key);
+    return value ? JSON.parse(value) as T : null;
+  } catch (error) {
+    console.error(`Failed to read API cache key ${key}:`, error);
+    return null;
+  }
+}
+
+function putSharedCache(
+  env: WorkerEnv,
+  ctx: ExecutionContext,
+  key: string,
+  value: unknown,
+  expirationTtl: number,
+) {
+  if (!env.API_CACHE) return;
+
+  const write = env.API_CACHE
+    .put(key, JSON.stringify(value), { expirationTtl })
+    .catch((error) => console.error(`Failed to write API cache key ${key}:`, error));
+
+  if (ctx.waitUntil) {
+    ctx.waitUntil(write);
+  }
+}
 
 export default {
-  async fetch(request: Request, env: unknown, ctx: unknown) {
+  async fetch(request: Request, env: WorkerEnv, ctx: ExecutionContext) {
     try {
       // Handle API proxy requests
       const url = new URL(request.url);
@@ -169,8 +215,18 @@ Sitemap: https://keyverse.me/sitemap.xml`;
 
         const cacheKey = `${artist}:${track}`;
         const cached = lyricsCache.get(cacheKey);
-        if (cached && Date.now() - cached.timestamp < 30 * 60 * 1000) {
+        if (cached && Date.now() - cached.timestamp < LYRICS_CACHE_TTL_SECONDS * 1000) {
           return new Response(JSON.stringify(cached.data), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        }
+
+        const sharedCacheKey = `lyrics:${cacheKey}`;
+        const sharedCached = await getSharedCache<any>(env, sharedCacheKey);
+        if (sharedCached) {
+          lyricsCache.set(cacheKey, { data: sharedCached, timestamp: Date.now() });
+          return new Response(JSON.stringify(sharedCached), {
             status: 200,
             headers: { "content-type": "application/json" },
           });
@@ -334,6 +390,7 @@ Sitemap: https://keyverse.me/sitemap.xml`;
             const clone = response.clone();
             const data = await clone.json();
             lyricsCache.set(cacheKey, { data, timestamp: Date.now() });
+            putSharedCache(env, ctx, sharedCacheKey, data, LYRICS_CACHE_TTL_SECONDS);
             return response;
           }
 
@@ -405,6 +462,25 @@ Sitemap: https://keyverse.me/sitemap.xml`;
         if (!query) {
           return new Response(JSON.stringify({ error: "Missing query" }), {
             status: 400,
+            headers: { "content-type": "application/json" },
+          });
+        }
+
+        const cacheKey = `${query}:${expectedDuration}`;
+        const cached = youtubeCache.get(cacheKey);
+        if (cached && Date.now() - cached.timestamp < YOUTUBE_CACHE_TTL_SECONDS * 1000) {
+          return new Response(JSON.stringify(cached.data), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        }
+
+        const sharedCacheKey = `youtube:${cacheKey}`;
+        const sharedCached = await getSharedCache<{ videoId: string; authorName: string }>(env, sharedCacheKey);
+        if (sharedCached) {
+          youtubeCache.set(cacheKey, { data: sharedCached, timestamp: Date.now() });
+          return new Response(JSON.stringify(sharedCached), {
+            status: 200,
             headers: { "content-type": "application/json" },
           });
         }
@@ -493,7 +569,11 @@ Sitemap: https://keyverse.me/sitemap.xml`;
             }
           }
 
-          return new Response(JSON.stringify({ videoId: bestVideo.videoId, authorName: bestVideo.author || "YouTube" }), {
+          const data = { videoId: bestVideo.videoId, authorName: bestVideo.author || "YouTube" };
+          youtubeCache.set(cacheKey, { data, timestamp: Date.now() });
+          putSharedCache(env, ctx, sharedCacheKey, data, YOUTUBE_CACHE_TTL_SECONDS);
+
+          return new Response(JSON.stringify(data), {
             status: 200,
             headers: { "content-type": "application/json" },
           });

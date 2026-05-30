@@ -4,6 +4,11 @@
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "dist/server/server.js",
+  "kv_namespaces": [
+    {
+      "binding": "API_CACHE"
+    }
+  ],
   "assets": {
     "directory": "dist/client"
   }
