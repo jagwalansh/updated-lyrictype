@@ -95,6 +95,7 @@ function PlayPage() {
 
   const [videoId, setVideoId] = useState<string | null>(null);
   const [ytAuthor, setYtAuthor] = useState<string | null>(null);
+  const [ytCandidates, setYtCandidates] = useState<Array<{ videoId: string; authorName: string }>>([]);
   const [ytLoading, setYtLoading] = useState(true);
   const [songEnded, setSongEnded] = useState(false);
   const [songEndedAt, setSongEndedAt] = useState<number | null>(null);
@@ -132,6 +133,9 @@ function PlayPage() {
     setShowBlurOverlay(false);
     setLoadErr(null);
     setLines(null);
+    setVideoId(null);
+    setYtAuthor(null);
+    setYtCandidates([]);
 
     // Guard: Don't fetch if search parameters are not yet resolved or are empty
     if (!artist.trim() || !track.trim()) {
@@ -171,6 +175,7 @@ function PlayPage() {
         if (d.videoId) {
            setVideoId(d.videoId);
            setYtAuthor(d.authorName);
+           setYtCandidates(d.candidates || [{ videoId: d.videoId, authorName: d.authorName }]);
         } else {
            setLoadErr("Could not find a YouTube video for this track.");
         }
@@ -188,6 +193,21 @@ function PlayPage() {
       cancelled = true;
     };
   }, [artist, track, duration]);
+
+  const handleYoutubeError = useCallback(() => {
+    const currentIndex = ytCandidates.findIndex((candidate) => candidate.videoId === videoId);
+    const nextCandidate = ytCandidates[currentIndex + 1];
+
+    if (nextCandidate) {
+      setAudioReady(false);
+      setPlaying(false);
+      setVideoId(nextCandidate.videoId);
+      setYtAuthor(nextCandidate.authorName);
+      return;
+    }
+
+    setLoadErr("Synced lyrics were found, but the available YouTube videos could not be played.");
+  }, [videoId, ytCandidates]);
 
   // Clear hit feedback automatically
   useEffect(() => {
@@ -679,10 +699,10 @@ function PlayPage() {
             <div className="w-16 h-16 mx-auto bg-muted/30 rounded-full flex items-center justify-center mb-6">
               <Music className="h-6 w-6 text-muted-foreground/60" />
             </div>
-            <h2 className="text-xl font-semibold mb-2">Lyrics Not Found</h2>
+            <h2 className="text-xl font-semibold mb-2">Track Unavailable</h2>
             <p className="text-sm text-muted-foreground mb-8 leading-relaxed">
-              Sorry, we couldn't find synced lyrics for <strong>{track}</strong> by <strong>{artist}</strong>.<br/><br/>
-              Only songs with time-synced lyrics can be played in KeyVerse.
+              Sorry, <strong>{track}</strong> by <strong>{artist}</strong> could not be loaded.<br/><br/>
+              {loadErr}
             </p>
             <Link 
               to="/" 
@@ -763,7 +783,7 @@ function PlayPage() {
                            }}
                           onError={(e) => {
                             console.error("YouTube Error", e);
-                            setLoadErr("Failed to load YouTube video.");
+                            handleYoutubeError();
                           }}
                           className="w-full h-full scale-[1.6]"
                         />

@@ -475,8 +475,12 @@ Sitemap: https://keyverse.me/sitemap.xml`;
           });
         }
 
-        const sharedCacheKey = `youtube:${cacheKey}`;
-        const sharedCached = await getSharedCache<{ videoId: string; authorName: string }>(env, sharedCacheKey);
+        const sharedCacheKey = `youtube:v2:${cacheKey}`;
+        const sharedCached = await getSharedCache<{
+          videoId: string;
+          authorName: string;
+          candidates?: Array<{ videoId: string; authorName: string }>;
+        }>(env, sharedCacheKey);
         if (sharedCached) {
           youtubeCache.set(cacheKey, { data: sharedCached, timestamp: Date.now() });
           return new Response(JSON.stringify(sharedCached), {
@@ -569,7 +573,20 @@ Sitemap: https://keyverse.me/sitemap.xml`;
             }
           }
 
-          const data = { videoId: bestVideo.videoId, authorName: bestVideo.author || "YouTube" };
+          const candidates = [
+            bestVideo,
+            ...videos.filter((video) => video.videoId !== bestVideo.videoId),
+          ]
+            .slice(0, 10)
+            .map((video) => ({
+              videoId: video.videoId,
+              authorName: video.author || "YouTube",
+            }));
+          const data = {
+            videoId: bestVideo.videoId,
+            authorName: bestVideo.author || "YouTube",
+            candidates,
+          };
           youtubeCache.set(cacheKey, { data, timestamp: Date.now() });
           putSharedCache(env, ctx, sharedCacheKey, data, YOUTUBE_CACHE_TTL_SECONDS);
 

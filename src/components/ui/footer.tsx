@@ -99,6 +99,24 @@ export function Footer() {
 
           </div>
 
+          {/* Product Hunt badge */}
+          <div className="flex justify-center border-t border-border pt-6">
+            <a
+              href="https://www.producthunt.com/products/feel-the-rhythm-in-every-keystroke?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-feel-the-rhythm-in-every-keystroke"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full max-w-[250px]"
+            >
+              <img
+                alt="Feel the rhythm in every keystroke. - Type lyrics in sync with your favorite songs. | Product Hunt"
+                width="250"
+                height="54"
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1160336&theme=dark&t=1780288425399"
+                className="h-auto w-full"
+              />
+            </a>
+          </div>
+
           {/* Bottom copyright row */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border pt-6 text-[10px] text-muted-foreground font-mono">
             <div>
