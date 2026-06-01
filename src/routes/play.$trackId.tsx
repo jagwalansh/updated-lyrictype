@@ -1120,15 +1120,6 @@ function PlayPage() {
                                 })
                                 : lineText}
                                 
-                              {isCurrentLine && waitingForNext && (
-                                  <div className="absolute top-full left-0 mt-4 text-sm text-primary animate-pulse font-mono tracking-widest bg-primary/10 px-3 py-1 rounded-full border border-primary/20 flex items-center gap-2">
-                                      <svg className="w-4 h-4 animate-spin-slow" fill="none" viewBox="0 0 24 24">
-                                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                      </svg>
-                                      <Music className="w-3.5 h-3.5 animate-pulse text-primary shrink-0" /> Next in {waitingForNext}s
-                                  </div>
-                              )}
                             </div>
                           </div>
                         );
@@ -1138,6 +1129,16 @@ function PlayPage() {
                     </div>
                     )}
                     </div>
+
+                    {!songEnded && waitingForNext && (
+                      <div className="pointer-events-none absolute bottom-20 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-full border border-primary/20 bg-background/85 px-3 py-1 text-sm font-mono tracking-widest text-primary shadow-sm backdrop-blur-sm animate-pulse flex items-center gap-2">
+                        <svg className="w-4 h-4 animate-spin-slow" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <Music className="w-3.5 h-3.5 animate-pulse text-primary shrink-0" /> Next in {waitingForNext}s
+                      </div>
+                    )}
 
                     {!songEnded && (
                       <>
