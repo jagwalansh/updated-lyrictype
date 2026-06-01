@@ -91,9 +91,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "A typing game where you race to type the lyrics of songs in real time. Minimal, fast, and free.",
       },
       { property: "og:title", content: "KeyVerse" },
-      { property: "og:description", content: "Race to type lyrics in time with the music." },
+      {
+        property: "og:description",
+        content: "Type lyrics in sync with your favorite songs.",
+      },
+      { property: "og:image", content: "https://keyverse.me/og-image.png" },
+      { property: "og:url", content: "https://keyverse.me" },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "KeyVerse" },
+      {
+        name: "twitter:description",
+        content: "Type lyrics in sync with your favorite songs.",
+      },
+      { name: "twitter:image", content: "https://keyverse.me/og-image.png" },
     ],
     links: [
       {
