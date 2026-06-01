@@ -8,6 +8,9 @@ import { motion, AnimatePresence } from "motion/react";
 import { Trophy, Calendar, Clock, ArrowLeft, Music } from "lucide-react";
 
 export const Route = createFileRoute("/leaderboard")({
+  head: () => ({
+    links: [{ rel: "canonical", href: "https://keyverse.me/leaderboard" }],
+  }),
   component: LeaderboardPage,
 });
 

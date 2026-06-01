@@ -195,6 +195,9 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
 }
 
 export const Route = createFileRoute("/support")({
+  head: () => ({
+    links: [{ rel: "canonical", href: "https://keyverse.me/support" }],
+  }),
   component: Support,
 });
 

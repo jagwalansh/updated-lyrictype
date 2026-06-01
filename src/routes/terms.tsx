@@ -5,6 +5,9 @@ import { motion } from "motion/react";
 import { ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/terms")({
+  head: () => ({
+    links: [{ rel: "canonical", href: "https://keyverse.me/terms" }],
+  }),
   component: Terms,
 });
 

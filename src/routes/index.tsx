@@ -15,6 +15,9 @@ type SearchParams = {
 let hasVisitedHome = false;
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    links: [{ rel: "canonical", href: "https://keyverse.me/" }],
+  }),
   validateSearch: (search: Record<string, unknown>): SearchParams => ({
     q: typeof search.q === "string" ? search.q.replace(/\+/g, " ") : undefined,
   }),

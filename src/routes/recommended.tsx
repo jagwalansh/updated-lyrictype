@@ -5,6 +5,9 @@ import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
 
 export const Route = createFileRoute("/recommended")({
+  head: () => ({
+    links: [{ rel: "canonical", href: "https://keyverse.me/recommended" }],
+  }),
   component: Recommended,
 });
 
