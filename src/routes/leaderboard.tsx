@@ -19,7 +19,8 @@ async function fetchLeaderboard(period: "daily" | "weekly" | "alltime") {
   const { data, error } = await supabase
     .from(viewName as any)
     .select("*")
-    .limit(50);
+    .order("best_score", { ascending: false })
+    .limit(500);
 
   if (error) throw error;
   return data || [];
@@ -69,7 +70,9 @@ function LeaderboardPage() {
   const scores = useMemo(() => {
     if (isLoading || error) return [];
 
-    return dbScores
+    const bestScoreByUser = new Map<string, any>();
+
+    dbScores
       .map((score: any) => ({
         user_id: score.user_id,
         song_id: score.song_id,
@@ -80,7 +83,14 @@ function LeaderboardPage() {
         best_score: score.best_score,
         best_accuracy: score.best_accuracy,
       }))
-      .sort((a: any, b: any) => b.best_score - a.best_score);
+      .sort((a: any, b: any) => b.best_score - a.best_score)
+      .forEach((score: any) => {
+        if (!bestScoreByUser.has(score.user_id)) {
+          bestScoreByUser.set(score.user_id, score);
+        }
+      });
+
+    return Array.from(bestScoreByUser.values()).slice(0, 50);
   }, [dbScores, isLoading, error]);
 
   const periodOptions = [
