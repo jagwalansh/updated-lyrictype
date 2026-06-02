@@ -464,7 +464,7 @@ Sitemap: https://keyverse.me/sitemap.xml`;
           });
         }
 
-        const cacheKey = `${query}:${expectedDuration}`;
+        const cacheKey = `v5:${query}:${expectedDuration}`;
         const cached = youtubeCache.get(cacheKey);
         if (cached && Date.now() - cached.timestamp < YOUTUBE_CACHE_TTL_SECONDS * 1000) {
           return new Response(JSON.stringify(cached.data), {
@@ -473,7 +473,7 @@ Sitemap: https://keyverse.me/sitemap.xml`;
           });
         }
 
-        const sharedCacheKey = `youtube:v4:${cacheKey}`;
+        const sharedCacheKey = `youtube:${cacheKey}`;
         const sharedCached = await getSharedCache<{
           videoId: string;
           authorName: string;
@@ -564,31 +564,44 @@ Sitemap: https://keyverse.me/sitemap.xml`;
             "sped up",
             "slowed",
             "nightcore",
+            "edit",
             "edit audio",
             "fan edit",
             "status",
+            "remix",
+            "cover",
+            "reaction",
           ];
-          const preferredVideos = videos.filter((video) => {
+          const cleanVideos = videos.filter((video) => {
             const normalizedTitle = video.title?.toLowerCase() || "";
             return !blockedTitleTerms.some((term) => normalizedTitle.includes(term));
           });
-          const rankedVideos = preferredVideos.length > 0 ? preferredVideos : videos;
+          const rankedVideos = [...cleanVideos].sort((a, b) => {
+            const rank = (video: typeof a) => {
+              const normalizedTitle = video.title?.toLowerCase() || "";
+              const normalizedAuthor = video.author?.toLowerCase() || "";
+              let score = 0;
+              if (normalizedTitle.includes("official audio")) score += 5;
+              if (normalizedTitle.includes("official video") || normalizedTitle.includes("official music video")) score += 4;
+              if (normalizedAuthor.includes(" - topic")) score += 3;
+              return score;
+            };
+            const qualityDiff = rank(b) - rank(a);
+            if (qualityDiff !== 0 || expectedDuration <= 0) return qualityDiff;
 
-          let bestVideo = rankedVideos[0];
-          if (expectedDuration > 0) {
-            let bestDiff = Infinity;
-            // Only look at the top 10 results to ensure high relevance
-            const candidates = rankedVideos.slice(0, 10);
-            for (const video of candidates) {
-              if (video.seconds !== undefined) {
-                const diff = Math.abs(video.seconds - expectedDuration);
-                if (diff < bestDiff) {
-                  bestDiff = diff;
-                  bestVideo = video;
-                }
-              }
-            }
+            const aDiff = a.seconds === undefined ? Infinity : Math.abs(a.seconds - expectedDuration);
+            const bDiff = b.seconds === undefined ? Infinity : Math.abs(b.seconds - expectedDuration);
+            return aDiff - bDiff;
+          });
+
+          if (rankedVideos.length === 0) {
+            return new Response(JSON.stringify({ error: "Could not find a clean original YouTube upload for this track" }), {
+              status: 404,
+              headers: { "content-type": "application/json" },
+            });
           }
+
+          const bestVideo = rankedVideos[0];
 
           const candidates = [
             bestVideo,
