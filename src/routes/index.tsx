@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Footer } from "@/components/ui/footer";
 import { Play } from "lucide-react";
 import { DeflectCard } from "@/components/ui/deflect-card";
+import { trackEvent } from "@/lib/analytics";
 
 type SearchParams = {
   q?: string;
@@ -182,6 +183,7 @@ function Index() {
 
   useEffect(() => {
     hasVisitedHome = true;
+    trackEvent("homepage_viewed");
   }, []);
 
   useEffect(() => {

@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase";
+import { trackEvent } from "@/lib/analytics";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -12,7 +13,7 @@ interface AuthContextType {
   profileLoading: boolean;
   signUp: (email: string, password: string) => Promise<{ needsEmailConfirmation: boolean }>;
   signIn: (email: string, password: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (isSignUp?: boolean) => Promise<void>;
   signOut: () => Promise<void>;
   resendConfirmation: (email: string) => Promise<void>;
   refreshProfile: () => Promise<Profile | null>;
@@ -22,6 +23,23 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const GOOGLE_SIGNUP_PENDING_KEY = "keyverse_google_signup_pending";
+
+function trackPendingGoogleSignup(currentUser: User | null) {
+  if (!currentUser || typeof window === "undefined") return;
+  if (sessionStorage.getItem(GOOGLE_SIGNUP_PENDING_KEY) !== "true") return;
+
+  sessionStorage.removeItem(GOOGLE_SIGNUP_PENDING_KEY);
+
+  const createdAt = new Date(currentUser.created_at).getTime();
+  const lastSignInAt = currentUser.last_sign_in_at
+    ? new Date(currentUser.last_sign_in_at).getTime()
+    : createdAt;
+
+  if (Math.abs(lastSignInAt - createdAt) < 60_000) {
+    trackEvent("user_signed_up", { method: "google" });
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -94,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth
       .getSession()
       .then(({ data: { session } }) => {
+        trackPendingGoogleSignup(session?.user ?? null);
         setUser(session?.user ?? null);
         void loadProfile(session?.user ?? null);
       })
@@ -105,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      trackPendingGoogleSignup(session?.user ?? null);
       setUser(session?.user ?? null);
       void loadProfile(session?.user ?? null);
       setLoading(false);
@@ -117,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
 
+    trackEvent("user_signed_up", { method: "email" });
     setUser(data.session?.user ?? null);
     void loadProfile(data.session?.user ?? null);
 
@@ -135,15 +156,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await loadProfile(data.user);
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (isSignUp = false) => {
     // Redirect to the current origin (e.g. http://localhost:5173) which matches typical Supabase site URL setup
     const redirectTo = typeof window !== "undefined" ? window.location.origin : undefined;
+    if (isSignUp && typeof window !== "undefined") {
+      sessionStorage.setItem(GOOGLE_SIGNUP_PENDING_KEY, "true");
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: redirectTo ? { redirectTo } : undefined,
     });
 
-    if (error) throw error;
+    if (error) {
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem(GOOGLE_SIGNUP_PENDING_KEY);
+      }
+      throw error;
+    }
   };
 
   const signOut = async () => {

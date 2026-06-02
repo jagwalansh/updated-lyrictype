@@ -12,7 +12,8 @@ type AuthMode = "signIn" | "signUp";
 
 export function AuthModal() {
   const { modalOpen, setModalOpen } = useModal();
-  const { signIn, signUp, signInWithGoogle, resendConfirmation, authError, clearAuthError } = useAuth();
+  const { signIn, signUp, signInWithGoogle, resendConfirmation, authError, clearAuthError } =
+    useAuth();
   const [authMode, setAuthMode] = useState<AuthMode>("signIn");
 
   // Automatically open modal and display error if redirected back with an OAuth error
@@ -99,7 +100,7 @@ export function AuthModal() {
     setGoogleSubmitting(true);
 
     try {
-      await signInWithGoogle();
+      await signInWithGoogle(authMode === "signUp");
     } catch (err) {
       setGoogleSubmitting(false);
       setError(err instanceof Error ? err.message : "Could not start Google sign-in. Try again.");

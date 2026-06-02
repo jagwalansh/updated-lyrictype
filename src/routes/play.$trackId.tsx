@@ -10,6 +10,7 @@ import { useModal } from "@/lib/modal-context";
 import { supabase } from "@/lib/supabase";
 import { Music, RotateCcw, Trophy, Home, Award, CheckCircle2, AlertCircle, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { trackEvent } from "@/lib/analytics";
 
 interface Search {
   artist: string;
@@ -91,6 +92,8 @@ function PlayPage() {
   const ytPlayerRef = useRef<YouTubePlayer | null>(null);
   const rafRef = useRef<number | null>(null);
   const currentTimeRef = useRef(0);
+  const songStartedTrackedRef = useRef(false);
+  const songCompletedTrackedRef = useRef(false);
 
   const [playing, setPlaying] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
@@ -105,6 +108,13 @@ function PlayPage() {
   const [showBlurOverlay, setShowBlurOverlay] = useState(false);
   const showBlurOverlayRef = useRef(false);
 
+  useEffect(() => {
+    trackEvent("song_page_opened", {
+      song_id: trackId,
+      song_title: track,
+      artist,
+    });
+  }, [artist, track, trackId]);
 
   // Prevent multiple triggers in rAF loop
   const lastCompletedLineRef = useRef(-1);
@@ -140,6 +150,8 @@ function PlayPage() {
     setHitFeedback(null);
     setParticles([]);
     currentTimeRef.current = 0;
+    songStartedTrackedRef.current = false;
+    songCompletedTrackedRef.current = false;
     lastCompletedLineRef.current = -1;
     setPlaying(false);
     setAudioReady(false);
@@ -331,6 +343,18 @@ function PlayPage() {
       }
     }
   }, []);
+
+  const handleSongPlay = useCallback(() => {
+    setPlaying(true);
+
+    if (songStartedTrackedRef.current) return;
+    songStartedTrackedRef.current = true;
+    trackEvent("song_started", {
+      song_id: trackId,
+      song_title: track,
+      artist,
+    });
+  }, [artist, track, trackId]);
 
   // High precision time sync and animation loop
   const updateTime = useCallback(() => {
@@ -559,6 +583,19 @@ function PlayPage() {
   const elapsed = stats.started ? ((songEndedAt || Date.now()) - stats.started) / 1000 / 60 : 0;
   const wpm = elapsed > 0 ? Math.round(stats.correct / 5 / elapsed) : 0;
 
+  useEffect(() => {
+    if (!songEnded || songCompletedTrackedRef.current) return;
+
+    songCompletedTrackedRef.current = true;
+    trackEvent("song_completed", {
+      song_id: trackId,
+      song_title: track,
+      artist,
+      score,
+      accuracy,
+    });
+  }, [accuracy, artist, score, songEnded, track, trackId]);
+
   // Save score when song ends
   useEffect(() => {
     if (songEnded && user && !scoreSaved && !savingScore && !saveAttempted) {
@@ -636,6 +673,8 @@ function PlayPage() {
     setHitFeedback(null);
     setParticles([]);
     currentTimeRef.current = 0;
+    songStartedTrackedRef.current = false;
+    songCompletedTrackedRef.current = false;
     lastCompletedLineRef.current = -1;
     setSongEnded(false);
     setSongEndedAt(null);
@@ -796,7 +835,7 @@ function PlayPage() {
                               remainingEl.innerText = `-${formatTime(durationVal)}`;
                             }
                           }}
-                          onPlay={() => setPlaying(true)}
+                          onPlay={handleSongPlay}
                           onPause={() => setPlaying(false)}
                           onEnd={() => {
                              endSong();
