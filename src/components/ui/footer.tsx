@@ -13,7 +13,7 @@ export function Footer() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
             
             {/* Col 1: Brand details */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 md:justify-self-start">
               <h3 className="font-mono text-sm font-semibold tracking-wider text-foreground">
                 key<span className="text-primary border-b border-primary">Verse</span>
               </h3>
@@ -23,7 +23,7 @@ export function Footer() {
             </div>
 
             {/* Col 2: Navigation links */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 md:justify-self-center">
               <h4 className="font-mono text-xs font-bold tracking-wider text-muted-foreground uppercase">
                 Links
               </h4>
@@ -57,7 +57,7 @@ export function Footer() {
             </div>
 
             {/* Col 3: Dedicated APIs column */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 md:justify-self-end">
               <h4 className="font-mono text-xs font-bold tracking-wider text-muted-foreground uppercase">
                 Integrations
               </h4>
