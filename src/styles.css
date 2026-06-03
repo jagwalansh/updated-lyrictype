@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playwrite+MX:wght@100..400&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Playwrite+MX:wght@100..400&display=swap");
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
@@ -85,7 +85,7 @@ html {
   --secondary: oklch(0.84 0.045 120);
   --secondary-foreground: oklch(0.24 0.02 120);
   --muted: oklch(0.84 0.045 120);
-  --muted-foreground: oklch(0.50 0.03 120);
+  --muted-foreground: oklch(0.5 0.03 120);
   --accent: oklch(0.84 0.045 120);
   --accent-foreground: oklch(0.24 0.02 120);
   --destructive: oklch(0.577 0.245 27.325);
@@ -94,7 +94,7 @@ html {
   --input: oklch(0.68 0.035 120 / 50%);
   --ring: oklch(0.57 0.035 120);
   --correct: oklch(0.45 0.15 140);
-  --incorrect: oklch(0.55 0.20 25);
+  --incorrect: oklch(0.55 0.2 25);
   --pending: oklch(0.68 0.035 120);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -113,37 +113,37 @@ html {
 
 .dark {
   --background: oklch(0.275 0.019 258.4);
-  --foreground: oklch(0.949 0.000 3.3);
+  --foreground: oklch(0.949 0 3.3);
   --card: oklch(0.362 0.015 259.8);
-  --card-foreground: oklch(0.949 0.000 3.3);
+  --card-foreground: oklch(0.949 0 3.3);
   --popover: oklch(0.362 0.015 259.8);
-  --popover-foreground: oklch(0.949 0.000 3.3);
-  --primary: oklch(0.680 0.116 200.7);
+  --popover-foreground: oklch(0.949 0 3.3);
+  --primary: oklch(0.68 0.116 200.7);
   --primary-foreground: oklch(0.275 0.019 258.4);
   --secondary: oklch(0.362 0.015 259.8);
-  --secondary-foreground: oklch(0.949 0.000 3.3);
+  --secondary-foreground: oklch(0.949 0 3.3);
   --muted: oklch(0.362 0.015 259.8);
-  --muted-foreground: oklch(0.700 0.015 259.8);
+  --muted-foreground: oklch(0.7 0.015 259.8);
   --accent: oklch(0.362 0.015 259.8);
-  --accent-foreground: oklch(0.680 0.116 200.7);
+  --accent-foreground: oklch(0.68 0.116 200.7);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(0.48 0.015 259.8 / 60%);
   --input: oklch(0.362 0.015 259.8 / 60%);
-  --ring: oklch(0.680 0.116 200.7);
+  --ring: oklch(0.68 0.116 200.7);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: oklch(0.362 0.015 259.8);
-  --sidebar-foreground: oklch(0.949 0.000 3.3);
-  --sidebar-primary: oklch(0.680 0.116 200.7);
+  --sidebar-foreground: oklch(0.949 0 3.3);
+  --sidebar-primary: oklch(0.68 0.116 200.7);
   --sidebar-primary-foreground: oklch(0.275 0.019 258.4);
   --sidebar-accent: oklch(0.362 0.015 259.8);
-  --sidebar-accent-foreground: oklch(0.949 0.000 3.3);
+  --sidebar-accent-foreground: oklch(0.949 0 3.3);
   --sidebar-border: oklch(0.362 0.015 259.8 / 40%);
-  --sidebar-ring: oklch(0.680 0.116 200.7);
+  --sidebar-ring: oklch(0.68 0.116 200.7);
 }
 
 @layer base {
@@ -207,9 +207,9 @@ html {
 .dark .animate-shimmer {
   background: linear-gradient(
     90deg,
-    oklch(0.30 0.015 259.8) 25%,
+    oklch(0.3 0.015 259.8) 25%,
     oklch(0.35 0.015 259.8) 50%,
-    oklch(0.30 0.015 259.8) 75%
+    oklch(0.3 0.015 259.8) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.6s infinite linear;
@@ -259,8 +259,15 @@ html {
 }
 
 @keyframes cursorBlink {
-  0%, 100% { opacity: 1; border-bottom-color: var(--color-primary); }
-  50% { opacity: 0.3; border-bottom-color: transparent; }
+  0%,
+  100% {
+    opacity: 1;
+    border-bottom-color: var(--color-primary);
+  }
+  50% {
+    opacity: 0.3;
+    border-bottom-color: transparent;
+  }
 }
 
 .animate-cursor-blink {
@@ -268,13 +275,20 @@ html {
 }
 
 @keyframes missShake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-3px); }
-  75% { transform: translateX(3px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
 }
 
 .animate-miss-shake {
-  animation: missShake 0.3s cubic-bezier(.36,.07,.19,.97) both;
+  animation: missShake 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
 @keyframes floatUpFade {
