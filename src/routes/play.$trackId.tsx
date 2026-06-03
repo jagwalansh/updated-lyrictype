@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { useModal } from "@/lib/modal-context";
 import { supabase } from "@/lib/supabase";
-import { Music, RotateCcw, Trophy, Home, Award, CheckCircle2, AlertCircle, Loader2, Sparkles } from "lucide-react";
+import { Music, Pause, Play, RotateCcw, Trophy, Home, Award, CheckCircle2, AlertCircle, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 
@@ -20,6 +20,12 @@ interface Search {
   q?: string;
   from?: string;
 }
+
+type YoutubeCandidate = {
+  videoId: string;
+  authorName: string;
+  title?: string;
+};
 
 function formatTime(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -94,6 +100,7 @@ function PlayPage() {
   const currentTimeRef = useRef(0);
   const songStartedTrackedRef = useRef(false);
   const songCompletedTrackedRef = useRef(false);
+  const shiftShortcutPendingRef = useRef(false);
 
   const [playing, setPlaying] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
@@ -101,7 +108,7 @@ function PlayPage() {
 
   const [videoId, setVideoId] = useState<string | null>(null);
   const [ytAuthor, setYtAuthor] = useState<string | null>(null);
-  const [ytCandidates, setYtCandidates] = useState<Array<{ videoId: string; authorName: string }>>([]);
+  const [ytCandidates, setYtCandidates] = useState<YoutubeCandidate[]>([]);
   const [ytLoading, setYtLoading] = useState(true);
   const [songEnded, setSongEnded] = useState(false);
   const [songEndedAt, setSongEndedAt] = useState<number | null>(null);
@@ -179,11 +186,17 @@ function PlayPage() {
       try {
         setYtLoading(true);
         const searchQuery = artist + " " + track;
+        const youtubeParams = new URLSearchParams({
+          artist,
+          track,
+          q: searchQuery,
+          duration: String(duration || 0),
+        });
         
         // Fetch both lyrics and YouTube search in parallel to optimize loading speed / LCP
         const [lyricsRes, ytResponse] = await Promise.all([
           fetchSyncedLyrics(artist, track, duration),
-          fetch(`/api/youtube-search?q=${encodeURIComponent(searchQuery)}&duration=${duration || 0}`)
+          fetch(`/api/youtube-search?${youtubeParams.toString()}`)
         ]);
 
         if (cancelled) return;
@@ -468,6 +481,23 @@ function PlayPage() {
   }, [playing, updateTime]);
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Shift") {
+      if (!e.repeat) {
+        shiftShortcutPendingRef.current = true;
+      }
+      return;
+    }
+
+    if (e.shiftKey) {
+      shiftShortcutPendingRef.current = false;
+    }
+
+    if (e.key === "Tab") {
+      e.preventDefault();
+      restart();
+      return;
+    }
+
     // Prevent default actions for certain keys to avoid navigation/scrolling
     if (e.key === "Delete" || e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "Enter") {
         e.preventDefault();
@@ -577,6 +607,17 @@ function PlayPage() {
             endSong();
         }
     }
+  }
+
+  function onKeyUp(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Shift") return;
+
+    if (shiftShortcutPendingRef.current) {
+      e.preventDefault();
+      togglePlay();
+    }
+
+    shiftShortcutPendingRef.current = false;
   }
 
   const accuracy = stats.total ? Math.round((stats.correct / stats.total) * 100) : 0;
@@ -717,7 +758,7 @@ function PlayPage() {
 
   return (
     <main className="relative min-h-screen bg-background text-foreground font-sans flex flex-col items-center">
-      <Navbar />
+      <Navbar staticLayout />
 
       {/* Content Overlay */}
       <div className="relative z-20 w-full max-w-5xl px-6 pt-24 pb-8">
@@ -774,7 +815,7 @@ function PlayPage() {
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-6 items-start">
             {/* Left Column Skeleton */}
             <div className="flex flex-col gap-4">
-              <div className="relative w-full h-[360px] rounded-xl overflow-hidden border border-border/40 shadow-lg bg-card/45 backdrop-blur-md flex flex-col items-center justify-center p-5 text-center">
+              <div className="relative w-full h-[460px] lg:h-[520px] rounded-xl overflow-hidden border border-border/40 shadow-lg bg-card/45 backdrop-blur-md flex flex-col items-center justify-center p-5 text-center">
                 <Skeleton className="h-48 w-48 rounded-lg shadow-md mb-8" />
                 <div className="relative z-10 mx-auto w-64 bg-background/40 backdrop-blur-md px-6 py-4 rounded-md shadow-lg border border-white/10 flex flex-col gap-2 items-center">
                   <Skeleton className="h-6 w-40" />
@@ -786,7 +827,7 @@ function PlayPage() {
             {/* Right Column Skeleton */}
             <div className="flex flex-col gap-6 relative">
               {/* Game Area Skeleton */}
-              <div className="relative h-[360px] rounded-xl bg-card/40 border border-border/40 shadow-inner px-5 py-8 overflow-hidden flex flex-col justify-center">
+              <div className="relative h-[460px] lg:h-[520px] rounded-xl bg-card/40 border border-border/40 shadow-inner px-5 py-8 overflow-hidden flex flex-col justify-center">
                 <div className="flex flex-col gap-8">
                   {/* Past line skeleton */}
                   <div className="flex items-center gap-6 opacity-30 scale-95">
@@ -819,7 +860,7 @@ function PlayPage() {
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-6 items-start">
             {/* Left Column: YouTube Video / Song Information Card */}
             <div className="flex flex-col gap-4">
-              <div className="relative w-full h-[360px] rounded-xl overflow-hidden border border-border/40 shadow-lg bg-black flex flex-col items-center justify-center p-5 text-center">
+              <div className="relative w-full h-[460px] lg:h-[520px] rounded-xl overflow-hidden border border-border/40 shadow-lg bg-black flex flex-col items-center justify-center p-5 text-center">
                 {videoId ? (
                   <>
                     <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden rounded-xl bg-black">
@@ -961,7 +1002,7 @@ function PlayPage() {
 
                   {/* Game Area */}
                   <div
-                    className="relative h-[360px] overflow-hidden rounded-xl border border-border/40 bg-card/40 shadow-inner"
+                    className="relative h-[460px] lg:h-[520px] overflow-hidden rounded-xl border border-border/40 bg-card/40 shadow-inner"
                     onClick={() => inputRef.current?.focus()}
                   >
                     <div
@@ -1046,7 +1087,11 @@ function PlayPage() {
                             onClick={restart}
                             className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground font-semibold rounded-xl hover:opacity-95 shadow-sm transition-all cursor-pointer text-sm"
                           >
-                            <RotateCcw className="w-4 h-4" /> Play Again
+                            <RotateCcw className="w-4 h-4" />
+                            <span>Play Again</span>
+                            <kbd className="ml-1 rounded border border-primary-foreground/30 bg-primary-foreground/10 px-1.5 py-0.5 font-mono text-[10px] font-bold leading-none text-primary-foreground/85">
+                              Tab
+                            </kbd>
                           </button>
                           <Link
                             to="/leaderboard"
@@ -1197,8 +1242,8 @@ function PlayPage() {
 
                     {!songEnded && (
                       <>
-                        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-16 bg-gradient-to-b from-background/85 via-background/35 to-transparent backdrop-blur-[2px]" />
-                        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-16 bg-gradient-to-t from-background/85 via-background/35 to-transparent backdrop-blur-[2px]" />
+                        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-24 bg-gradient-to-b from-background via-background/70 via-55% to-transparent backdrop-blur-md" />
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-24 bg-gradient-to-t from-background via-background/70 via-55% to-transparent backdrop-blur-md" />
                       </>
                     )}
                   </div>
@@ -1208,15 +1253,23 @@ function PlayPage() {
                     <button
                       onClick={togglePlay}
                       disabled={!videoId || !audioReady}
-                      className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-40 cursor-pointer flex items-center justify-center animate-pulse-subtle"
+                      className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-40 cursor-pointer flex items-center justify-center gap-2 animate-pulse-subtle"
                     >
-                      {playing ? "Pause" : "Play"}
+                      {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                      <span>{playing ? "Pause" : "Play"}</span>
+                      <kbd className="ml-1 rounded border border-primary-foreground/30 bg-primary-foreground/10 px-1.5 py-0.5 font-mono text-[10px] font-bold leading-none text-primary-foreground/85">
+                        Shift
+                      </kbd>
                     </button>
                     <button
                       onClick={restart}
-                      className="rounded-lg border border-border/40 bg-card/45 backdrop-blur-sm py-2.5 px-6 text-sm font-semibold hover:bg-muted transition-colors cursor-pointer"
+                      className="rounded-lg border border-border/40 bg-card/45 backdrop-blur-sm py-2.5 px-5 text-sm font-semibold hover:bg-muted transition-colors cursor-pointer flex items-center justify-center gap-2"
                     >
-                      Restart
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Restart</span>
+                      <kbd className="rounded border border-border/50 bg-background/60 px-1.5 py-0.5 font-mono text-[10px] font-bold leading-none text-muted-foreground">
+                        Tab
+                      </kbd>
                     </button>
                   </div>
 
@@ -1230,6 +1283,10 @@ function PlayPage() {
                     value=""
                     onChange={() => {}}
                     onKeyDown={onKeyDown}
+                    onKeyUp={onKeyUp}
+                    onBlur={() => {
+                      shiftShortcutPendingRef.current = false;
+                    }}
                     onPaste={(e) => e.preventDefault()}
                     autoFocus
                     spellCheck={false}

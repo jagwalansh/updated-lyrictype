@@ -53,7 +53,11 @@ const LeaderboardIcon = ({ className }: { className?: string }) => {
   );
 };
 
-export function Navbar() {
+type NavbarProps = {
+  staticLayout?: boolean;
+};
+
+export function Navbar({ staticLayout = false }: NavbarProps) {
   const { modalOpen, setModalOpen } = useModal();
   const { user, loading: authLoading } = useAuth();
   const [accountOpen, setAccountOpen] = useState(false);
@@ -73,6 +77,19 @@ export function Navbar() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (staticLayout) {
+      const handleResize = () => {
+        setWindowWidth(window.innerWidth);
+      };
+
+      setIsScrolled(false);
+      handleResize();
+      window.addEventListener("resize", handleResize);
+
+      return () => {
+        window.removeEventListener("resize", handleResize);
+      };
+    }
 
     const handleScroll = () => {
       const nextIsScrolled = window.scrollY > 20;
@@ -96,12 +113,13 @@ export function Navbar() {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleResize);
     };
-  }, []);
+  }, [staticLayout]);
 
   const baseWidth = Math.min(896, windowWidth - 32);
   const shrinkWidth = Math.max(360, baseWidth * 0.54);
   const attachedWidth = Math.min(1200, windowWidth - 32);
-  const targetWidth = isScrolled ? shrinkWidth : attachedWidth;
+  const targetWidth = !staticLayout && isScrolled ? shrinkWidth : attachedWidth;
+  const navIsScrolled = !staticLayout && isScrolled;
 
   const toggleTheme = (event: React.MouseEvent) => {
     const isDarkNow = document.documentElement.classList.contains("dark");
@@ -169,10 +187,10 @@ export function Navbar() {
       <motion.nav
         initial={false}
         animate={{
-          y: isScrolled ? 20 : 0,
+          y: navIsScrolled ? 20 : 0,
           width: targetWidth,
-          borderTopLeftRadius: isScrolled ? 16 : 0,
-          borderTopRightRadius: isScrolled ? 16 : 0,
+          borderTopLeftRadius: navIsScrolled ? 16 : 0,
+          borderTopRightRadius: navIsScrolled ? 16 : 0,
           borderBottomLeftRadius: 16,
           borderBottomRightRadius: 16,
         }}
@@ -197,16 +215,16 @@ export function Navbar() {
           },
         }}
         className={`liquid-glass-navbar sticky top-0 z-50 mx-auto mb-8 text-md flex items-center overflow-hidden h-[52px] ${
-          isScrolled ? "is-scrolled" : ""
+          navIsScrolled ? "is-scrolled" : ""
         }`}
       >
         <div
           className={`relative z-10 flex w-full items-center justify-between gap-4 px-6 py-2.5 ${
-            isScrolled ? "" : "mx-auto max-w-6xl"
+            navIsScrolled ? "" : "mx-auto max-w-6xl"
           }`}
         >
           <Link to="/" className="font-mono text-xl font-medium tracking-tight hover:opacity-90 transition-opacity shrink-0">
-            <motion.span className="flex items-baseline" animate={isScrolled ? "compact" : "full"} initial={false}>
+            <motion.span className="flex items-baseline" animate={navIsScrolled ? "compact" : "full"} initial={false}>
               <span>k</span>
               <motion.span
                 variants={{
@@ -214,8 +232,8 @@ export function Navbar() {
                   compact: { width: 0, opacity: 0 },
                 }}
                 transition={{
-                  width: { delay: isScrolled ? 0.26 : 0, duration: 0.34, ease: "easeOut" },
-                  opacity: { delay: isScrolled ? 0 : 0.28, duration: 0.24, ease: "easeOut" },
+                  width: { delay: navIsScrolled ? 0.26 : 0, duration: 0.34, ease: "easeOut" },
+                  opacity: { delay: navIsScrolled ? 0 : 0.28, duration: 0.24, ease: "easeOut" },
                 }}
                 className="overflow-hidden"
               >
@@ -230,8 +248,8 @@ export function Navbar() {
                   compact: { width: 0, opacity: 0 },
                 }}
                 transition={{
-                  width: { delay: isScrolled ? 0.26 : 0, duration: 0.34, ease: "easeOut" },
-                  opacity: { delay: isScrolled ? 0 : 0.28, duration: 0.24, ease: "easeOut" },
+                  width: { delay: navIsScrolled ? 0.26 : 0, duration: 0.34, ease: "easeOut" },
+                  opacity: { delay: navIsScrolled ? 0 : 0.28, duration: 0.24, ease: "easeOut" },
                 }}
                 className="overflow-hidden border-b-2 border-primary text-primary"
               >

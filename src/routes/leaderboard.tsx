@@ -26,6 +26,18 @@ async function fetchLeaderboard(period: "daily" | "weekly" | "alltime") {
   return data || [];
 }
 
+const DEBUG_FOURTH_PLACE_ROW = {
+  user_id: "debug-fourth-place-user",
+  song_id: "debug-fourth-place-song",
+  username: "debug_user_4",
+  track: "Debug Sync Run",
+  artist: "KeyVerse",
+  art_url: "",
+  best_score: 4321,
+  best_accuracy: 72.4,
+  isDebug: true,
+};
+
 // Custom Premium SVG Rank Badge Component
 const RankBadge = ({ rank }: { rank: number }) => {
   if (rank === 1) {
@@ -90,7 +102,12 @@ function LeaderboardPage() {
         }
       });
 
-    return Array.from(bestScoreByUser.values()).slice(0, 50);
+    const rankedScores = Array.from(bestScoreByUser.values()).slice(0, 50);
+    return [
+      ...rankedScores.slice(0, 3),
+      DEBUG_FOURTH_PLACE_ROW,
+      ...rankedScores.slice(3, 49),
+    ];
   }, [dbScores, isLoading, error]);
 
   const periodOptions = [
@@ -198,18 +215,14 @@ function LeaderboardPage() {
                     {scores.map((row: any, index: number) => {
                       const rank = index + 1;
                       
-                      let rankStyle = "text-muted-foreground font-mono font-medium";
-                      let rowBgStyle = "hover:bg-muted/15 border-b border-border/10";
+                      let rowBgStyle = "bg-card/20 hover:bg-card/35 border-b border-border/10";
 
                       if (rank === 1) {
-                        rankStyle = "text-amber-400 font-extrabold";
-                        rowBgStyle = "bg-amber-400/5 hover:bg-amber-400/10 border-b border-amber-400/15";
+                        rowBgStyle = "bg-yellow-400/12 hover:bg-yellow-400/18 border-b border-yellow-400/25";
                       } else if (rank === 2) {
-                        rankStyle = "text-slate-300 font-extrabold";
-                        rowBgStyle = "bg-slate-300/5 hover:bg-slate-300/10 border-b border-slate-300/15";
+                        rowBgStyle = "bg-sky-400/12 hover:bg-sky-400/18 border-b border-sky-400/25";
                       } else if (rank === 3) {
-                        rankStyle = "text-amber-600/80 font-extrabold";
-                        rowBgStyle = "bg-amber-600/5 hover:bg-amber-600/10 border-b border-amber-600/15";
+                        rowBgStyle = "bg-orange-500/12 hover:bg-orange-500/18 border-b border-orange-500/25";
                       }
 
                       return (

@@ -108,6 +108,326 @@ function cleanArtist(artist: string): string {
     .trim();
 }
 
+type YoutubeVideoCandidate = {
+  videoId: string;
+  title?: string;
+  author?: string;
+  seconds?: number;
+  channelId?: string;
+  channelHandle?: string;
+  verified?: boolean;
+  sourceQuery?: string;
+};
+
+type ScoredYoutubeVideo = {
+  video: YoutubeVideoCandidate;
+  score: number;
+};
+
+function normalizeMusicText(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function compactMusicText(value: string): string {
+  return normalizeMusicText(value).replace(/\s+/g, "");
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+}
+
+function getArtistAliases(artist: string): string[] {
+  const cleaned = cleanArtist(artist);
+  const aliases = [cleaned];
+  const artistParts = cleaned
+    .split(/\s*(?:&|\+|,|\/|\band\b|\bx\b)\s*/i)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  aliases.push(...artistParts);
+  aliases.push(...artistParts.map((part) => part.replace(/^the\s+/i, "")));
+  return uniqueStrings(aliases);
+}
+
+function textIncludesMusicValue(text: string, value: string): boolean {
+  const normalizedText = normalizeMusicText(text);
+  const compactText = compactMusicText(text);
+  const normalizedValue = normalizeMusicText(value);
+  const compactValue = compactMusicText(value);
+
+  if (!normalizedValue || !compactValue) return false;
+  return normalizedText.includes(normalizedValue) || compactText.includes(compactValue);
+}
+
+function textIncludesAnyArtistAlias(text: string, artistAliases: string[]): boolean {
+  return artistAliases.some((alias) => textIncludesMusicValue(text, alias));
+}
+
+function hasNormalizedPhrase(text: string, phrase: string): boolean {
+  const normalizedText = ` ${normalizeMusicText(text)} `;
+  const normalizedPhrase = normalizeMusicText(phrase);
+  return normalizedPhrase ? normalizedText.includes(` ${normalizedPhrase} `) : false;
+}
+
+function parseYoutubeDuration(durationText: string): number | undefined {
+  const parts = durationText.split(":").map((part) => Number(part));
+  if (!parts.length || parts.some((part) => Number.isNaN(part))) {
+    return undefined;
+  }
+
+  const seconds = parts.reduce((total, part) => total * 60 + part, 0);
+  return seconds > 0 ? seconds : undefined;
+}
+
+function readTextRuns(value: any): string {
+  if (value?.simpleText) return String(value.simpleText);
+  if (Array.isArray(value?.runs)) {
+    return value.runs.map((run: any) => run?.text ?? "").join("");
+  }
+  return "";
+}
+
+function hasVerifiedYoutubeBadge(info: any): boolean {
+  const badges = [...(info.ownerBadges ?? []), ...(info.badges ?? [])];
+  return badges.some((badge: any) => {
+    const renderer = badge?.metadataBadgeRenderer;
+    const text = `${renderer?.label ?? ""} ${renderer?.tooltip ?? ""} ${renderer?.style ?? ""}`.toLowerCase();
+    return text.includes("verified") || text.includes("official artist");
+  });
+}
+
+function collectYoutubeVideoRenderers(value: unknown, output: any[] = []): any[] {
+  if (!value || typeof value !== "object" || output.length >= 60) {
+    return output;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectYoutubeVideoRenderers(item, output);
+      if (output.length >= 60) break;
+    }
+    return output;
+  }
+
+  const record = value as Record<string, unknown>;
+  if (record.videoRenderer && typeof record.videoRenderer === "object") {
+    output.push(record.videoRenderer);
+  }
+
+  for (const child of Object.values(record)) {
+    collectYoutubeVideoRenderers(child, output);
+    if (output.length >= 60) break;
+  }
+
+  return output;
+}
+
+function parseYoutubeVideoRenderer(info: any, sourceQuery: string): YoutubeVideoCandidate | null {
+  if (!info?.videoId) return null;
+
+  const ownerRun =
+    info.ownerText?.runs?.[0] ??
+    info.longBylineText?.runs?.[0] ??
+    info.shortBylineText?.runs?.[0];
+
+  const durationText = readTextRuns(info.lengthText);
+
+  return {
+    videoId: String(info.videoId),
+    title: readTextRuns(info.title),
+    author: readTextRuns(info.ownerText) || readTextRuns(info.longBylineText) || readTextRuns(info.shortBylineText),
+    seconds: durationText ? parseYoutubeDuration(durationText) : undefined,
+    channelId: ownerRun?.navigationEndpoint?.browseEndpoint?.browseId,
+    channelHandle: ownerRun?.navigationEndpoint?.browseEndpoint?.canonicalBaseUrl,
+    verified: hasVerifiedYoutubeBadge(info),
+    sourceQuery,
+  };
+}
+
+function parseYoutubeSearchHtml(html: string, sourceQuery: string): YoutubeVideoCandidate[] {
+  const videos: YoutubeVideoCandidate[] = [];
+  const dataMatch = html.match(/(?:ytInitialData\s*=\s*|window\["ytInitialData"\]\s*=\s*)({.+?});\s*<\/script>/);
+
+  if (dataMatch) {
+    try {
+      const data = JSON.parse(dataMatch[1]);
+      const primaryContents =
+        data.contents?.twoColumnSearchResultsRenderer?.primaryContents ??
+        data.contents?.sectionListRenderer ??
+        data.contents;
+      const renderers = collectYoutubeVideoRenderers(primaryContents);
+
+      for (const renderer of renderers) {
+        const video = parseYoutubeVideoRenderer(renderer, sourceQuery);
+        if (video) videos.push(video);
+      }
+    } catch (err) {
+      console.error("Error parsing ytInitialData JSON:", err);
+    }
+  }
+
+  if (videos.length === 0) {
+    const videoIdRegex = /"videoId":"([^"]+)"/g;
+    const seen = new Set<string>();
+    let match: RegExpExecArray | null;
+    while ((match = videoIdRegex.exec(html)) !== null) {
+      const id = match[1];
+      if (id && id.length === 11 && !seen.has(id)) {
+        seen.add(id);
+        videos.push({ videoId: id, sourceQuery });
+      }
+    }
+  }
+
+  return videos;
+}
+
+async function fetchYoutubeSearchResults(searchQuery: string): Promise<YoutubeVideoCandidate[]> {
+  const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`;
+  const ytRes = await fetch(searchUrl, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+      "Accept-Language": "en-US,en;q=0.9",
+    },
+  });
+
+  if (!ytRes.ok) {
+    throw new Error(`YouTube request failed with status: ${ytRes.status}`);
+  }
+
+  return parseYoutubeSearchHtml(await ytRes.text(), searchQuery);
+}
+
+function isLiveYoutubeVersion(video: YoutubeVideoCandidate, track: string): boolean {
+  const title = `${video.title ?? ""} ${video.author ?? ""}`;
+  const cleanedTrack = cleanTitle(track);
+  const livePhrases = [
+    "live at",
+    "live from",
+    "live on",
+    "live performance",
+    "live session",
+    "concert",
+    "festival",
+    "tour",
+    "performance",
+    "jingle ball",
+    "tiny desk",
+    "bbc radio",
+    "radio 1",
+    "mtv",
+    "grammy",
+    "late show",
+    "tonight show",
+    "jimmy fallon",
+    "jimmy kimmel",
+    "colbert",
+    "vevo live",
+  ];
+
+  if (livePhrases.some((phrase) => hasNormalizedPhrase(title, phrase) && !hasNormalizedPhrase(cleanedTrack, phrase))) {
+    return true;
+  }
+
+  return hasNormalizedPhrase(title, "live") && !hasNormalizedPhrase(cleanedTrack, "live");
+}
+
+function scoreYoutubeVideo(
+  video: YoutubeVideoCandidate,
+  artist: string,
+  track: string,
+  expectedDuration: number,
+): number {
+  const title = video.title ?? "";
+  const author = video.author ?? "";
+  const cleanedTrack = cleanTitle(track);
+  const artistAliases = getArtistAliases(artist);
+  const normalizedTitle = normalizeMusicText(title);
+  const normalizedAuthor = normalizeMusicText(author);
+  const normalizedSourceQuery = normalizeMusicText(video.sourceQuery ?? "");
+  const trackMatchesTitle = textIncludesMusicValue(title, cleanedTrack);
+  const authorMatchesArtist = textIncludesAnyArtistAlias(author, artistAliases);
+  const titleMatchesArtist = textIncludesAnyArtistAlias(title, artistAliases);
+
+  let score = 0;
+
+  if (trackMatchesTitle) score += 28;
+  else if (title) score -= 30;
+
+  if (authorMatchesArtist) score += 30;
+  if (titleMatchesArtist) score += 8;
+  if (video.verified && authorMatchesArtist) score += 8;
+
+  if (normalizedAuthor.includes("topic") && authorMatchesArtist) score += 24;
+  if (compactMusicText(author).endsWith("vevo") && authorMatchesArtist) score += 18;
+  if (normalizedAuthor.includes("official") && authorMatchesArtist) score += 12;
+
+  if (normalizedTitle.includes("official audio")) score += 22;
+  else if (normalizedTitle.includes("audio")) score += 10;
+  if (normalizedTitle.includes("visualizer")) score += 7;
+  if (normalizedTitle.includes("official music video") || normalizedTitle.includes("official video")) score += 4;
+
+  if (normalizedSourceQuery.includes("official audio")) score += 4;
+  if (normalizedSourceQuery.includes("topic")) score += 3;
+
+  const trackNorm = normalizeMusicText(cleanedTrack);
+  const versionPenalties: Array<[string, number]> = [
+    ["karaoke", 45],
+    ["sped up", 40],
+    ["slowed", 40],
+    ["nightcore", 40],
+    ["reaction", 40],
+    ["cover", 34],
+    ["instrumental", 34],
+    ["remix", 30],
+    ["edit audio", 30],
+    ["fan edit", 30],
+    ["8d audio", 28],
+    ["acoustic", 20],
+    ["live performance", 20],
+    ["live at", 20],
+    ["live from", 20],
+  ];
+
+  for (const [term, penalty] of versionPenalties) {
+    if (normalizedTitle.includes(term) && !trackNorm.includes(term)) {
+      score -= penalty;
+    }
+  }
+
+  if (normalizedTitle.includes("lyric video")) score -= 8;
+  else if (normalizedTitle.includes("lyrics") && !trackNorm.includes("lyrics")) score -= 18;
+
+  if (video.seconds && expectedDuration > 0) {
+    const diff = Math.abs(video.seconds - expectedDuration);
+    if (diff <= 2) score += 24;
+    else if (diff <= 5) score += 18;
+    else if (diff <= 8) score += 12;
+    else if (diff <= 15) score += 6;
+    else if (diff > 45) score -= 45;
+    else if (diff > 25) score -= 22;
+  } else if (expectedDuration > 0) {
+    score -= 6;
+  }
+
+  if (video.seconds && (video.seconds < 30 || video.seconds > 900)) {
+    score -= 50;
+  }
+
+  if (!title || !author) {
+    score -= 14;
+  }
+
+  return score;
+}
+
 const lyricsCache = new Map<string, { data: any, timestamp: number }>();
 const youtubeCache = new Map<string, { data: any, timestamp: number }>();
 const LYRICS_CACHE_TTL_SECONDS = 30 * 60;
@@ -453,18 +773,25 @@ Sitemap: https://keyverse.me/sitemap.xml`;
 
       if (url.pathname === "/api/youtube-search") {
         const rawQuery = url.searchParams.get("q");
+        const rawArtist = url.searchParams.get("artist");
+        const rawTrack = url.searchParams.get("track");
         const query = rawQuery ? rawQuery.replace(/\+/g, " ") : null;
+        const artistParam = rawArtist ? rawArtist.replace(/\+/g, " ") : null;
+        const trackParam = rawTrack ? rawTrack.replace(/\+/g, " ") : null;
         const durationParam = url.searchParams.get("duration");
         const expectedDuration = durationParam ? parseInt(durationParam, 10) : 0;
+        const baseQuery = query || [artistParam, trackParam].filter(Boolean).join(" ").trim();
+        const rankingArtist = artistParam || query || "";
+        const rankingTrack = trackParam || query || "";
 
-        if (!query) {
+        if (!baseQuery) {
           return new Response(JSON.stringify({ error: "Missing query" }), {
             status: 400,
             headers: { "content-type": "application/json" },
           });
         }
 
-        const cacheKey = `v5:${query}:${expectedDuration}`;
+        const cacheKey = `v8:${rankingArtist}:${rankingTrack}:${baseQuery}:${expectedDuration}`.toLowerCase();
         const cached = youtubeCache.get(cacheKey);
         if (cached && Date.now() - cached.timestamp < YOUTUBE_CACHE_TTL_SECONDS * 1000) {
           return new Response(JSON.stringify(cached.data), {
@@ -488,111 +815,61 @@ Sitemap: https://keyverse.me/sitemap.xml`;
         }
 
         try {
-          // Prefer clean audio uploads so the embedded video does not duplicate the game's lyrics.
-          // Duration ranking below keeps the selected result close to the synced lyrics.
-          const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${query} official audio`)}`;
-          const ytRes = await fetch(searchUrl, {
-            headers: {
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
-              "Accept-Language": "en-US,en;q=0.9",
-            }
-          });
+          const cleanedArtist = cleanArtist(rankingArtist);
+          const cleanedTrack = cleanTitle(rankingTrack);
+          const searchTerms = artistParam && trackParam
+            ? [
+                `${cleanedArtist} ${cleanedTrack} official audio`,
+                `${cleanedArtist} ${cleanedTrack} topic`,
+                `${cleanedArtist} ${cleanedTrack}`,
+              ]
+            : [
+                `${baseQuery} official audio`,
+                `${baseQuery} topic`,
+                baseQuery,
+              ];
 
-          if (!ytRes.ok) {
-            throw new Error(`YouTube request failed with status: ${ytRes.status}`);
-          }
-
-          const html = await ytRes.text();
-          const videos: Array<{ videoId: string; title?: string; author?: string; seconds?: number }> = [];
-
-          // Try parsing initial data first
-          const dataMatch = html.match(/(?:ytInitialData\s*=\s*|window\["ytInitialData"\]\s*=\s*)({.+?});\s*<\/script>/);
-          if (dataMatch) {
-            try {
-              const data = JSON.parse(dataMatch[1]);
-              const contents = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents;
-              const results = contents?.find((c: any) => c.itemSectionRenderer)?.itemSectionRenderer?.contents || [];
-              for (const item of results) {
-                const info = item.videoRenderer;
-                if (info && info.videoId) {
-                  const title = info.title?.runs?.[0]?.text || "";
-                  const author = info.ownerText?.runs?.[0]?.text || "";
-                  const durationText = info.lengthText?.simpleText || "";
-                  const parts = durationText.split(":").map(Number);
-                  let seconds = 0;
-                  if (parts.length === 2) seconds = parts[0] * 60 + parts[1];
-                  else if (parts.length === 3) seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
-                  
-                  videos.push({
-                    videoId: info.videoId,
-                    title,
-                    author,
-                    seconds
-                  });
-                }
+          const searchResultGroups = await Promise.all(
+            uniqueStrings(searchTerms).map(async (searchTerm) => {
+              try {
+                return await fetchYoutubeSearchResults(searchTerm);
+              } catch (error) {
+                console.error(`YouTube search failed for ${searchTerm}:`, error);
+                return [];
               }
-            } catch (err) {
-              console.error("Error parsing ytInitialData JSON:", err);
+            }),
+          );
+
+          const videosById = new Map<string, YoutubeVideoCandidate>();
+          for (const video of searchResultGroups.flat()) {
+            const existing = videosById.get(video.videoId);
+            if (!existing) {
+              videosById.set(video.videoId, video);
+              continue;
+            }
+
+            const existingScore = scoreYoutubeVideo(existing, rankingArtist, rankingTrack, expectedDuration);
+            const nextScore = scoreYoutubeVideo(video, rankingArtist, rankingTrack, expectedDuration);
+            if (nextScore > existingScore) {
+              videosById.set(video.videoId, video);
             }
           }
 
-          // Fallback: extract raw video IDs via Regex if JSON parsing yields nothing
+          const videos = [...videosById.values()].filter((video) => !isLiveYoutubeVersion(video, rankingTrack));
           if (videos.length === 0) {
-            const videoIdRegex = /"videoId":"([^"]+)"/g;
-            const seen = new Set<string>();
-            let m;
-            while ((m = videoIdRegex.exec(html)) !== null) {
-              const id = m[1];
-              if (id && id.length === 11 && !seen.has(id)) {
-                seen.add(id);
-                videos.push({ videoId: id });
-              }
-            }
-          }
-
-          if (videos.length === 0) {
-            return new Response(JSON.stringify({ error: "Could not find a YouTube video for this track" }), {
+            return new Response(JSON.stringify({ error: "Could not find a non-live YouTube video for this track" }), {
               status: 404,
               headers: { "content-type": "application/json" },
             });
           }
 
-          const blockedTitleTerms = [
-            "lyrics",
-            "lyric video",
-            "karaoke",
-            "sped up",
-            "slowed",
-            "nightcore",
-            "edit",
-            "edit audio",
-            "fan edit",
-            "status",
-            "remix",
-            "cover",
-            "reaction",
-          ];
-          const cleanVideos = videos.filter((video) => {
-            const normalizedTitle = video.title?.toLowerCase() || "";
-            return !blockedTitleTerms.some((term) => normalizedTitle.includes(term));
-          });
-          const rankedVideos = [...cleanVideos].sort((a, b) => {
-            const rank = (video: typeof a) => {
-              const normalizedTitle = video.title?.toLowerCase() || "";
-              const normalizedAuthor = video.author?.toLowerCase() || "";
-              let score = 0;
-              if (normalizedTitle.includes("official audio")) score += 5;
-              if (normalizedTitle.includes("official video") || normalizedTitle.includes("official music video")) score += 4;
-              if (normalizedAuthor.includes(" - topic")) score += 3;
-              return score;
-            };
-            const qualityDiff = rank(b) - rank(a);
-            if (qualityDiff !== 0 || expectedDuration <= 0) return qualityDiff;
-
-            const aDiff = a.seconds === undefined ? Infinity : Math.abs(a.seconds - expectedDuration);
-            const bDiff = b.seconds === undefined ? Infinity : Math.abs(b.seconds - expectedDuration);
-            return aDiff - bDiff;
-          });
+          const scoredVideos: ScoredYoutubeVideo[] = videos
+            .map((video) => ({
+              video,
+              score: scoreYoutubeVideo(video, rankingArtist, rankingTrack, expectedDuration),
+            }))
+            .sort((a, b) => b.score - a.score);
+          const rankedVideos = scoredVideos.map(({ video }) => video);
 
           if (rankedVideos.length === 0) {
             return new Response(JSON.stringify({ error: "Could not find a clean original YouTube upload for this track" }), {
@@ -611,10 +888,12 @@ Sitemap: https://keyverse.me/sitemap.xml`;
             .map((video) => ({
               videoId: video.videoId,
               authorName: video.author || "YouTube",
+              title: video.title,
             }));
           const data = {
             videoId: bestVideo.videoId,
             authorName: bestVideo.author || "YouTube",
+            title: bestVideo.title,
             candidates,
           };
           youtubeCache.set(cacheKey, { data, timestamp: Date.now() });
