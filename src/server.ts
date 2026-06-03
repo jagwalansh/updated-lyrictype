@@ -8,6 +8,7 @@ import { GET as leaderboardHandler } from "./server/api/leaderboard";
 import { GET as profileHandler } from "./server/api/profile";
 import { GET as userBestHandler } from "./server/api/user-best";
 import { POST as contactHandler } from "./server/api/contact";
+import type { ContactEnv } from "./server/api/contact";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -18,7 +19,7 @@ type KVNamespace = {
   put: (key: string, value: string, options?: { expirationTtl?: number }) => Promise<void>;
 };
 
-type WorkerEnv = {
+type WorkerEnv = ContactEnv & {
   API_CACHE?: KVNamespace;
 };
 
@@ -119,6 +120,51 @@ type YoutubeVideoCandidate = {
   sourceQuery?: string;
 };
 
+type YoutubeTextRun = {
+  text?: string;
+  navigationEndpoint?: {
+    browseEndpoint?: {
+      browseId?: string;
+      canonicalBaseUrl?: string;
+    };
+  };
+};
+
+type YoutubeText = {
+  simpleText?: string;
+  runs?: YoutubeTextRun[];
+};
+
+type YoutubeBadge = {
+  metadataBadgeRenderer?: {
+    label?: string;
+    tooltip?: string;
+    style?: string;
+  };
+};
+
+type YoutubeVideoRenderer = {
+  videoId?: string;
+  title?: YoutubeText;
+  ownerText?: YoutubeText;
+  longBylineText?: YoutubeText;
+  shortBylineText?: YoutubeText;
+  lengthText?: YoutubeText;
+  ownerBadges?: YoutubeBadge[];
+  badges?: YoutubeBadge[];
+};
+
+type LyricsCacheData = {
+  syncedLyrics?: string | null;
+};
+
+type YoutubeSearchData = {
+  videoId: string;
+  authorName: string;
+  title?: string;
+  candidates?: Array<{ videoId: string; authorName: string; title?: string }>;
+};
+
 type ScoredYoutubeVideo = {
   video: YoutubeVideoCandidate;
   score: number;
@@ -186,24 +232,24 @@ function parseYoutubeDuration(durationText: string): number | undefined {
   return seconds > 0 ? seconds : undefined;
 }
 
-function readTextRuns(value: any): string {
+function readTextRuns(value?: YoutubeText): string {
   if (value?.simpleText) return String(value.simpleText);
   if (Array.isArray(value?.runs)) {
-    return value.runs.map((run: any) => run?.text ?? "").join("");
+    return value.runs.map((run) => run.text ?? "").join("");
   }
   return "";
 }
 
-function hasVerifiedYoutubeBadge(info: any): boolean {
+function hasVerifiedYoutubeBadge(info: YoutubeVideoRenderer): boolean {
   const badges = [...(info.ownerBadges ?? []), ...(info.badges ?? [])];
-  return badges.some((badge: any) => {
+  return badges.some((badge) => {
     const renderer = badge?.metadataBadgeRenderer;
     const text = `${renderer?.label ?? ""} ${renderer?.tooltip ?? ""} ${renderer?.style ?? ""}`.toLowerCase();
     return text.includes("verified") || text.includes("official artist");
   });
 }
 
-function collectYoutubeVideoRenderers(value: unknown, output: any[] = []): any[] {
+function collectYoutubeVideoRenderers(value: unknown, output: YoutubeVideoRenderer[] = []): YoutubeVideoRenderer[] {
   if (!value || typeof value !== "object" || output.length >= 60) {
     return output;
   }
@@ -218,7 +264,7 @@ function collectYoutubeVideoRenderers(value: unknown, output: any[] = []): any[]
 
   const record = value as Record<string, unknown>;
   if (record.videoRenderer && typeof record.videoRenderer === "object") {
-    output.push(record.videoRenderer);
+    output.push(record.videoRenderer as YoutubeVideoRenderer);
   }
 
   for (const child of Object.values(record)) {
@@ -229,7 +275,7 @@ function collectYoutubeVideoRenderers(value: unknown, output: any[] = []): any[]
   return output;
 }
 
-function parseYoutubeVideoRenderer(info: any, sourceQuery: string): YoutubeVideoCandidate | null {
+function parseYoutubeVideoRenderer(info: YoutubeVideoRenderer, sourceQuery: string): YoutubeVideoCandidate | null {
   if (!info?.videoId) return null;
 
   const ownerRun =
@@ -428,8 +474,8 @@ function scoreYoutubeVideo(
   return score;
 }
 
-const lyricsCache = new Map<string, { data: any, timestamp: number }>();
-const youtubeCache = new Map<string, { data: any, timestamp: number }>();
+const lyricsCache = new Map<string, { data: LyricsCacheData, timestamp: number }>();
+const youtubeCache = new Map<string, { data: YoutubeSearchData, timestamp: number }>();
 const LYRICS_CACHE_TTL_SECONDS = 30 * 60;
 const YOUTUBE_CACHE_TTL_SECONDS = 6 * 60 * 60;
 
@@ -546,7 +592,7 @@ Sitemap: https://keyverse.me/sitemap.xml`;
         }
 
         const sharedCacheKey = `lyrics:v2:${cacheKey}`;
-        const sharedCached = await getSharedCache<any>(env, sharedCacheKey);
+        const sharedCached = await getSharedCache<LyricsCacheData>(env, sharedCacheKey);
         if (sharedCached?.syncedLyrics) {
           lyricsCache.set(cacheKey, { data: sharedCached, timestamp: Date.now() });
           return new Response(JSON.stringify(sharedCached), {
@@ -903,9 +949,10 @@ Sitemap: https://keyverse.me/sitemap.xml`;
             status: 200,
             headers: { "content-type": "application/json" },
           });
-        } catch (error: any) {
+        } catch (error) {
           console.error("YouTube search error:", error);
-          return new Response(JSON.stringify({ error: error.message || "Failed to search YouTube" }), {
+          const message = error instanceof Error ? error.message : "Failed to search YouTube";
+          return new Response(JSON.stringify({ error: message }), {
             status: 500,
             headers: { "content-type": "application/json" },
           });

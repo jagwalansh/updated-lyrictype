@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
 import { AnimatePresence, motion } from "motion/react";
-import { Mail, Github, Loader2, Send, CheckCircle, AlertCircle, X, ArrowLeft } from "lucide-react";
+import { Mail, Github, Heart, Loader2, Send, CheckCircle, AlertCircle, X, ArrowLeft } from "lucide-react";
 import { DeflectCard } from "@/components/ui/deflect-card";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useState } from "react";
@@ -201,6 +201,8 @@ export const Route = createFileRoute("/support")({
   component: Support,
 });
 
+const PATREON_URL = "https://www.patreon.com/cw/playKeyverse";
+
 function Support() {
   const [contactOpen, setContactOpen] = useState(false);
 
@@ -216,10 +218,10 @@ function Support() {
               Contact
             </div>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-              Bug Reports & Feedback
+              Support and Feedback
             </h1>
             <p className="text-xs text-muted-foreground mt-2 leading-relaxed max-w-xl">
-              Found an issue or have an idea? Send us a message or open a GitHub issue.
+              Found an issue, have an idea, or want to support KeyVerse? Send us a message, open a GitHub issue, or become a patron.
             </p>
           </div>
           <Link
@@ -234,7 +236,7 @@ function Support() {
         {/* Content Grid */}
         <div className="grid grid-cols-1 gap-10 mt-2">
 
-          {/* Card 1: Bug Reports & Feedback */}
+          {/* Card 1: Support and Feedback */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -249,7 +251,7 @@ function Support() {
 
               <div className="relative z-10 text-left ">
                 <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
-                  Report a Bug & Feedback
+                  Support and Feedback
                 </h2>
                 <p className="text-sm text-muted-foreground mt-4 leading-relaxed">
                   Found a mistake in the lyric sync? Or did the player fail to load a video? We are constantly improving KeyVerse and would love to hear from you.
@@ -282,6 +284,20 @@ function Support() {
                     <span className="text-xs font-mono font-medium">Open a GitHub Issue</span>
                   </div>
                   <span className="text-[10px] font-mono text-muted-foreground">Submit Ticket &rarr;</span>
+                </motion.a>
+                <motion.a
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  href={PATREON_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-4 rounded-xl border border-border/20 bg-background/30 hover:bg-background/80 transition-colors text-foreground"
+                >
+                  <div className="flex items-center gap-3">
+                    <Heart className="h-4 w-4 text-primary" />
+                    <span className="text-xs font-mono font-medium">Support on Patreon</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-muted-foreground">Become a Patron &rarr;</span>
                 </motion.a>
               </div>
             </DeflectCard>

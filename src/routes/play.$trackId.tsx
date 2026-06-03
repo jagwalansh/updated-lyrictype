@@ -670,9 +670,9 @@ function PlayPage() {
             throw new Error(data.error || "Failed to save score");
           }
           setScoreSaved(true);
-        } catch (err: any) {
+        } catch (err) {
           console.error(err);
-          setSaveError(err.message || "Failed to save score");
+          setSaveError(err instanceof Error ? err.message : "Failed to save score");
         } finally {
           setSavingScore(false);
         }
@@ -815,7 +815,7 @@ function PlayPage() {
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-6 items-start">
             {/* Left Column Skeleton */}
             <div className="flex flex-col gap-4">
-              <div className="relative w-full h-[460px] lg:h-[520px] rounded-xl overflow-hidden border border-border/40 shadow-lg bg-card/45 backdrop-blur-md flex flex-col items-center justify-center p-5 text-center">
+              <div className="relative w-full h-[360px] rounded-xl overflow-hidden border border-border/40 shadow-lg bg-card/45 backdrop-blur-md flex flex-col items-center justify-center p-5 text-center">
                 <Skeleton className="h-48 w-48 rounded-lg shadow-md mb-8" />
                 <div className="relative z-10 mx-auto w-64 bg-background/40 backdrop-blur-md px-6 py-4 rounded-md shadow-lg border border-white/10 flex flex-col gap-2 items-center">
                   <Skeleton className="h-6 w-40" />
@@ -827,7 +827,7 @@ function PlayPage() {
             {/* Right Column Skeleton */}
             <div className="flex flex-col gap-6 relative">
               {/* Game Area Skeleton */}
-              <div className="relative h-[460px] lg:h-[520px] rounded-xl bg-card/40 border border-border/40 shadow-inner px-5 py-8 overflow-hidden flex flex-col justify-center">
+              <div className="relative h-[360px] rounded-xl bg-card/40 border border-border/40 shadow-inner px-5 py-8 overflow-hidden flex flex-col justify-center">
                 <div className="flex flex-col gap-8">
                   {/* Past line skeleton */}
                   <div className="flex items-center gap-6 opacity-30 scale-95">
@@ -860,7 +860,7 @@ function PlayPage() {
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-6 items-start">
             {/* Left Column: YouTube Video / Song Information Card */}
             <div className="flex flex-col gap-4">
-              <div className="relative w-full h-[460px] lg:h-[520px] rounded-xl overflow-hidden border border-border/40 shadow-lg bg-black flex flex-col items-center justify-center p-5 text-center">
+              <div className="relative w-full h-[360px] rounded-xl overflow-hidden border border-border/40 shadow-lg bg-black flex flex-col items-center justify-center p-5 text-center">
                 {videoId ? (
                   <>
                     <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden rounded-xl bg-black">
@@ -1002,7 +1002,7 @@ function PlayPage() {
 
                   {/* Game Area */}
                   <div
-                    className="relative h-[460px] lg:h-[520px] overflow-hidden rounded-xl border border-border/40 bg-card/40 shadow-inner"
+                    className="relative h-[360px] overflow-hidden rounded-xl border border-border/40 bg-card/40 shadow-inner"
                     onClick={() => inputRef.current?.focus()}
                   >
                     <div
@@ -1116,6 +1116,12 @@ function PlayPage() {
                       {lines.map((line, idx) => {
                         const isCurrentLine = idx === currentLineIdx;
                         const isPassed = idx < currentLineIdx;
+                        const distanceFromCurrent = Math.abs(idx - currentLineIdx);
+                        const lyricLineStateClass = isCurrentLine
+                          ? "scale-105 opacity-100 blur-0"
+                          : distanceFromCurrent === 1
+                            ? "scale-95 opacity-45 blur-[1.5px]"
+                            : "scale-95 opacity-20 blur-[3px]";
                         const lineText = line.text;
                         const lineTokens = lineText.match(/\S+\s*|\s+/g) || [];
                         let tokenOffset = 0;
@@ -1124,10 +1130,7 @@ function PlayPage() {
                           <div
                             key={idx}
                             data-line-idx={idx}
-                            className={`flex items-center gap-6 mb-8 transition-all duration-300 p-2 rounded-xl hover:bg-muted/10 ${
-                              isCurrentLine ? "scale-105 opacity-100" : 
-                              isPassed ? "opacity-30 scale-95" : "opacity-50 scale-95"
-                            }`}
+                            className={`flex items-center gap-6 mb-8 transition-all duration-300 p-2 rounded-xl hover:bg-muted/10 ${lyricLineStateClass}`}
                           >
                             {/* osu! Style Note Indicator */}
                             <div className="relative w-12 h-12 flex-shrink-0 flex items-center justify-center">
@@ -1238,13 +1241,6 @@ function PlayPage() {
                         </svg>
                         <Music className="w-3.5 h-3.5 animate-pulse text-primary shrink-0" /> Next in {waitingForNext}s
                       </div>
-                    )}
-
-                    {!songEnded && (
-                      <>
-                        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-24 bg-gradient-to-b from-background via-background/70 via-55% to-transparent backdrop-blur-md" />
-                        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-24 bg-gradient-to-t from-background via-background/70 via-55% to-transparent backdrop-blur-md" />
-                      </>
                     )}
                   </div>
 

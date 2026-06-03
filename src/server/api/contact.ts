@@ -1,4 +1,4 @@
-type ContactEnv = {
+export type ContactEnv = {
   CONTACT_EMAIL?: {
     send: (message: unknown) => Promise<void>;
   };
