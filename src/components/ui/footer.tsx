@@ -109,7 +109,7 @@ export function Footer() {
               <motion.a
                 whileHover={{ scale: 1.15, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                href="https://www.instagram.com/lyric_type"
+                href="https://www.instagram.com/keyverse__/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-primary transition-colors text-muted-foreground"
