@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { useModal } from "@/lib/modal-context";
 import { supabase } from "@/lib/supabase";
-import { Music, Pause, Play, RotateCcw, Trophy, Home, Award, CheckCircle2, AlertCircle, Loader2, Sparkles, Flag, Send, X } from "lucide-react";
+import { Music, Pause, Play, RotateCcw, Trophy, Home, Award, CheckCircle2, AlertCircle, Loader2, Sparkles, Flag, Send, X, ChevronUp, ChevronDown, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -27,6 +27,49 @@ type YoutubeCandidate = {
   authorName: string;
   title?: string;
 };
+
+type VideoVoteData = {
+  scores: Record<string, number>;
+  userVotes: Record<string, number>;
+};
+
+function emptyVideoVoteData(): VideoVoteData {
+  return { scores: {}, userVotes: {} };
+}
+
+async function fetchVideoVoteData(songId: string): Promise<VideoVoteData> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 1500);
+
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const response = await fetch(`/api/video-votes?songId=${encodeURIComponent(songId)}`, {
+      headers: session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : undefined,
+      signal: controller.signal,
+    });
+
+    if (!response.ok) return emptyVideoVoteData();
+    return await response.json();
+  } catch (error) {
+    if (!(error instanceof DOMException && error.name === "AbortError")) {
+      console.error("Failed to load video votes", error);
+    }
+    return emptyVideoVoteData();
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+function sortVideoCandidates(candidates: YoutubeCandidate[], scores: Record<string, number>) {
+  return candidates
+    .map((candidate, index) => ({ candidate, index }))
+    .sort((a, b) => (scores[b.candidate.videoId] ?? 0) - (scores[a.candidate.videoId] ?? 0) || a.index - b.index)
+    .map(({ candidate }) => candidate);
+}
 
 type SyncReportModalProps = {
   open: boolean;
@@ -306,6 +349,7 @@ function PlayPage() {
   const songStartedTrackedRef = useRef(false);
   const songCompletedTrackedRef = useRef(false);
   const shiftShortcutPendingRef = useRef(false);
+  const lastVideoCarouselScrollRef = useRef(0);
 
   const [playing, setPlaying] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
@@ -314,6 +358,9 @@ function PlayPage() {
   const [videoId, setVideoId] = useState<string | null>(null);
   const [ytAuthor, setYtAuthor] = useState<string | null>(null);
   const [ytCandidates, setYtCandidates] = useState<YoutubeCandidate[]>([]);
+  const [videoVoteScores, setVideoVoteScores] = useState<Record<string, number>>({});
+  const [userVideoVotes, setUserVideoVotes] = useState<Record<string, number>>({});
+  const [savingVideoVote, setSavingVideoVote] = useState(false);
   const [ytLoading, setYtLoading] = useState(true);
   const [songEnded, setSongEnded] = useState(false);
   const [songEndedAt, setSongEndedAt] = useState<number | null>(null);
@@ -322,6 +369,7 @@ function PlayPage() {
   const [syncReportOpen, setSyncReportOpen] = useState(false);
   const [syncReportPlaybackTime, setSyncReportPlaybackTime] = useState(0);
   const [syncReportVideoDuration, setSyncReportVideoDuration] = useState<number | undefined>();
+  const [videoCarouselDirection, setVideoCarouselDirection] = useState<1 | -1>(1);
 
   useEffect(() => {
     trackEvent("song_page_opened", {
@@ -383,6 +431,8 @@ function PlayPage() {
     setVideoId(null);
     setYtAuthor(null);
     setYtCandidates([]);
+    setVideoVoteScores({});
+    setUserVideoVotes({});
 
     // Guard: Don't fetch if search parameters are not yet resolved or are empty
     if (!artist.trim() || !track.trim()) {
@@ -401,10 +451,11 @@ function PlayPage() {
           duration: String(duration || 0),
         });
         
-        // Fetch both lyrics and YouTube search in parallel to optimize loading speed / LCP
-        const [lyricsRes, ytResponse] = await Promise.all([
+        // Fetch lyrics, YouTube results, and community ranking together to avoid serial loading.
+        const [lyricsRes, ytResponse, voteData] = await Promise.all([
           fetchSyncedLyrics(artist, track, duration),
-          fetch(`/api/youtube-search?${youtubeParams.toString()}`)
+          fetch(`/api/youtube-search?${youtubeParams.toString()}`),
+          fetchVideoVoteData(trackId),
         ]);
 
         if (cancelled) return;
@@ -426,9 +477,14 @@ function PlayPage() {
         if (cancelled) return;
         
         if (d.videoId) {
-           setVideoId(d.videoId);
-           setYtAuthor(d.authorName);
-           setYtCandidates(d.candidates || [{ videoId: d.videoId, authorName: d.authorName }]);
+           const candidates: YoutubeCandidate[] = d.candidates || [{ videoId: d.videoId, authorName: d.authorName }];
+           const rankedCandidates = sortVideoCandidates(candidates, voteData.scores);
+           const selectedCandidate = rankedCandidates[0] ?? candidates[0];
+           setVideoVoteScores(voteData.scores);
+           setUserVideoVotes(voteData.userVotes);
+           setVideoId(selectedCandidate.videoId);
+           setYtAuthor(selectedCandidate.authorName);
+           setYtCandidates(rankedCandidates);
         } else {
            setLoadErr("Could not find a YouTube video for this track.");
         }
@@ -963,6 +1019,88 @@ function PlayPage() {
   }
 
   const showSpotifyPlayer = !!(videoId && playing && !songEnded && !showBlurOverlay);
+  const selectedVideoIndex = ytCandidates.findIndex((candidate) => candidate.videoId === videoId);
+  const previousVideoCandidate = selectedVideoIndex > 0 ? ytCandidates[selectedVideoIndex - 1] : null;
+  const nextVideoCandidate =
+    selectedVideoIndex >= 0 && selectedVideoIndex < ytCandidates.length - 1
+      ? ytCandidates[selectedVideoIndex + 1]
+      : null;
+
+  const selectVideoCandidate = (candidate: YoutubeCandidate) => {
+    if (candidate.videoId === videoId) return;
+
+    const nextIndex = ytCandidates.findIndex((item) => item.videoId === candidate.videoId);
+    setVideoCarouselDirection(nextIndex > selectedVideoIndex ? 1 : -1);
+    restart();
+    setAudioReady(false);
+    setVideoId(candidate.videoId);
+    setYtAuthor(candidate.authorName);
+    trackEvent("youtube_video_changed", {
+      song_id: trackId,
+      song_title: track,
+      artist,
+      video_id: candidate.videoId,
+    });
+  };
+
+  const voteForCurrentVideo = async () => {
+    if (!videoId || savingVideoVote) return;
+    if (!user) {
+      setModalOpen(true);
+      toast("Sign in to vote on video sync.");
+      return;
+    }
+
+    const nextVote = userVideoVotes[videoId] === 1 ? 0 : 1;
+    setSavingVideoVote(true);
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const response = await fetch("/api/video-votes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ songId: trackId, videoId, vote: nextVote }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.error || "Failed to save vote");
+
+      setVideoVoteScores(data.scores ?? {});
+      setUserVideoVotes(data.userVotes ?? {});
+      setYtCandidates((candidates) => sortVideoCandidates(candidates, data.scores ?? {}));
+      toast.success(nextVote === 0 ? "Vote removed." : "Thanks for rating this video's sync.");
+      trackEvent("youtube_video_sync_voted", {
+        song_id: trackId,
+        song_title: track,
+        artist,
+        video_id: videoId,
+        vote: nextVote,
+      });
+    } catch (error) {
+      console.error(error);
+      toast.error(error instanceof Error ? error.message : "Failed to save vote");
+    } finally {
+      setSavingVideoVote(false);
+    }
+  };
+
+  const handleVideoCarouselWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    if (Math.abs(event.deltaY) < 8 || ytCandidates.length < 2) return;
+
+    const candidate = event.deltaY > 0 ? nextVideoCandidate : previousVideoCandidate;
+    if (!candidate) return;
+
+    event.preventDefault();
+    const now = Date.now();
+    if (now - lastVideoCarouselScrollRef.current < 450) return;
+
+    lastVideoCarouselScrollRef.current = now;
+    selectVideoCandidate(candidate);
+  };
 
   const openSyncReport = () => {
     let videoDuration: number | undefined;
@@ -1082,7 +1220,86 @@ function PlayPage() {
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-6 items-start">
             {/* Left Column: YouTube Video / Song Information Card */}
             <div className="flex flex-col gap-4">
-              <div className="relative w-full h-[360px] rounded-xl overflow-hidden border border-border/40 shadow-lg bg-black flex flex-col items-center justify-center p-5 text-center">
+              <div
+                className="relative h-[360px] w-full"
+                onWheel={handleVideoCarouselWheel}
+                aria-label="YouTube video carousel"
+              >
+                <AnimatePresence initial={false}>
+                {previousVideoCandidate && (
+                  <motion.button
+                    key={`previous-${previousVideoCandidate.videoId}`}
+                    type="button"
+                    onClick={() => selectVideoCandidate(previousVideoCandidate)}
+                    initial={{ opacity: 0, y: 32, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -32, scale: 0.96 }}
+                    transition={{ duration: 0.28, ease: "easeOut" }}
+                    className="absolute -top-7 left-5 right-5 z-0 h-24 overflow-hidden rounded-xl border border-border/40 bg-black shadow-md transition-all hover:-top-9 hover:border-primary/50"
+                    aria-label={`Use previous video: ${previousVideoCandidate.title || previousVideoCandidate.authorName}`}
+                  >
+                    <img
+                      src={`https://i.ytimg.com/vi/${previousVideoCandidate.videoId}/hqdefault.jpg`}
+                      alt=""
+                      className="h-full w-full object-cover opacity-55"
+                    />
+                    <div className="absolute inset-0 bg-black/35" />
+                    <ChevronUp className="absolute left-1/2 top-1 h-4 w-4 -translate-x-1/2 text-white/80" />
+                  </motion.button>
+                )}
+                </AnimatePresence>
+
+                <AnimatePresence initial={false}>
+                {nextVideoCandidate && (
+                  <motion.button
+                    key={`next-${nextVideoCandidate.videoId}`}
+                    type="button"
+                    onClick={() => selectVideoCandidate(nextVideoCandidate)}
+                    initial={{ opacity: 0, y: -32, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 32, scale: 0.96 }}
+                    transition={{ duration: 0.28, ease: "easeOut" }}
+                    className="absolute -bottom-7 left-5 right-5 z-0 h-24 overflow-hidden rounded-xl border border-border/40 bg-black shadow-md transition-all hover:-bottom-9 hover:border-primary/50"
+                    aria-label={`Use next video: ${nextVideoCandidate.title || nextVideoCandidate.authorName}`}
+                  >
+                    <img
+                      src={`https://i.ytimg.com/vi/${nextVideoCandidate.videoId}/hqdefault.jpg`}
+                      alt=""
+                      className="h-full w-full object-cover opacity-55"
+                    />
+                    <div className="absolute inset-0 bg-black/35" />
+                    <ChevronDown className="absolute bottom-1 left-1/2 h-4 w-4 -translate-x-1/2 text-white/80" />
+                  </motion.button>
+                )}
+                </AnimatePresence>
+
+              <AnimatePresence initial={false} mode="popLayout" custom={videoCarouselDirection}>
+              <motion.div
+                key={videoId ?? "no-video"}
+                custom={videoCarouselDirection}
+                variants={{
+                  enter: (direction: 1 | -1) => ({
+                    opacity: 0,
+                    y: direction * 90,
+                    scale: 0.97,
+                  }),
+                  center: {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                  },
+                  exit: (direction: 1 | -1) => ({
+                    opacity: 0,
+                    y: direction * -90,
+                    scale: 0.97,
+                  }),
+                }}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.32, ease: "easeInOut" }}
+                className="absolute inset-0 z-10 w-full h-[360px] rounded-xl overflow-hidden border border-border/40 shadow-lg bg-black flex flex-col items-center justify-center p-5 text-center"
+              >
                 {videoId ? (
                   <>
                     <div className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-hidden rounded-xl bg-black">
@@ -1119,6 +1336,12 @@ function PlayPage() {
                       (!playing || showBlurOverlay || songEnded) ? "opacity-100" : "opacity-0 pointer-events-none"
                     }`} />
 
+                    {ytCandidates.length > 1 && (
+                      <div className="absolute right-3 top-3 z-30 rounded-full border border-white/10 bg-black/55 px-2 py-1 font-mono text-[10px] text-white/75 backdrop-blur-sm">
+                        {selectedVideoIndex + 1}/{ytCandidates.length}
+                      </div>
+                    )}
+
                   </>
                 ) : (
                   <>
@@ -1136,7 +1359,7 @@ function PlayPage() {
                   } ${
                     showSpotifyPlayer 
                       ? "w-[80%] max-w-[320px] h-[56px] px-5 rounded-xl" 
-                      : "w-[240px] h-[110px] px-5 rounded-2xl"
+                      : "w-[240px] h-[150px] px-5 rounded-2xl"
                   }`}
                   style={videoId ? {
                     transform: `translate(-50%, ${showSpotifyPlayer ? "110px" : "-50%"})`,
@@ -1157,6 +1380,26 @@ function PlayPage() {
                         <svg className="w-2.5 h-2.5 text-red-500/80" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
                         {ytAuthor}
                       </p>
+                    )}
+                    {videoId && (
+                      <div className="mt-3 flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={voteForCurrentVideo}
+                          disabled={savingVideoVote}
+                          className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition-colors disabled:opacity-50 ${
+                            userVideoVotes[videoId] === 1
+                              ? "border-emerald-400/50 bg-emerald-400/15 text-emerald-400"
+                              : "border-white/10 bg-black/15 text-muted-foreground hover:text-foreground"
+                          }`}
+                          aria-label="Upvote this video's lyric sync"
+                        >
+                          <ThumbsUp className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="min-w-8 font-mono text-xs font-semibold text-foreground">
+                          {videoVoteScores[videoId] ?? 0}
+                        </span>
+                      </div>
                     )}
                   </div>
 
@@ -1207,6 +1450,8 @@ function PlayPage() {
                     </div>
                   </div>
                 </div>
+              </motion.div>
+              </AnimatePresence>
               </div>
             </div>
 

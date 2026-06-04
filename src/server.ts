@@ -9,6 +9,7 @@ import { GET as profileHandler } from "./server/api/profile";
 import { GET as userBestHandler } from "./server/api/user-best";
 import { POST as contactHandler } from "./server/api/contact";
 import type { ContactEnv } from "./server/api/contact";
+import { GET as videoVotesGetHandler, POST as videoVotesPostHandler } from "./server/api/video-votes";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -529,6 +530,12 @@ export default {
       }
       if (url.pathname === "/api/contact" && request.method === "POST") {
         return await contactHandler(request, env);
+      }
+      if (url.pathname === "/api/video-votes" && request.method === "GET") {
+        return await videoVotesGetHandler(request);
+      }
+      if (url.pathname === "/api/video-votes" && request.method === "POST") {
+        return await videoVotesPostHandler(request);
       }
       if (url.pathname === "/api/ping") {
         return new Response(JSON.stringify({ status: "ok" }), {
