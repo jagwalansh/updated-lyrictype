@@ -8,9 +8,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { useModal } from "@/lib/modal-context";
 import { supabase } from "@/lib/supabase";
-import { Music, Pause, Play, RotateCcw, Trophy, Home, Award, CheckCircle2, AlertCircle, Loader2, Sparkles } from "lucide-react";
+import { Music, Pause, Play, RotateCcw, Trophy, Home, Award, CheckCircle2, AlertCircle, Loader2, Sparkles, Flag, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
+import * as Dialog from "@radix-ui/react-dialog";
 
 interface Search {
   artist: string;
@@ -26,6 +27,210 @@ type YoutubeCandidate = {
   authorName: string;
   title?: string;
 };
+
+type SyncReportModalProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  artist: string;
+  track: string;
+  trackId: string;
+  videoId: string | null;
+  ytAuthor: string | null;
+  expectedDuration?: number;
+  videoDuration?: number;
+  playbackTime: number;
+  defaultEmail?: string;
+};
+
+function SyncReportModal({
+  open,
+  onOpenChange,
+  artist,
+  track,
+  trackId,
+  videoId,
+  ytAuthor,
+  expectedDuration,
+  videoDuration,
+  playbackTime,
+  defaultEmail,
+}: SyncReportModalProps) {
+  const [email, setEmail] = useState(defaultEmail ?? "");
+  const [details, setDetails] = useState("");
+  const [sending, setSending] = useState(false);
+  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [reportDelivered, setReportDelivered] = useState(true);
+  const youtubeUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : "Unavailable";
+  const reportMessage = [
+    `Song: ${track} by ${artist}`,
+    `Track ID: ${trackId}`,
+    `YouTube video: ${youtubeUrl}`,
+    `YouTube channel: ${ytAuthor ?? "Unknown"}`,
+    `Expected track duration: ${expectedDuration ? formatTime(expectedDuration) : "Unknown"}`,
+    `Selected video duration: ${videoDuration ? formatTime(videoDuration) : "Unknown"}`,
+    `Playback time when report opened: ${formatTime(playbackTime)}`,
+    "",
+    "Player note:",
+    details.trim(),
+  ].join("\n");
+
+  useEffect(() => {
+    if (open && defaultEmail) setEmail(defaultEmail);
+  }, [defaultEmail, open]);
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      setDetails("");
+      setSending(false);
+      setStatus("idle");
+      setErrorMessage("");
+      setReportDelivered(true);
+    }
+    onOpenChange(nextOpen);
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSending(true);
+    setStatus("idle");
+    setErrorMessage("");
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: "KeyVerse player",
+          email: email.trim(),
+          subject: `Out-of-sync report: ${track} by ${artist}`,
+          message: reportMessage,
+        }),
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to send report");
+      }
+
+      setReportDelivered(data?.delivered !== false);
+      setStatus("success");
+      trackEvent("sync_issue_reported", {
+        song_id: trackId,
+        song_title: track,
+        artist,
+        video_id: videoId ?? undefined,
+      });
+    } catch (error) {
+      console.error(error);
+      setErrorMessage(error instanceof Error ? error.message : "Failed to send report");
+      setStatus("error");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-[110] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-background p-6 text-foreground shadow-2xl">
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <Dialog.Title className="text-xl font-semibold tracking-tight">
+                Report a sync issue
+              </Dialog.Title>
+              <Dialog.Description className="mt-1 text-sm text-muted-foreground">
+                We will include the current song and video details automatically.
+              </Dialog.Description>
+            </div>
+            <Dialog.Close asChild>
+              <button
+                type="button"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label="Close report dialog"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </Dialog.Close>
+          </div>
+
+          {status === "success" ? (
+            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-emerald-500">
+              {reportDelivered
+                ? "Thanks. Your report was sent with the song and video details."
+                : "Local preview accepted. The report was logged by the dev server, but no email was sent."}
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <div className="rounded-lg border border-border/30 bg-card/50 p-3">
+                <p className="text-sm font-medium text-foreground">{track}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{artist}</p>
+                <p className="mt-2 text-[11px] font-mono text-muted-foreground">
+                  Current position: {formatTime(playbackTime)}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="sync-report-email" className="text-sm font-medium">
+                  Email
+                </label>
+                <input
+                  id="sync-report-email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                  placeholder="you@example.com"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="sync-report-details" className="text-sm font-medium">
+                  What felt out of sync?
+                </label>
+                <textarea
+                  id="sync-report-details"
+                  value={details}
+                  onChange={(event) => setDetails(event.target.value)}
+                  required
+                  rows={4}
+                  placeholder="For example: the lyrics started after the vocal, or this looks like a shortened music video."
+                  className="flex w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={sending}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+              >
+                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                {sending ? "Sending report..." : "Send report"}
+              </button>
+
+              {status === "error" && (
+                <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-sm text-red-500">
+                  <p className="flex items-center gap-1.5">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    {errorMessage}
+                  </p>
+                  <a
+                    href={`mailto:support@keyverse.me?subject=${encodeURIComponent(`Out-of-sync report: ${track} by ${artist}`)}&body=${encodeURIComponent(reportMessage)}`}
+                    className="mt-2 inline-block font-medium underline underline-offset-2"
+                  >
+                    Send by email instead
+                  </a>
+                </div>
+              )}
+            </form>
+          )}
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
 
 function formatTime(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -114,6 +319,9 @@ function PlayPage() {
   const [songEndedAt, setSongEndedAt] = useState<number | null>(null);
   const [showBlurOverlay, setShowBlurOverlay] = useState(false);
   const showBlurOverlayRef = useRef(false);
+  const [syncReportOpen, setSyncReportOpen] = useState(false);
+  const [syncReportPlaybackTime, setSyncReportPlaybackTime] = useState(0);
+  const [syncReportVideoDuration, setSyncReportVideoDuration] = useState<number | undefined>();
 
   useEffect(() => {
     trackEvent("song_page_opened", {
@@ -756,6 +964,20 @@ function PlayPage() {
 
   const showSpotifyPlayer = !!(videoId && playing && !songEnded && !showBlurOverlay);
 
+  const openSyncReport = () => {
+    let videoDuration: number | undefined;
+    try {
+      const playerDuration = ytPlayerRef.current?.getDuration();
+      if (playerDuration && playerDuration > 0) videoDuration = playerDuration;
+    } catch (error) {
+      console.error("Failed to read YouTube duration for sync report", error);
+    }
+
+    setSyncReportPlaybackTime(currentTimeRef.current);
+    setSyncReportVideoDuration(videoDuration);
+    setSyncReportOpen(true);
+  };
+
   return (
     <main className="relative min-h-screen bg-background text-foreground font-sans flex flex-col items-center">
       <Navbar staticLayout />
@@ -1269,9 +1491,14 @@ function PlayPage() {
                     </button>
                   </div>
 
-                  <p className="text-center font-mono text-xs text-muted-foreground leading-relaxed">
-                    Type the lyrics in sync with the music
-                  </p>
+                  <button
+                    type="button"
+                    onClick={openSyncReport}
+                    className="mx-auto inline-flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <Flag className="h-3.5 w-3.5" />
+                    Report an out-of-sync song
+                  </button>
 
                   {/* Hidden input for capturing keyboard events */}
                   <input
@@ -1296,6 +1523,19 @@ function PlayPage() {
         )}
       </div>
 
+      <SyncReportModal
+        open={syncReportOpen}
+        onOpenChange={setSyncReportOpen}
+        artist={artist}
+        track={track}
+        trackId={trackId}
+        videoId={videoId}
+        ytAuthor={ytAuthor}
+        expectedDuration={duration}
+        videoDuration={syncReportVideoDuration}
+        playbackTime={syncReportPlaybackTime}
+        defaultEmail={user?.email}
+      />
 
     </main>
   );

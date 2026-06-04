@@ -63,7 +63,8 @@ export function Navbar({ staticLayout = false }: NavbarProps) {
   const [accountOpen, setAccountOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1200);
+  // Keep the first client render identical to SSR, then measure after hydration.
+  const [windowWidth, setWindowWidth] = useState(1200);
 
   const [searchOpen, setSearchOpen] = useState(false);
 

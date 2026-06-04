@@ -13,12 +13,12 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
-  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "success" | "preview" | "error">("idle");
   const [sentAnimationDone, setSentAnimationDone] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    if (status !== "success") return;
+    if (status !== "success" && status !== "preview") return;
     const timer = setTimeout(() => setSentAnimationDone(true), 900);
     return () => clearTimeout(timer);
   }, [status]);
@@ -51,12 +51,13 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
         body: JSON.stringify({ name, email, subject, message }),
       });
 
+      const data = await res.json().catch(() => null);
+
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
         throw new Error(data?.error || "Failed to send");
       }
 
-      setStatus("success");
+      setStatus(data?.delivered === false ? "preview" : "success");
     } catch (error) {
       console.error(error);
       setErrorMessage(error instanceof Error ? error.message : "Failed to send");
@@ -134,7 +135,7 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
 
             <button
               type="submit"
-              disabled={sending || status === "success"}
+              disabled={sending || status === "success" || status === "preview"}
               className="relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-default"
             >
               <AnimatePresence mode="wait">
@@ -148,7 +149,7 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
                   >
                     <Loader2 className="h-4 w-4 animate-spin" /> Sending...
                   </motion.span>
-                ) : status === "success" && !sentAnimationDone ? (
+                ) : (status === "success" || status === "preview") && !sentAnimationDone ? (
                   <motion.span
                     key="plane"
                     initial={{ x: -80, y: 7, rotate: -18, opacity: 0 }}
@@ -159,14 +160,14 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
                   >
                     <Send className="h-5 w-5" />
                   </motion.span>
-                ) : status === "success" ? (
+                ) : status === "success" || status === "preview" ? (
                   <motion.span
                     key="sent"
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className="inline-flex items-center gap-2"
                   >
-                    <CheckCircle className="h-4 w-4" /> Sent!
+                    <CheckCircle className="h-4 w-4" /> {status === "preview" ? "Previewed" : "Sent!"}
                   </motion.span>
                 ) : (
                   <motion.span
@@ -185,6 +186,11 @@ function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (op
             {status === "error" && (
               <p className="flex items-center gap-1.5 text-sm text-red-500">
                 <AlertCircle className="h-4 w-4" /> {errorMessage || "Failed to send."} Try emailing support@keyverse.me directly.
+              </p>
+            )}
+            {status === "preview" && (
+              <p className="text-sm text-muted-foreground">
+                Local preview logged by the dev server. No email was sent.
               </p>
             )}
           </form>

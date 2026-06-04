@@ -30,6 +30,12 @@ export async function POST(req: Request, env: ContactEnv = {}) {
     }
 
     if (!env.CONTACT_EMAIL) {
+      const hostname = new URL(req.url).hostname;
+      if (hostname === "localhost" || hostname === "127.0.0.1") {
+        console.info("Contact form local preview:", { name, email, subject, message });
+        return jsonResponse({ success: true, delivered: false }, 200);
+      }
+
       console.error("Contact API is missing CONTACT_EMAIL binding");
       return jsonResponse({ error: "Contact form email provider is not configured yet." }, 503);
     }
@@ -59,7 +65,7 @@ export async function POST(req: Request, env: ContactEnv = {}) {
     const { EmailMessage } = await import("cloudflare:email");
     await env.CONTACT_EMAIL.send(new EmailMessage(fromEmail, toEmail, rawEmail));
 
-    return jsonResponse({ success: true }, 200);
+    return jsonResponse({ success: true, delivered: true }, 200);
   } catch (err) {
     console.error("Contact API error:", err);
     return jsonResponse({ error: "Internal server error" }, 500);
