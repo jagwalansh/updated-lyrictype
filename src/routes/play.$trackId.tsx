@@ -390,6 +390,13 @@ function PlayPage() {
 
   const comboRef = useRef(combo);
   useEffect(() => { comboRef.current = combo; }, [combo]);
+  const waitingForNextRef = useRef<string | null>(null);
+
+  const updateWaitingForNext = useCallback((value: string | null) => {
+    if (waitingForNextRef.current === value) return;
+    waitingForNextRef.current = value;
+    setWaitingForNext(value);
+  }, []);
 
   const resetActiveLineState = useCallback(() => {
     charIdxRef.current = 0;
@@ -397,8 +404,8 @@ function PlayPage() {
     setCharIdx(0);
     setCharResults([]);
     setLineComplete(false);
-    setWaitingForNext(null);
-  }, []);
+    updateWaitingForNext(null);
+  }, [updateWaitingForNext]);
 
   // Load Lyrics and YouTube ID
   useEffect(() => {
@@ -722,15 +729,15 @@ function PlayPage() {
         } else if (charIdxRef.current >= line.text.length && currentTimeRef.current < nextLineTime) {
             // Waiting for next line
             const timeRemaining = (nextLineTime - currentTimeRef.current).toFixed(1);
-            setWaitingForNext(timeRemaining);
+            updateWaitingForNext(timeRemaining);
         } else {
-            setWaitingForNext(null);
+            updateWaitingForNext(null);
         }
       }
       
       rafRef.current = requestAnimationFrame(updateTime);
     }
-  }, [playing, lines, currentLineIdx, handleLineComplete, endSong]);
+  }, [playing, lines, currentLineIdx, handleLineComplete, endSong, updateWaitingForNext]);
 
   useEffect(() => {
     if (playing) {

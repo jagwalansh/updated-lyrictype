@@ -180,10 +180,29 @@ function Index() {
   const [err, setErr] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [disableAnimation, setDisableAnimation] = useState(hasVisitedHome);
+  const [showAmbientMotion, setShowAmbientMotion] = useState(false);
 
   useEffect(() => {
     hasVisitedHome = true;
     trackEvent("homepage_viewed");
+  }, []);
+
+  useEffect(() => {
+    const mobileQuery = window.matchMedia("(max-width: 639px)");
+    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    const updateAmbientMotion = () => {
+      setShowAmbientMotion(!mobileQuery.matches && !reducedMotionQuery.matches);
+    };
+
+    updateAmbientMotion();
+    mobileQuery.addEventListener("change", updateAmbientMotion);
+    reducedMotionQuery.addEventListener("change", updateAmbientMotion);
+
+    return () => {
+      mobileQuery.removeEventListener("change", updateAmbientMotion);
+      reducedMotionQuery.removeEventListener("change", updateAmbientMotion);
+    };
   }, []);
 
   useEffect(() => {
@@ -220,7 +239,7 @@ function Index() {
 
       <div className="w-full max-w-4xl mx-auto px-6 py-28 flex flex-col items-center text-center justify-start flex-1 gap-10 relative">
         {/* Floating background music notes and keycaps */}
-        {floatingElements.map((el, idx) => (
+        {showAmbientMotion && floatingElements.map((el, idx) => (
           <motion.div
             key={idx}
             initial={{ opacity: 0, y: 10 }}

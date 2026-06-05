@@ -187,7 +187,10 @@ function AdSenseLoader() {
       return;
     }
 
+    let loaded = false;
     const loadAdSense = () => {
+      if (loaded) return;
+      loaded = true;
       if (document.querySelector("script[data-keyverse-adsense='true']")) return;
 
       const script = document.createElement("script");
@@ -199,12 +202,17 @@ function AdSenseLoader() {
       document.head.appendChild(script);
     };
 
-    const idleCallback = window.requestIdleCallback?.(loadAdSense, { timeout: 2500 });
-    const timer = idleCallback === undefined ? window.setTimeout(loadAdSense, 1200) : undefined;
+    const interactionEvents = ["pointerdown", "keydown", "touchstart", "scroll"] as const;
+    interactionEvents.forEach((eventName) => {
+      window.addEventListener(eventName, loadAdSense, { once: true, passive: true });
+    });
+    const timer = window.setTimeout(loadAdSense, 12000);
 
     return () => {
-      if (idleCallback !== undefined) window.cancelIdleCallback?.(idleCallback);
-      if (timer !== undefined) window.clearTimeout(timer);
+      interactionEvents.forEach((eventName) => {
+        window.removeEventListener(eventName, loadAdSense);
+      });
+      window.clearTimeout(timer);
     };
   }, [isPlayRoute]);
 

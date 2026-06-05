@@ -184,6 +184,34 @@ html {
   border-top-color: oklch(1 0 0 / 18%);
 }
 
+@media (max-width: 639px) {
+  .liquid-glass-navbar,
+  .backdrop-blur-sm,
+  .backdrop-blur-md {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .liquid-glass-navbar {
+    background-color: oklch(0.97 0.025 100 / 98%);
+  }
+
+  .dark .liquid-glass-navbar {
+    background-color: oklch(0.2 0.025 260 / 98%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
