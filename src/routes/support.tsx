@@ -1,318 +1,333 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
-import { AnimatePresence, motion } from "motion/react";
-import { Mail, Github, Heart, Loader2, Send, CheckCircle, AlertCircle, X, ArrowLeft } from "lucide-react";
-import { DeflectCard } from "@/components/ui/deflect-card";
+import { Navbar } from "@/components/ui/navbar";
+import { motion } from "motion/react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  Github,
+  Heart,
+  Loader2,
+  Mail,
+  Send,
+  X,
+} from "lucide-react";
+import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { useEffect, useState } from "react";
-
-function ContactModal({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
-  const [sending, setSending] = useState(false);
-  const [status, setStatus] = useState<"idle" | "success" | "preview" | "error">("idle");
-  const [sentAnimationDone, setSentAnimationDone] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-
-  useEffect(() => {
-    if (status !== "success" && status !== "preview") return;
-    const timer = setTimeout(() => setSentAnimationDone(true), 900);
-    return () => clearTimeout(timer);
-  }, [status]);
-
-  const handleOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen) {
-      setName("");
-      setEmail("");
-      setSubject("");
-      setMessage("");
-      setSending(false);
-      setStatus("idle");
-      setSentAnimationDone(false);
-      setErrorMessage("");
-    }
-    onOpenChange(nextOpen);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSending(true);
-    setStatus("idle");
-    setSentAnimationDone(false);
-    setErrorMessage("");
-
-    try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, email, subject, message }),
-      });
-
-      const data = await res.json().catch(() => null);
-
-      if (!res.ok) {
-        throw new Error(data?.error || "Failed to send");
-      }
-
-      setStatus(data?.delivered === false ? "preview" : "success");
-    } catch (error) {
-      console.error(error);
-      setErrorMessage(error instanceof Error ? error.message : "Failed to send");
-      setStatus("error");
-    } finally {
-      setSending(false);
-    }
-  };
-
-  return (
-    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border/40 bg-background/80 backdrop-blur-md p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95">
-          <div className="mb-5 flex items-start justify-between gap-4">
-            <div>
-              <Dialog.Title className="text-xl font-semibold tracking-tight">
-                Send a Message
-              </Dialog.Title>
-              <Dialog.Description className="mt-1 text-sm text-muted-foreground">
-                Have a bug or feedback? Send us a message and we'll get back to you.
-              </Dialog.Description>
-            </div>
-            <Dialog.Close asChild>
-              <button className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent h-8 w-8 shrink-0">
-                <X className="h-4 w-4" />
-              </button>
-            </Dialog.Close>
-          </div>
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="contact-name">Name</label>
-              <input
-                id="contact-name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="contact-email">Email</label>
-              <input
-                id="contact-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="contact-subject">Subject (optional)</label>
-              <input
-                id="contact-subject"
-                type="text"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="contact-message">Message</label>
-              <textarea
-                id="contact-message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                required
-                rows={4}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={sending || status === "success" || status === "preview"}
-              className="relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-default"
-            >
-              <AnimatePresence mode="wait">
-                {sending ? (
-                  <motion.span
-                    key="sending"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="inline-flex items-center gap-2"
-                  >
-                    <Loader2 className="h-4 w-4 animate-spin" /> Sending...
-                  </motion.span>
-                ) : (status === "success" || status === "preview") && !sentAnimationDone ? (
-                  <motion.span
-                    key="plane"
-                    initial={{ x: -80, y: 7, rotate: -18, opacity: 0 }}
-                    animate={{ x: 80, y: -7, rotate: -4, opacity: [0, 1, 1, 0] }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.85, ease: "easeOut" }}
-                    className="absolute"
-                  >
-                    <Send className="h-5 w-5" />
-                  </motion.span>
-                ) : status === "success" || status === "preview" ? (
-                  <motion.span
-                    key="sent"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="inline-flex items-center gap-2"
-                  >
-                    <CheckCircle className="h-4 w-4" /> {status === "preview" ? "Previewed" : "Sent!"}
-                  </motion.span>
-                ) : (
-                  <motion.span
-                    key="idle"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="inline-flex items-center gap-2"
-                  >
-                    <Send className="h-4 w-4" /> Send Message
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </button>
-
-            {status === "error" && (
-              <p className="flex items-center gap-1.5 text-sm text-red-500">
-                <AlertCircle className="h-4 w-4" /> {errorMessage || "Failed to send."} Try emailing support@keyverse.me directly.
-              </p>
-            )}
-            {status === "preview" && (
-              <p className="text-sm text-muted-foreground">
-                Local preview logged by the dev server. No email was sent.
-              </p>
-            )}
-          </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
-  );
-}
+import { DeflectCard } from "@/components/ui/deflect-card";
 
 export const Route = createFileRoute("/support")({
   head: () => ({
+    meta: [
+      { title: "Contact and Support | KeyVerse" },
+      {
+        name: "description",
+        content:
+          "Contact KeyVerse with feedback, questions, bug reports, or song suggestions.",
+      },
+    ],
     links: [{ rel: "canonical", href: "https://keyverse.me/support" }],
   }),
   component: Support,
 });
 
+type Status = "idle" | "sending" | "success" | "preview" | "error";
+
 const PATREON_URL = "https://www.patreon.com/cw/playKeyverse";
 
 function Support() {
   const [contactOpen, setContactOpen] = useState(false);
+  const [status, setStatus] = useState<Status>("idle");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleOpenChange = (open: boolean) => {
+    setContactOpen(open);
+    if (!open) {
+      setStatus("idle");
+      setErrorMessage("");
+    }
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setStatus("sending");
+    setErrorMessage("");
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: formData.get("name"),
+          email: formData.get("email"),
+          subject: formData.get("subject"),
+          message: formData.get("message"),
+        }),
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Your message could not be sent.");
+      }
+
+      setStatus(data?.delivered === false ? "preview" : "success");
+      form.reset();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Your message could not be sent.",
+      );
+      setStatus("error");
+    }
+  };
+
+  const sent = status === "success" || status === "preview";
 
   return (
-    <main className="flex flex-col justify-start items-center min-h-screen bg-background text-foreground font-sans relative">
+    <main className="relative flex min-h-screen flex-col items-center bg-background font-sans text-foreground">
       <Navbar />
 
-      <div className="w-full max-w-5xl mx-auto px-6 py-28 flex flex-col gap-10 flex-1 justify-start relative z-20">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 border-b border-border/20 pb-6 text-left">
+      <div className="relative z-20 mx-auto flex w-full max-w-5xl flex-1 flex-col gap-10 px-6 py-28">
+        <div className="flex flex-col gap-4 border-b border-border/20 pb-6 text-left md:flex-row md:items-start md:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono text-primary font-semibold tracking-wider uppercase mb-1">
+            <div className="mb-1 text-xs font-mono font-semibold uppercase tracking-wider text-primary">
               Contact
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-              Support and Feedback
+            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
+              Contact and Support
             </h1>
-            <p className="text-xs text-muted-foreground mt-2 leading-relaxed max-w-xl">
-              Found an issue, have an idea, or want to support KeyVerse? Send us a message, open a GitHub issue, or become a patron.
+            <p className="mt-2 max-w-xl text-xs leading-relaxed text-muted-foreground">
+              Questions, feedback, song suggestions, and bug reports are all
+              welcome.
             </p>
           </div>
           <Link
             to="/"
-            className="flex items-center gap-2 self-start shrink-0 px-4 py-2 text-xs font-mono font-semibold border border-border/40 hover:border-primary/50 bg-card/45 backdrop-blur-sm hover:bg-muted/60 text-muted-foreground hover:text-foreground rounded-lg transition-all shadow-sm"
+            className="flex shrink-0 items-center gap-2 self-start rounded-lg border border-border/40 bg-card/45 px-4 py-2 text-xs font-mono font-semibold text-muted-foreground shadow-sm transition-all hover:border-primary/50 hover:bg-muted/60 hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Home
           </Link>
         </div>
 
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 gap-10 mt-2">
-
-          {/* Card 1: Support and Feedback */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.25 }}
-            className="w-full h-full"
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.25 }}
+          className="h-full w-full"
+        >
+          <DeflectCard
+            className="h-full w-full"
+            cardClassName="group relative flex min-h-[320px] h-full flex-col justify-between rounded-2xl border border-border/40 bg-card/45 p-10 text-left backdrop-blur-sm transition-all duration-150 hover:border-primary/30"
           >
-            <DeflectCard
-              className="w-full h-full"
-              cardClassName="group relative p-10 rounded-2xl border border-border/40 bg-card/45 backdrop-blur-sm hover:border-primary/30 transition-all duration-150 flex flex-col justify-between h-full min-h-[320px] text-left"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-350 pointer-events-none rounded-2xl" />
+            <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-              <div className="relative z-10 text-left ">
-                <h2 className="font-mono text-lg font-bold tracking-wide text-foreground">
-                  Support and Feedback
-                </h2>
-                <p className="text-sm text-muted-foreground mt-4 leading-relaxed">
-                  Found a mistake in the lyric sync? Or did the player fail to load a video? We are constantly improving KeyVerse and would love to hear from you.
-                </p>
-              </div>
+            <div className="relative z-10">
+              <h2 className="font-mono text-lg font-bold tracking-wide">
+                Contact and Support
+              </h2>
+              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                Found a mistake in the lyric sync? Or did the player fail to
+                load a video? We are constantly improving KeyVerse and would
+                love to hear from you.
+              </p>
+            </div>
 
-              <div className="relative z-10 flex flex-col gap-3 mt-5 mb-4">
-                <motion.button
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setContactOpen(true)}
-                  className="flex items-center justify-between p-4 rounded-xl border border-border/20 bg-background/30 hover:bg-background/80 transition-colors text-foreground text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-4 w-4 text-primary" />
-                    <span className="text-xs font-mono font-medium">Send a Message</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-muted-foreground">support@keyverse.me &rarr;</span>
-                </motion.button>
-                <motion.a
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  href="https://github.com/jagwalansh/updated-lyrictype/issues"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between p-4 rounded-xl border border-border/20 bg-background/30 hover:bg-background/80 transition-colors text-foreground"
-                >
-                  <div className="flex items-center gap-3">
-                    <Github className="h-4 w-4 text-primary" />
-                    <span className="text-xs font-mono font-medium">Open a GitHub Issue</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-muted-foreground">Submit Ticket &rarr;</span>
-                </motion.a>
-                <motion.a
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  href={PATREON_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between p-4 rounded-xl border border-border/20 bg-background/30 hover:bg-background/80 transition-colors text-foreground"
-                >
-                  <div className="flex items-center gap-3">
-                    <Heart className="h-4 w-4 text-primary" />
-                    <span className="text-xs font-mono font-medium">Support on Patreon</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-muted-foreground">Become a Patron &rarr;</span>
-                </motion.a>
-              </div>
-            </DeflectCard>
-          </motion.div>
-        </div>
+            <div className="relative z-10 mt-5 flex flex-col gap-3">
+              <SupportButton onClick={() => setContactOpen(true)}>
+                <Mail className="h-4 w-4 text-primary" />
+                <span>Send a Message</span>
+                <span className="ml-auto text-[10px] text-muted-foreground">
+                  support@keyverse.me &rarr;
+                </span>
+              </SupportButton>
+              <SupportLink href="https://github.com/jagwalansh/updated-lyrictype/issues">
+                <Github className="h-4 w-4 text-primary" />
+                <span>Open a GitHub Issue</span>
+                <span className="ml-auto text-[10px] text-muted-foreground">
+                  Submit Ticket &rarr;
+                </span>
+              </SupportLink>
+              <SupportLink href={PATREON_URL}>
+                <Heart className="h-4 w-4 text-primary" />
+                <span>Support on Patreon</span>
+                <span className="ml-auto text-[10px] text-muted-foreground">
+                  Become a Patron &rarr;
+                </span>
+              </SupportLink>
+            </div>
+          </DeflectCard>
+        </motion.div>
       </div>
 
-      <ContactModal open={contactOpen} onOpenChange={setContactOpen} />
+      <Dialog.Root open={contactOpen} onOpenChange={handleOpenChange}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-border/40 bg-background/95 p-6 shadow-xl backdrop-blur-md duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95 md:p-8">
+            <div className="mb-6 flex items-start justify-between gap-4">
+              <div>
+                <Dialog.Title className="text-xl font-semibold tracking-tight">
+                  Send a Message
+                </Dialog.Title>
+                <Dialog.Description className="mt-1 text-sm text-muted-foreground">
+                  Tell us how we can help and we will get back to you.
+                </Dialog.Description>
+              </div>
+              <Dialog.Close className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-accent">
+                <X className="h-4 w-4" />
+              </Dialog.Close>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field label="Name" name="name" autoComplete="name" required />
+                <Field
+                  label="Email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                />
+              </div>
+
+              <div className="mt-5">
+                <Field label="Subject" name="subject" />
+              </div>
+
+              <label className="mt-5 block">
+                <span className="mb-2 block text-xs font-mono font-semibold">
+                  Message
+                </span>
+                <textarea
+                  name="message"
+                  rows={7}
+                  required
+                  placeholder="How can we help?"
+                  className="w-full resize-none rounded-xl border border-input bg-background/35 px-3 py-3 text-sm outline-none transition-shadow placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
+                />
+              </label>
+
+              <button
+                type="submit"
+                disabled={status === "sending" || sent}
+                className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-70"
+              >
+                {status === "sending" ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : sent ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4" />
+                    {status === "preview"
+                      ? "Preview submitted"
+                      : "Message sent"}
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    Send message
+                  </>
+                )}
+              </button>
+
+              {status === "error" && (
+                <p className="mt-4 flex items-start gap-2 text-xs text-red-500">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  {errorMessage} You can also email support@keyverse.me.
+                </p>
+              )}
+              {status === "preview" && (
+                <p className="mt-4 text-xs text-muted-foreground">
+                  Local preview received. No email is sent in local development.
+                </p>
+              )}
+            </form>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
       <Footer />
     </main>
+  );
+}
+
+function SupportButton({
+  onClick,
+  children,
+}: {
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <motion.button
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className="flex items-center gap-3 rounded-xl border border-border/20 bg-background/30 p-4 text-left text-xs font-mono font-medium transition-colors hover:bg-background/80"
+    >
+      {children}
+    </motion.button>
+  );
+}
+
+function SupportLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <motion.a
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.98 }}
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-3 rounded-xl border border-border/20 bg-background/30 p-4 text-xs font-mono font-medium transition-colors hover:bg-background/80"
+    >
+      {children}
+    </motion.a>
+  );
+}
+
+function Field({
+  label,
+  name,
+  type = "text",
+  autoComplete,
+  required,
+}: {
+  label: string;
+  name: string;
+  type?: string;
+  autoComplete?: string;
+  required?: boolean;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-xs font-mono font-semibold">
+        {label}
+        {!required && (
+          <span className="ml-1 font-sans font-normal text-muted-foreground">
+            (optional)
+          </span>
+        )}
+      </span>
+      <input
+        name={name}
+        type={type}
+        autoComplete={autoComplete}
+        required={required}
+        className="h-11 w-full rounded-xl border border-input bg-background/35 px-3 text-sm outline-none transition-shadow focus:ring-2 focus:ring-ring"
+      />
+    </label>
   );
 }

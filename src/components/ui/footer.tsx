@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
-import { Github, Heart, Instagram } from "lucide-react";
+import { Github, Instagram } from "lucide-react";
 
 export function Footer() {
   return (
@@ -20,6 +20,14 @@ export function Footer() {
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 A clean, minimal rhythm typing game built for music lovers. Test your speed and accuracy in sync with the beat.
               </p>
+              <div className="flex flex-col gap-2 pt-1 text-xs text-muted-foreground font-mono">
+                <Link to="/about" className="underline decoration-border underline-offset-2 transition-colors hover:text-primary hover:decoration-primary">
+                  About Us
+                </Link>
+                <Link to="/support" className="underline decoration-border underline-offset-2 transition-colors hover:text-primary hover:decoration-primary">
+                  Contact & Support
+                </Link>
+              </div>
             </div>
 
             {/* Col 2: Navigation links */}
@@ -36,11 +44,6 @@ export function Footer() {
                 <li>
                   <Link to="/recommended" className="hover:text-primary transition-colors">
                     Recommended
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/support" className="hover:text-primary transition-colors">
-                    Support & Feedback
                   </Link>
                 </li>
                 <li>
