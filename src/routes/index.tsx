@@ -5,7 +5,7 @@ import { searchTracks, type TrackSearchResult } from "@/lib/lrc";
 import { motion } from "motion/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Footer } from "@/components/ui/footer";
-import { Play } from "lucide-react";
+import { Keyboard, Play, Target, Trophy } from "lucide-react";
 import { DeflectCard } from "@/components/ui/deflect-card";
 import { trackEvent } from "@/lib/analytics";
 
@@ -26,14 +26,70 @@ export const Route = createFileRoute("/")({
 });
 
 const floatingElements = [
-  { char: "♪", size: "text-3xl font-sans text-primary/70 z-10", top: "8%", left: "10%", delay: 0, duration: 6 },
-  { char: "♫", size: "text-2xl font-sans text-primary/70 z-10", top: "72%", left: "8%", delay: 1.5, duration: 7 },
-  { char: "♩", size: "text-xl font-sans text-primary/70 z-10", top: "5%", left: "85%", delay: 0.5, duration: 5.5 },
-  { char: "♬", size: "text-3xl font-sans text-primary/70 z-10", top: "78%", left: "88%", delay: 2, duration: 8 },
-  { char: "A", size: "text-[11px] font-mono border border-primary/30 px-2 py-0.5 rounded bg-primary/10 shadow-md text-primary/80 z-10", top: "25%", left: "90%", delay: 1, duration: 6.5 },
-  { char: "S", size: "text-[11px] font-mono border border-primary/30 px-2 py-0.5 rounded bg-primary/10 shadow-md text-primary/80 z-10", top: "45%", left: "5%", delay: 2.5, duration: 7.2 },
-  { char: "space", size: "text-[9px] uppercase tracking-wider font-mono border border-primary/30 px-3.5 py-0.5 rounded bg-primary/10 shadow-md text-primary/80 z-10", top: "85%", left: "48%", delay: 0.8, duration: 8.5 },
-  { char: "♩", size: "text-lg font-sans text-primary/70 z-10", top: "35%", left: "94%", delay: 3, duration: 6.8 },
+  {
+    char: "♪",
+    size: "text-3xl font-sans text-primary/70 z-10",
+    top: "8%",
+    left: "10%",
+    delay: 0,
+    duration: 6,
+  },
+  {
+    char: "♫",
+    size: "text-2xl font-sans text-primary/70 z-10",
+    top: "72%",
+    left: "8%",
+    delay: 1.5,
+    duration: 7,
+  },
+  {
+    char: "♩",
+    size: "text-xl font-sans text-primary/70 z-10",
+    top: "5%",
+    left: "85%",
+    delay: 0.5,
+    duration: 5.5,
+  },
+  {
+    char: "♬",
+    size: "text-3xl font-sans text-primary/70 z-10",
+    top: "78%",
+    left: "88%",
+    delay: 2,
+    duration: 8,
+  },
+  {
+    char: "A",
+    size: "text-[11px] font-mono border border-primary/30 px-2 py-0.5 rounded bg-primary/10 shadow-md text-primary/80 z-10",
+    top: "25%",
+    left: "90%",
+    delay: 1,
+    duration: 6.5,
+  },
+  {
+    char: "S",
+    size: "text-[11px] font-mono border border-primary/30 px-2 py-0.5 rounded bg-primary/10 shadow-md text-primary/80 z-10",
+    top: "45%",
+    left: "5%",
+    delay: 2.5,
+    duration: 7.2,
+  },
+  {
+    char: "space",
+    size: "text-[9px] uppercase tracking-wider font-mono border border-primary/30 px-3.5 py-0.5 rounded bg-primary/10 shadow-md text-primary/80 z-10",
+    top: "85%",
+    left: "48%",
+    delay: 0.8,
+    duration: 8.5,
+  },
+  {
+    char: "♩",
+    size: "text-lg font-sans text-primary/70 z-10",
+    top: "35%",
+    left: "94%",
+    delay: 3,
+    duration: 6.8,
+  },
 ];
 
 const titleContainerVariants = {
@@ -77,100 +133,153 @@ const RECOMMENDED_SONGS_HOMEPAGE = [
     id: 1743852427,
     trackName: "Love Me Not",
     artistName: "Ravyn Lenae",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/07/8c/6c/078c6c94-d38d-0451-d57b-23e957b569f8/075679660893.jpg/100x100bb.jpg",
-    duration: 213
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/07/8c/6c/078c6c94-d38d-0451-d57b-23e957b569f8/075679660893.jpg/100x100bb.jpg",
+    duration: 213,
   },
   {
     id: 1579787410,
     trackName: "STAY",
     artistName: "The Kid LAROI & Justin Bieber",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/a8/3a/22/a83a22f7-af18-7ef6-a7de-74816c532a44/886449475421.jpg/100x100bb.jpg",
-    duration: 142
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/a8/3a/22/a83a22f7-af18-7ef6-a7de-74816c532a44/886449475421.jpg/100x100bb.jpg",
+    duration: 142,
   },
   {
     id: 1615585008,
     trackName: "As It Was",
     artistName: "Harry Styles",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/2a/19/fb/2a19fb85-2f70-9e44-f2a9-82abe679b88e/886449990061.jpg/100x100bb.jpg",
-    duration: 167
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/2a/19/fb/2a19fb85-2f70-9e44-f2a9-82abe679b88e/886449990061.jpg/100x100bb.jpg",
+    duration: 167,
   },
   {
     id: 1538003843,
     trackName: "Levitating",
     artistName: "Dua Lipa",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/6c/11/d6/6c11d681-aa3a-d59e-4c2e-f77e181026ab/190295092665.jpg/100x100bb.jpg",
-    duration: 203
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/6c/11/d6/6c11d681-aa3a-d59e-4c2e-f77e181026ab/190295092665.jpg/100x100bb.jpg",
+    duration: 203,
   },
   {
     id: 1440870375,
     trackName: "Starboy",
     artistName: "The Weeknd feat. Daft Punk",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/b5/92/bb/b592bb72-52e3-e756-9b26-9f56d08f47ab/16UMGIM67864.rgb.jpg/100x100bb.jpg",
-    duration: 230
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/b5/92/bb/b592bb72-52e3-e756-9b26-9f56d08f47ab/16UMGIM67864.rgb.jpg/100x100bb.jpg",
+    duration: 230,
   },
   {
     id: 1468058171,
     trackName: "Cruel Summer",
     artistName: "Taylor Swift",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/49/3d/ab/493dab54-f920-9043-6181-80993b8116c9/19UMGIM53909.rgb.jpg/100x100bb.jpg",
-    duration: 178
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/49/3d/ab/493dab54-f920-9043-6181-80993b8116c9/19UMGIM53909.rgb.jpg/100x100bb.jpg",
+    duration: 178,
   },
   {
     id: 1193701392,
     trackName: "Shape of You",
     artistName: "Ed Sheeran",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/15/e6/e8/15e6e8a4-4190-6a8b-86c3-ab4a51b88288/190295851286.jpg/100x100bb.jpg",
-    duration: 233
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/15/e6/e8/15e6e8a4-4190-6a8b-86c3-ab4a51b88288/190295851286.jpg/100x100bb.jpg",
+    duration: 233,
   },
   {
     id: 1411628233,
     trackName: "Believer",
     artistName: "Imagine Dragons",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/11/7a/b8/117ab805-6811-8929-18b9-0fad7baf0c25/17UMGIM98210.rgb.jpg/100x100bb.jpg",
-    duration: 204
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/11/7a/b8/117ab805-6811-8929-18b9-0fad7baf0c25/17UMGIM98210.rgb.jpg/100x100bb.jpg",
+    duration: 204,
   },
   {
     id: 1193701400,
     trackName: "Perfect",
     artistName: "Ed Sheeran",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/15/e6/e8/15e6e8a4-4190-6a8b-86c3-ab4a51b88288/190295851286.jpg/100x100bb.jpg",
-    duration: 263
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/15/e6/e8/15e6e8a4-4190-6a8b-86c3-ab4a51b88288/190295851286.jpg/100x100bb.jpg",
+    duration: 263,
   },
   {
     id: 1488408568,
     trackName: "Blinding Lights",
     artistName: "The Weeknd",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/a6/6e/bf/a66ebf79-5008-8948-b352-a790fc87446b/19UM1IM04638.rgb.jpg/100x100bb.jpg",
-    duration: 202
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/a6/6e/bf/a66ebf79-5008-8948-b352-a790fc87446b/19UM1IM04638.rgb.jpg/100x100bb.jpg",
+    duration: 202,
   },
   {
     id: 1674691586,
     trackName: "Flowers",
     artistName: "Miley Cyrus",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/8c/67/ff/8c67ff91-31c3-3fef-1884-ce3ec89f3af4/196589946874.jpg/100x100bb.jpg",
-    duration: 201
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/8c/67/ff/8c67ff91-31c3-3fef-1884-ce3ec89f3af4/196589946874.jpg/100x100bb.jpg",
+    duration: 201,
   },
   {
     id: 1508562516,
     trackName: "Heat Waves",
     artistName: "Glass Animals",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/da/8b/77/da8b7731-6f4f-eacf-5e74-8b23389eefa1/20UMGIM03371.rgb.jpg/100x100bb.jpg",
-    duration: 239
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/da/8b/77/da8b7731-6f4f-eacf-5e74-8b23389eefa1/20UMGIM03371.rgb.jpg/100x100bb.jpg",
+    duration: 239,
   },
   {
     id: 1434371887,
     trackName: "Shallow",
     artistName: "Lady Gaga & Bradley Cooper",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/b1/9f/ef/b19fef51-79de-a940-e8ab-9e4e07b04d96/18UMGIM53752.rgb.jpg/100x100bb.jpg",
-    duration: 216
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/b1/9f/ef/b19fef51-79de-a940-e8ab-9e4e07b04d96/18UMGIM53752.rgb.jpg/100x100bb.jpg",
+    duration: 216,
   },
   {
     id: 1571330212,
     trackName: "Bad Habits",
     artistName: "Ed Sheeran",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/63/45/cc/6345cc98-aa83-ad6e-e3c9-1a36ff9838a4/190296614316.jpg/100x100bb.jpg",
-    duration: 231
-  }
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/63/45/cc/6345cc98-aa83-ad6e-e3c9-1a36ff9838a4/190296614316.jpg/100x100bb.jpg",
+    duration: 231,
+  },
+];
+
+const gameHighlights = [
+  {
+    icon: Keyboard,
+    title: "Typing that follows the music",
+    description:
+      "Each round shows lyric lines in time with the track, so practice feels closer to rhythm training than a plain typing drill.",
+  },
+  {
+    icon: Target,
+    title: "Accuracy matters",
+    description:
+      "Scores reward clean input, timing, and consistency. Fast typing helps, but careless mistakes quickly pull a run down.",
+  },
+  {
+    icon: Trophy,
+    title: "Compete when you are ready",
+    description:
+      "Signed-in players can save scores and compare results on the leaderboard for daily, weekly, and all-time challenges.",
+  },
+];
+
+const faqs = [
+  {
+    question: "What is KeyVerse?",
+    answer:
+      "KeyVerse is a free rhythm typing game. You search for a song, start a round, and type the synced lyrics as the music plays.",
+  },
+  {
+    question: "Do I need an account?",
+    answer:
+      "No. You can play without signing in. Accounts are used for saved scores, profiles, and leaderboard entries.",
+  },
+  {
+    question: "Why are some songs harder than others?",
+    answer:
+      "Difficulty depends on tempo, lyric density, repeated phrases, pauses, and how clearly the vocal timing maps to typed words.",
+  },
 ];
 
 function Index() {
@@ -239,36 +348,39 @@ function Index() {
 
       <div className="w-full max-w-4xl mx-auto px-6 py-28 flex flex-col items-center text-center justify-start flex-1 gap-10 relative">
         {/* Floating background music notes and keycaps */}
-        {showAmbientMotion && floatingElements.map((el, idx) => (
-          <motion.div
-            key={idx}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{
-              opacity: [0.45, 0.85, 0.45],
-              y: [0, -14, 0],
-              x: [0, 6, 0],
-              rotate: [0, 10, -10, 0],
-            }}
-            transition={{
-              duration: el.duration,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: el.delay,
-            }}
-            className={`absolute pointer-events-none select-none ${el.size}`}
-            style={{
-              top: el.top,
-              left: el.left,
-            }}
-          >
-            {el.char}
-          </motion.div>
-        ))}
+        {showAmbientMotion &&
+          floatingElements.map((el, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{
+                opacity: [0.45, 0.85, 0.45],
+                y: [0, -14, 0],
+                x: [0, 6, 0],
+                rotate: [0, 10, -10, 0],
+              }}
+              transition={{
+                duration: el.duration,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: el.delay,
+              }}
+              className={`absolute pointer-events-none select-none ${el.size}`}
+              style={{
+                top: el.top,
+                left: el.left,
+              }}
+            >
+              {el.char}
+            </motion.div>
+          ))}
 
         {/* Hero Header Section */}
         <div className="w-full max-w-2xl flex flex-col items-center text-center relative z-20">
           <header className="mb-2">
-            <h1 className={`text-5xl md:text-6xl font-bold tracking-tight leading-tight text-foreground mb-6 ${disableAnimation ? "" : "animate-fade-in-up"}`}>
+            <h1
+              className={`text-5xl md:text-6xl font-bold tracking-tight leading-tight text-foreground mb-6 ${disableAnimation ? "" : "animate-fade-in-up"}`}
+            >
               Feel the rhythm in every{" "}
               <span className="inline-block whitespace-nowrap relative py-2">
                 <span className="playwrite-mx-regular text-primary italic">keystroke.</span>
@@ -287,8 +399,10 @@ function Index() {
                 </svg>
               </span>
             </h1>
-            
-            <p className={`text-sm text-muted-foreground leading-relaxed max-w-xl mx-auto ${disableAnimation ? "" : "animate-fade-in-up [animation-delay:200ms] opacity-0 [animation-fill-mode:forwards]"}`}>
+
+            <p
+              className={`text-sm text-muted-foreground leading-relaxed max-w-xl mx-auto ${disableAnimation ? "" : "animate-fade-in-up [animation-delay:200ms] opacity-0 [animation-fill-mode:forwards]"}`}
+            >
               Search your{" "}
               <span className="inline-block text-foreground font-medium underline decoration-primary/30 decoration-2 underline-offset-4 cursor-default">
                 favorite tracks
@@ -331,7 +445,10 @@ function Index() {
               {loading ? (
                 <ul className="space-y-4">
                   {Array.from({ length: 5 }).map((_, idx) => (
-                    <li key={idx} className="flex items-center gap-4 px-2 py-3 border-b border-border/40 last:border-0">
+                    <li
+                      key={idx}
+                      className="flex items-center gap-4 px-2 py-3 border-b border-border/40 last:border-0"
+                    >
                       <Skeleton className="h-10 w-10 rounded-full" />
                       <div className="min-w-0 flex-1 flex flex-col gap-2">
                         <Skeleton className="h-4 w-1/2" />
@@ -360,17 +477,27 @@ function Index() {
                           className="flex items-center gap-4 rounded-xl px-4 py-3.5 transition-all hover:bg-muted/65 text-left group"
                         >
                           {t.artworkUrl100 ? (
-                            <img src={t.artworkUrl100} alt="" className="h-10 w-10 rounded-lg shrink-0 object-cover border border-border/10" />
+                            <img
+                              src={t.artworkUrl100}
+                              alt=""
+                              className="h-10 w-10 rounded-lg shrink-0 object-cover border border-border/10"
+                            />
                           ) : (
                             <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
                               ♪
                             </div>
                           )}
                           <div className="min-w-0 flex-1">
-                            <p className="truncate font-semibold text-sm group-hover:text-primary transition-colors">{t.trackName}</p>
-                            <p className="truncate text-xs text-muted-foreground mt-0.5">{t.artistName}</p>
+                            <p className="truncate font-semibold text-sm group-hover:text-primary transition-colors">
+                              {t.trackName}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground mt-0.5">
+                              {t.artistName}
+                            </p>
                           </div>
-                          <span className="font-mono text-xs text-primary group-hover:translate-x-1 transition-transform">play -&gt;</span>
+                          <span className="font-mono text-xs text-primary group-hover:translate-x-1 transition-transform">
+                            play -&gt;
+                          </span>
                         </Link>
                       </li>
                     ))}
@@ -413,7 +540,7 @@ function Index() {
               <h2 className="text-sm font-bold tracking-wider text-muted-foreground font-mono uppercase">
                 Featured Songs
               </h2>
-              
+
               <div className="flex items-center gap-6">
                 <Link
                   to="/recommended"
@@ -442,9 +569,12 @@ function Index() {
                   >
                     {/* Subtle backlighting on card hover */}
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-xl" />
-                    
+
                     <div className="flex items-center gap-3 relative z-10">
-                      <img src={song.artworkUrl100} className="h-12 w-12 rounded-lg object-cover border border-border/10 shrink-0" />
+                      <img
+                        src={song.artworkUrl100}
+                        className="h-12 w-12 rounded-lg object-cover border border-border/10 shrink-0"
+                      />
                       <div className="min-w-0">
                         <h3 className="truncate font-semibold text-xs text-foreground group-hover:text-primary transition-colors">
                           {song.trackName}
@@ -463,6 +593,67 @@ function Index() {
               ))}
             </div>
           </motion.div>
+        )}
+
+        {!routeQuery && (
+          <section className="w-full max-w-4xl z-20 text-left">
+            <div className="grid gap-4 md:grid-cols-3">
+              {gameHighlights.map(({ icon: Icon, title, description }) => (
+                <div
+                  key={title}
+                  className="rounded-xl border border-border/40 bg-card/45 p-5 backdrop-blur-sm"
+                >
+                  <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <h2 className="font-mono text-sm font-bold tracking-wide">{title}</h2>
+                  <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                    {description}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 grid gap-8 border-t border-border/20 pt-8 md:grid-cols-[1.1fr_0.9fr]">
+              <div>
+                <h2 className="text-xl font-bold tracking-tight">
+                  A typing game built around songs
+                </h2>
+                <div className="mt-4 space-y-3 text-sm leading-7 text-muted-foreground">
+                  <p>
+                    Most typing practice asks you to copy random words. KeyVerse uses the structure
+                    of music instead: verses, pauses, hooks, and repeated phrases become the rhythm
+                    you follow.
+                  </p>
+                  <p>
+                    The goal is simple enough for a quick round, but the score system gives you room
+                    to improve. Better timing, fewer corrections, and steadier focus all make a
+                    noticeable difference.
+                  </p>
+                </div>
+                <Link
+                  to="/how-to-play"
+                  className="mt-5 inline-flex rounded-lg bg-primary px-4 py-2 text-xs font-mono font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  How to play
+                </Link>
+              </div>
+
+              <div className="rounded-xl border border-border/40 bg-card/45 p-5">
+                <h2 className="font-mono text-sm font-bold tracking-wide">Common questions</h2>
+                <div className="mt-4 space-y-4">
+                  {faqs.map((item) => (
+                    <div key={item.question}>
+                      <h3 className="text-sm font-semibold">{item.question}</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                        {item.answer}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
         )}
       </div>
 

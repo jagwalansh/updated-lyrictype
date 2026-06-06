@@ -8,23 +8,34 @@ export function Footer() {
       {/* Glassmorphic Footer Wrapper */}
       <footer className="w-full border border-border/40 bg-card/65 dark:bg-card/45 py-10 px-8 rounded-2xl backdrop-blur-md shadow-sm dark:shadow-[0_8px_32px_oklch(0_0_0_/_20%)]">
         <div className="flex flex-col gap-8">
-          
           {/* Top Row: Responsive Column Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-            
             {/* Col 1: Brand details */}
             <div className="flex flex-col gap-3 md:justify-self-start">
               <h3 className="font-mono text-sm font-semibold tracking-wider text-foreground">
                 key<span className="text-primary border-b border-primary">Verse</span>
               </h3>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                A clean, minimal rhythm typing game built for music lovers. Test your speed and accuracy in sync with the beat.
+                A clean, minimal rhythm typing game built for music lovers. Test your speed and
+                accuracy in sync with the beat.
               </p>
               <div className="flex flex-col gap-2 pt-1 text-xs text-muted-foreground font-mono">
-                <Link to="/about" className="underline decoration-border underline-offset-2 transition-colors hover:text-primary hover:decoration-primary">
+                <Link
+                  to="/about"
+                  className="underline decoration-border underline-offset-2 transition-colors hover:text-primary hover:decoration-primary"
+                >
                   About Us
                 </Link>
-                <Link to="/support" className="underline decoration-border underline-offset-2 transition-colors hover:text-primary hover:decoration-primary">
+                <Link
+                  to="/how-to-play"
+                  className="underline decoration-border underline-offset-2 transition-colors hover:text-primary hover:decoration-primary"
+                >
+                  How to Play
+                </Link>
+                <Link
+                  to="/support"
+                  className="underline decoration-border underline-offset-2 transition-colors hover:text-primary hover:decoration-primary"
+                >
                   Contact & Support
                 </Link>
               </div>
@@ -44,6 +55,11 @@ export function Footer() {
                 <li>
                   <Link to="/recommended" className="hover:text-primary transition-colors">
                     Recommended
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/leaderboard" className="hover:text-primary transition-colors">
+                    Leaderboard
                   </Link>
                 </li>
                 <li>
@@ -89,14 +105,11 @@ export function Footer() {
                 </li>
               </ul>
             </div>
-
           </div>
 
           {/* Bottom copyright row */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border pt-6 text-[10px] text-muted-foreground font-mono">
-            <div>
-              &copy; {new Date().getFullYear()} keyVerse. All rights reserved.
-            </div>
+            <div>&copy; {new Date().getFullYear()} keyVerse. All rights reserved.</div>
             <div className="flex items-center gap-4">
               <motion.a
                 whileHover={{ scale: 1.15, y: -2 }}
@@ -135,7 +148,6 @@ export function Footer() {
               </motion.a>
             </div>
           </div>
-
         </div>
       </footer>
     </div>

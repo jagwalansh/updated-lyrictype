@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Play } from "lucide-react";
 import { DeflectCard } from "@/components/ui/deflect-card";
 import { Navbar } from "@/components/ui/navbar";
@@ -6,6 +6,14 @@ import { Footer } from "@/components/ui/footer";
 
 export const Route = createFileRoute("/recommended")({
   head: () => ({
+    meta: [
+      { title: "Recommended Songs | KeyVerse" },
+      {
+        name: "description",
+        content:
+          "Browse recommended KeyVerse songs for rhythm typing practice, from beginner-friendly tracks to faster lyric challenges.",
+      },
+    ],
     links: [{ rel: "canonical", href: "https://keyverse.me/recommended" }],
   }),
   component: Recommended,
@@ -16,46 +24,50 @@ const FEATURED_SONGS = [
     id: 1743852427,
     trackName: "Love Me Not",
     artistName: "Ravyn Lenae",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/07/8c/6c/078c6c94-d38d-0451-d57b-23e957b569f8/075679660893.jpg/100x100bb.jpg",
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/07/8c/6c/078c6c94-d38d-0451-d57b-23e957b569f8/075679660893.jpg/100x100bb.jpg",
     duration: 213,
     difficulty: "Easy",
     difficultyColor: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
     description: "Catchy rhythm, clear vocals. Features custom pre-synced lyrics!",
-    tags: ["R&B", "Groovy"]
+    tags: ["R&B", "Groovy"],
   },
   {
     id: 1579787410,
     trackName: "STAY",
     artistName: "The Kid LAROI & Justin Bieber",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/a8/3a/22/a83a22f7-af18-7ef6-a7de-74816c532a44/886449475421.jpg/100x100bb.jpg",
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/a8/3a/22/a83a22f7-af18-7ef6-a7de-74816c532a44/886449475421.jpg/100x100bb.jpg",
     duration: 142,
     difficulty: "Medium",
     difficultyColor: "bg-amber-500/10 text-amber-500 border-amber-500/20",
     description: "Energetic, fast, but highly repetitive. Great for rhythm practice.",
-    tags: ["Pop", "Upbeat"]
+    tags: ["Pop", "Upbeat"],
   },
   {
     id: 1488408568,
     trackName: "Blinding Lights",
     artistName: "The Weeknd",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/a6/6e/bf/a66ebf79-5008-8948-b352-a790fc87446b/19UM1IM04638.rgb.jpg/100x100bb.jpg",
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/a6/6e/bf/a66ebf79-5008-8948-b352-a790fc87446b/19UM1IM04638.rgb.jpg/100x100bb.jpg",
     duration: 202,
     difficulty: "Medium",
     difficultyColor: "bg-amber-500/10 text-amber-500 border-amber-500/20",
     description: "Fast-paced synth-pop. Excellent test for high-speed typing endurance.",
-    tags: ["Synth-pop", "Energetic"]
+    tags: ["Synth-pop", "Energetic"],
   },
   {
     id: 1508562516,
     trackName: "Heat Waves",
     artistName: "Glass Animals",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/da/8b/77/da8b7731-6f4f-eacf-5e74-8b23389eefa1/20UMGIM03371.rgb.jpg/100x100bb.jpg",
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/da/8b/77/da8b7731-6f4f-eacf-5e74-8b23389eefa1/20UMGIM03371.rgb.jpg/100x100bb.jpg",
     duration: 239,
     difficulty: "Easy",
     difficultyColor: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
     description: "Laying down a clean indie-pop beat. Very forgiving word spacing.",
-    tags: ["Indie Pop", "Steady"]
-  }
+    tags: ["Indie Pop", "Steady"],
+  },
 ];
 
 const TRENDING_SONGS = [
@@ -63,134 +75,146 @@ const TRENDING_SONGS = [
     id: 1752214923,
     trackName: "Espresso",
     artistName: "Sabrina Carpenter",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/a1/1c/ca/a11ccab6-7d4c-e041-d028-998bcebeb709/24UMGIM61704.rgb.jpg/100x100bb.jpg",
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/a1/1c/ca/a11ccab6-7d4c-e041-d028-998bcebeb709/24UMGIM61704.rgb.jpg/100x100bb.jpg",
     duration: 175,
     difficulty: "Medium",
     difficultyColor: "bg-amber-500/10 text-amber-500 border-amber-500/20",
     description: "Bouncy pop phrasing with quick transitions and a playful rhythm.",
-    tags: ["Pop", "Trending"]
+    tags: ["Pop", "Trending"],
   },
   {
     id: 1739659142,
     trackName: "BIRDS OF A FEATHER",
     artistName: "Billie Eilish",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/92/9f/69/929f69f1-9977-3a44-d674-11f70c852d1b/24UMGIM36186.rgb.jpg/100x100bb.jpg",
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/92/9f/69/929f69f1-9977-3a44-d674-11f70c852d1b/24UMGIM36186.rgb.jpg/100x100bb.jpg",
     duration: 210,
     difficulty: "Easy",
     difficultyColor: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
     description: "Smooth, melodic lines with a steady tempo that is easy to follow.",
-    tags: ["Pop", "Chill"]
+    tags: ["Pop", "Chill"],
   },
   {
     id: 1762656732,
     trackName: "Die With A Smile",
     artistName: "Lady Gaga & Bruno Mars",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/11/ae/f2/11aef294-f57c-bab9-c9fc-529162984e62/24UMGIM85348.rgb.jpg/100x100bb.jpg",
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/11/ae/f2/11aef294-f57c-bab9-c9fc-529162984e62/24UMGIM85348.rgb.jpg/100x100bb.jpg",
     duration: 251,
     difficulty: "Easy",
     difficultyColor: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
     description: "A dramatic duet with clear vocals and a comfortable typing pace.",
-    tags: ["Pop", "Ballad"]
+    tags: ["Pop", "Ballad"],
   },
   {
     id: 1773452221,
     trackName: "APT.",
     artistName: "ROSÉ & Bruno Mars",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/2d/1a/7d/2d1a7d91-587e-0ceb-d434-327bd66d9e86/075679628312.jpg/100x100bb.jpg",
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/2d/1a/7d/2d1a7d91-587e-0ceb-d434-327bd66d9e86/075679628312.jpg/100x100bb.jpg",
     duration: 169,
     difficulty: "Medium",
     difficultyColor: "bg-amber-500/10 text-amber-500 border-amber-500/20",
     description: "Fast, punchy hooks and repeated phrases for energetic practice.",
-    tags: ["Pop", "Upbeat"]
+    tags: ["Pop", "Upbeat"],
   },
   {
     id: 1724488124,
     trackName: "Beautiful Things",
     artistName: "Benson Boone",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/54/f4/92/54f49210-e260-b519-ebbd-f4f40ee710cd/054391342751.jpg/100x100bb.jpg",
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/54/f4/92/54f49210-e260-b519-ebbd-f4f40ee710cd/054391342751.jpg/100x100bb.jpg",
     duration: 180,
     difficulty: "Easy",
     difficultyColor: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
     description: "A gradual vocal build with clear verses and a memorable chorus.",
-    tags: ["Pop", "Emotional"]
+    tags: ["Pop", "Emotional"],
   },
   {
     id: 1749591722,
     trackName: "A Bar Song (Tipsy)",
     artistName: "Shaboozey",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/be/db/81/bedb81c3-ca23-a1b9-f275-59e46ae4fdb1/197342625517_cover.jpg/100x100bb.jpg",
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/be/db/81/bedb81c3-ca23-a1b9-f275-59e46ae4fdb1/197342625517_cover.jpg/100x100bb.jpg",
     duration: 171,
     difficulty: "Medium",
     difficultyColor: "bg-amber-500/10 text-amber-500 border-amber-500/20",
     description: "A catchy country-pop rhythm with conversational, flowing lyrics.",
-    tags: ["Country", "Trending"]
+    tags: ["Country", "Trending"],
   },
   {
     id: 1866732800,
     trackName: "I Just Might",
     artistName: "Bruno Mars",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/ed/46/bf/ed46bf4e-7cb9-965a-54f3-03059977fe6c/075679589293.jpg/100x100bb.jpg",
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/ed/46/bf/ed46bf4e-7cb9-965a-54f3-03059977fe6c/075679589293.jpg/100x100bb.jpg",
     duration: 213,
     difficulty: "Medium",
     difficultyColor: "bg-amber-500/10 text-amber-500 border-amber-500/20",
     description: "Bright pop vocals and a steady groove with quick lyrical turns.",
-    tags: ["Pop", "Trending"]
+    tags: ["Pop", "Trending"],
   },
   {
     id: 1870984033,
     trackName: "Aperture",
     artistName: "Harry Styles",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/07/41/6a/07416a78-38b9-2d47-7ce8-8a52a44c510f/196874010112.jpg/100x100bb.jpg",
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/07/41/6a/07416a78-38b9-2d47-7ce8-8a52a44c510f/196874010112.jpg/100x100bb.jpg",
     duration: 312,
     difficulty: "Easy",
     difficultyColor: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
     description: "A relaxed, melodic track with plenty of room to settle into the beat.",
-    tags: ["Pop", "Chill"]
+    tags: ["Pop", "Chill"],
   },
   {
     id: 1833328845,
     trackName: "Opalite",
     artistName: "Taylor Swift",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/2d/46/e0/2d46e0bc-8ab9-85dd-4b56-ee6951351034/25UM1IM19577.rgb.jpg/100x100bb.jpg",
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/2d/46/e0/2d46e0bc-8ab9-85dd-4b56-ee6951351034/25UM1IM19577.rgb.jpg/100x100bb.jpg",
     duration: 235,
     difficulty: "Medium",
     difficultyColor: "bg-amber-500/10 text-amber-500 border-amber-500/20",
     description: "Polished pop storytelling with a rhythmic chorus and clear phrasing.",
-    tags: ["Pop", "Trending"]
+    tags: ["Pop", "Trending"],
   },
   {
     id: 1842444457,
     trackName: "Dracula",
     artistName: "Tame Impala",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/36/be/b4/36beb41f-c644-55cb-9fbb-bf0622a66653/196873644783.jpg/100x100bb.jpg",
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/36/be/b4/36beb41f-c644-55cb-9fbb-bf0622a66653/196873644783.jpg/100x100bb.jpg",
     duration: 205,
     difficulty: "Medium",
     difficultyColor: "bg-amber-500/10 text-amber-500 border-amber-500/20",
     description: "Psychedelic pop with a firm pulse and a slightly trickier lyrical flow.",
-    tags: ["Psychedelic", "Trending"]
+    tags: ["Psychedelic", "Trending"],
   },
   {
     id: 1817609509,
     trackName: "Man I Need",
     artistName: "Olivia Dean",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/08/e2/21/08e22164-7c0b-1522-818f-e0e74f62dc49/25UMGIM69703.rgb.jpg/100x100bb.jpg",
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/08/e2/21/08e22164-7c0b-1522-818f-e0e74f62dc49/25UMGIM69703.rgb.jpg/100x100bb.jpg",
     duration: 184,
     difficulty: "Easy",
     difficultyColor: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
     description: "Warm vocals and an easygoing groove that keeps the typing pace smooth.",
-    tags: ["Soul-pop", "Groovy"]
+    tags: ["Soul-pop", "Groovy"],
   },
   {
     id: 1806614783,
     trackName: "Stateside",
     artistName: "PinkPantheress",
-    artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/12/db/5a/12db5a38-94c1-42bc-b36b-7204b7aa4eac/5021732768650.jpg/100x100bb.jpg",
+    artworkUrl100:
+      "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/12/db/5a/12db5a38-94c1-42bc-b36b-7204b7aa4eac/5021732768650.jpg/100x100bb.jpg",
     duration: 168,
     difficulty: "Medium",
     difficultyColor: "bg-amber-500/10 text-amber-500 border-amber-500/20",
     description: "A compact, upbeat track with brisk lines and a light dance rhythm.",
-    tags: ["Dance-pop", "Upbeat"]
-  }
+    tags: ["Dance-pop", "Upbeat"],
+  },
 ];
 
 interface Song {
@@ -234,15 +258,16 @@ function SongGrid({ songs }: { songs: Song[] }) {
                   <h3 className="truncate font-semibold text-sm text-foreground group-hover:text-primary transition-colors">
                     {song.trackName}
                   </h3>
-                  <p className="truncate text-xs text-muted-foreground mt-0.5">
-                    {song.artistName}
-                  </p>
+                  <p className="truncate text-xs text-muted-foreground mt-0.5">{song.artistName}</p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1.5 mt-2">
                   {/* Tag Badges */}
                   {song.tags.map((tag) => (
-                    <span key={tag} className="inline-flex px-2 py-0.5 text-[9px] font-mono text-muted-foreground bg-muted/60 border border-border/20 rounded">
+                    <span
+                      key={tag}
+                      className="inline-flex px-2 py-0.5 text-[9px] font-mono text-muted-foreground bg-muted/60 border border-border/20 rounded"
+                    >
                       {tag}
                     </span>
                   ))}
@@ -269,7 +294,7 @@ function SongGrid({ songs }: { songs: Song[] }) {
                   track: song.trackName,
                   art: song.artworkUrl100 || "",
                   duration: song.duration,
-                  from: "/recommended"
+                  from: "/recommended",
                 }}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-mono font-bold bg-primary text-primary-foreground hover:opacity-90 rounded-lg shadow-sm transition-all cursor-pointer"
               >
@@ -300,7 +325,8 @@ function Recommended() {
               Recommended Songs
             </h1>
             <p className="text-xs text-muted-foreground mt-2 leading-relaxed max-w-xl">
-              Hop straight into the game with these popular, highly-rhythmic, and beginner-friendly tracks. Perfect for mastering your timing and typing accuracy!
+              Hop straight into the game with these popular, highly-rhythmic, and beginner-friendly
+              tracks. Perfect for mastering your timing and typing accuracy!
             </p>
           </div>
 
@@ -328,6 +354,26 @@ function Recommended() {
           </h2>
           <SongGrid songs={TRENDING_SONGS} />
         </div>
+
+        <section className="grid gap-6 border-t border-border/20 pt-8 text-left md:grid-cols-2">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight">How these songs are chosen</h2>
+            <p className="mt-4 text-sm leading-7 text-muted-foreground">
+              The recommended list favors tracks with clear vocal timing, steady phrasing, and
+              enough repetition to make practice feel fair. Easy songs usually have more open space
+              between lines, while medium songs ask you to react faster and recover from denser
+              phrases.
+            </p>
+          </div>
+          <div className="rounded-xl border border-border/40 bg-card/45 p-6">
+            <h2 className="font-mono text-sm font-bold tracking-wide">Practice path</h2>
+            <ol className="mt-4 space-y-3 text-sm leading-7 text-muted-foreground">
+              <li>Start with an easy track and focus on clean lines.</li>
+              <li>Replay the same song until your accuracy is stable.</li>
+              <li>Move to medium tracks when the timing starts to feel natural.</li>
+            </ol>
+          </div>
+        </section>
 
         <Footer />
       </div>

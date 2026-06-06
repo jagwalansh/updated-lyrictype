@@ -14,6 +14,7 @@ import { Route as SupportRouteImport } from './routes/support'
 import { Route as RecommendedRouteImport } from './routes/recommended'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
+import { Route as HowToPlayRouteImport } from './routes/how-to-play'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlayTrackIdRouteImport } from './routes/play.$trackId'
@@ -43,6 +44,11 @@ const LeaderboardRoute = LeaderboardRouteImport.update({
   path: '/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HowToPlayRoute = HowToPlayRouteImport.update({
+  id: '/how-to-play',
+  path: '/how-to-play',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -62,6 +68,7 @@ const PlayTrackIdRoute = PlayTrackIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/how-to-play': typeof HowToPlayRoute
   '/leaderboard': typeof LeaderboardRoute
   '/privacy': typeof PrivacyRoute
   '/recommended': typeof RecommendedRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/how-to-play': typeof HowToPlayRoute
   '/leaderboard': typeof LeaderboardRoute
   '/privacy': typeof PrivacyRoute
   '/recommended': typeof RecommendedRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/how-to-play': typeof HowToPlayRoute
   '/leaderboard': typeof LeaderboardRoute
   '/privacy': typeof PrivacyRoute
   '/recommended': typeof RecommendedRoute
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/how-to-play'
     | '/leaderboard'
     | '/privacy'
     | '/recommended'
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/how-to-play'
     | '/leaderboard'
     | '/privacy'
     | '/recommended'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/how-to-play'
     | '/leaderboard'
     | '/privacy'
     | '/recommended'
@@ -126,6 +138,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  HowToPlayRoute: typeof HowToPlayRoute
   LeaderboardRoute: typeof LeaderboardRoute
   PrivacyRoute: typeof PrivacyRoute
   RecommendedRoute: typeof RecommendedRoute
@@ -171,6 +184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/how-to-play': {
+      id: '/how-to-play'
+      path: '/how-to-play'
+      fullPath: '/how-to-play'
+      preLoaderRoute: typeof HowToPlayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -198,6 +218,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  HowToPlayRoute: HowToPlayRoute,
   LeaderboardRoute: LeaderboardRoute,
   PrivacyRoute: PrivacyRoute,
   RecommendedRoute: RecommendedRoute,

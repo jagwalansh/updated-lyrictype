@@ -9,6 +9,14 @@ import { Trophy, Calendar, Clock, ArrowLeft, Music } from "lucide-react";
 
 export const Route = createFileRoute("/leaderboard")({
   head: () => ({
+    meta: [
+      { title: "Leaderboard | KeyVerse" },
+      {
+        name: "description",
+        content:
+          "View KeyVerse leaderboard rankings for daily, weekly, and all-time rhythm typing scores.",
+      },
+    ],
     links: [{ rel: "canonical", href: "https://keyverse.me/leaderboard" }],
   }),
   component: LeaderboardPage,
@@ -61,7 +69,11 @@ const RankBadge = ({ rank }: { rank: number }) => {
 function LeaderboardPage() {
   const [period, setPeriod] = useState<"daily" | "weekly" | "alltime">("alltime");
 
-  const { data: dbScores = [], isLoading, error } = useQuery({
+  const {
+    data: dbScores = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["leaderboard", period],
     queryFn: () => fetchLeaderboard(period),
     refetchInterval: 10000, // Auto-refetch every 10 seconds for real-time feel
@@ -114,7 +126,8 @@ function LeaderboardPage() {
               Leaderboard
             </h1>
             <p className="text-xs text-muted-foreground mt-2 leading-relaxed max-w-xl">
-              Type with absolute speed and perfect accuracy to rise through the ranks. Only the absolute best make the cut!
+              Type with absolute speed and perfect accuracy to rise through the ranks. Only the
+              absolute best make the cut!
             </p>
           </div>
 
@@ -197,15 +210,17 @@ function LeaderboardPage() {
                   <AnimatePresence mode="popLayout">
                     {scores.map((row: any, index: number) => {
                       const rank = index + 1;
-                      
+
                       let rowBgStyle = "bg-card/20 hover:bg-card/35 border-b border-border/10";
 
                       if (rank === 1) {
-                        rowBgStyle = "bg-yellow-400/12 hover:bg-yellow-400/18 border-b border-yellow-400/25";
+                        rowBgStyle =
+                          "bg-yellow-400/12 hover:bg-yellow-400/18 border-b border-yellow-400/25";
                       } else if (rank === 2) {
                         rowBgStyle = "bg-sky-400/12 hover:bg-sky-400/18 border-b border-sky-400/25";
                       } else if (rank === 3) {
-                        rowBgStyle = "bg-orange-500/12 hover:bg-orange-500/18 border-b border-orange-500/25";
+                        rowBgStyle =
+                          "bg-orange-500/12 hover:bg-orange-500/18 border-b border-orange-500/25";
                       }
 
                       return (
