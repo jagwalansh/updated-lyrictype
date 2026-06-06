@@ -261,6 +261,10 @@ DECLARE
   v_min_id UUID;
   v_result JSONB;
 BEGIN
+  IF p_score <= 0 THEN
+    RAISE EXCEPTION 'Inactive or incomplete rounds are not eligible for the leaderboard';
+  END IF;
+
   -- 1. Check if this user already has a score for this song
   SELECT id, score INTO v_existing_id, v_existing_score
   FROM public.scores
@@ -335,4 +339,3 @@ GRANT EXECUTE ON FUNCTION public.save_user_score TO service_role;
 
 -- Force PostgREST to reload schema cache to pick up table changes immediately
 NOTIFY pgrst, 'reload schema';
-

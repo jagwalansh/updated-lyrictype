@@ -31,7 +31,8 @@ export async function GET(req: Request, env?: LeaderboardEnv) {
   if (period === "daily") view = "daily_leaderboard";
   if (period === "weekly") view = "weekly_leaderboard";
 
-  let query = supabase.from(view).select("*").order("best_score", { ascending: false }).limit(50);
+  const limit = songId ? 50 : 500;
+  let query = supabase.from(view).select("*").order("best_score", { ascending: false }).limit(limit);
 
   if (songId) {
     query = query.eq("song_id", songId);

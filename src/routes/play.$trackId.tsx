@@ -353,6 +353,7 @@ function PlayPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [scoreSaved, setScoreSaved] = useState(false);
   const [saveAttempted, setSaveAttempted] = useState(false);
+  const [scoreSaveSkippedReason, setScoreSaveSkippedReason] = useState<string | null>(null);
 
   const [lines, setLines] = useState<LyricLine[] | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
@@ -385,6 +386,8 @@ function PlayPage() {
   const currentTimeRef = useRef(0);
   const songStartedTrackedRef = useRef(false);
   const songCompletedTrackedRef = useRef(false);
+  const completedLyricsRef = useRef(false);
+  const inactivityMissesRef = useRef(0);
   const lastVideoCarouselScrollRef = useRef(0);
 
   const [playing, setPlaying] = useState(false);
@@ -464,6 +467,8 @@ function PlayPage() {
     currentTimeRef.current = 0;
     songStartedTrackedRef.current = false;
     songCompletedTrackedRef.current = false;
+    completedLyricsRef.current = false;
+    inactivityMissesRef.current = 0;
     lastCompletedLineRef.current = -1;
     setPlaying(false);
     setAudioReady(false);
@@ -475,6 +480,7 @@ function PlayPage() {
     setSaveError(null);
     setScoreSaved(false);
     setSaveAttempted(false);
+    setScoreSaveSkippedReason(null);
     setLoadErr(null);
     setLines(null);
     setVideoId(null);
@@ -769,6 +775,7 @@ function PlayPage() {
               }
             }
             if (modified) {
+              inactivityMissesRef.current += line.text.length - charIdxRef.current;
               charResultsRef.current = currentResults;
               setCharResults(currentResults);
               setCombo(0);
@@ -939,6 +946,7 @@ function PlayPage() {
     if (nextIdx >= line.text.length) {
       setLineComplete(true);
       if (currentLineIdx === lines.length - 1) {
+        completedLyricsRef.current = true;
         endSong();
       }
     }
@@ -964,10 +972,23 @@ function PlayPage() {
   // Save score when song ends
   useEffect(() => {
     if (songEnded && user && !scoreSaved && !savingScore && !saveAttempted) {
+      if (score <= 0 || stats.total <= 0) {
+        setSaveAttempted(true);
+        setScoreSaveSkippedReason("No score was saved because no lyrics were typed.");
+        return;
+      }
+
+      if (!completedLyricsRef.current || inactivityMissesRef.current > 0) {
+        setSaveAttempted(true);
+        setScoreSaveSkippedReason("No score was saved because the round was left inactive.");
+        return;
+      }
+
       const saveScore = async () => {
         setSavingScore(true);
         setSaveError(null);
         setSaveAttempted(true);
+        setScoreSaveSkippedReason(null);
         try {
           if (!isSupabaseConfigured) {
             throw new Error("Score saving is temporarily unavailable.");
@@ -991,6 +1012,9 @@ function PlayPage() {
               score,
               accuracy,
               consistency: accuracy,
+              typedCharacters: stats.total,
+              completedLyrics: completedLyricsRef.current,
+              inactivityMisses: inactivityMissesRef.current,
               previewUrl: null,
               artUrl: art,
             }),
@@ -1020,6 +1044,7 @@ function PlayPage() {
     track,
     score,
     accuracy,
+    stats.total,
     art,
   ]);
 
@@ -1087,6 +1112,8 @@ function PlayPage() {
     currentTimeRef.current = 0;
     songStartedTrackedRef.current = false;
     songCompletedTrackedRef.current = false;
+    completedLyricsRef.current = false;
+    inactivityMissesRef.current = 0;
     lastCompletedLineRef.current = -1;
     setSongEnded(false);
     setSongEndedAt(null);
@@ -1096,6 +1123,7 @@ function PlayPage() {
     setSaveError(null);
     setScoreSaved(false);
     setSaveAttempted(false);
+    setScoreSaveSkippedReason(null);
 
     // Reset Spotify bar DOM elements
     const currentEl = document.getElementById("spotify-current-time");
@@ -1696,6 +1724,13 @@ function PlayPage() {
                                 <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
                                 <span className="text-rose-500 text-xs font-medium">
                                   Failed to save: {saveError}
+                                </span>
+                              </>
+                            ) : scoreSaveSkippedReason ? (
+                              <>
+                                <AlertCircle className="w-4 h-4 text-muted-foreground shrink-0" />
+                                <span className="text-muted-foreground text-xs font-medium">
+                                  {scoreSaveSkippedReason}
                                 </span>
                               </>
                             ) : (

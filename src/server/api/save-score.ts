@@ -2,8 +2,51 @@ import { createClient } from "@supabase/supabase-js";
 import { supabaseUrl, supabaseAnonKey } from "@/lib/supabase";
 
 export async function POST(req: Request) {
-  const { songId, artist, track, score, accuracy, consistency, previewUrl, artUrl } =
-    await req.json();
+  const {
+    songId,
+    artist,
+    track,
+    score,
+    accuracy,
+    consistency,
+    typedCharacters,
+    completedLyrics,
+    inactivityMisses,
+    previewUrl,
+    artUrl,
+  } = await req.json();
+
+  const numericScore = Number(score);
+  const numericAccuracy = Number(accuracy);
+  const numericConsistency = Number(consistency);
+  const numericTypedCharacters = Number(typedCharacters);
+  const numericInactivityMisses = Number(inactivityMisses);
+
+  if (
+    !Number.isFinite(numericScore) ||
+    !Number.isFinite(numericAccuracy) ||
+    !Number.isFinite(numericConsistency) ||
+    !Number.isFinite(numericTypedCharacters) ||
+    !Number.isFinite(numericInactivityMisses)
+  ) {
+    return new Response(JSON.stringify({ error: "Invalid score payload" }), {
+      status: 400,
+    });
+  }
+
+  if (
+    numericScore <= 0 ||
+    numericTypedCharacters <= 0 ||
+    completedLyrics !== true ||
+    numericInactivityMisses > 0
+  ) {
+    return new Response(
+      JSON.stringify({
+        error: "Inactive or incomplete rounds are not eligible for the leaderboard",
+      }),
+      { status: 400 },
+    );
+  }
 
   // Get current user from Authorization header
   const authHeader = req.headers.get("Authorization");
@@ -54,9 +97,9 @@ export async function POST(req: Request) {
   const { data, error } = await userSupabase.rpc("save_user_score", {
     p_user_id: user.id,
     p_song_id: songId,
-    p_score: score,
-    p_accuracy: accuracy,
-    p_consistency: consistency,
+    p_score: Math.trunc(numericScore),
+    p_accuracy: numericAccuracy,
+    p_consistency: numericConsistency,
   });
 
   if (error) {
