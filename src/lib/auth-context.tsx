@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
-import { supabase } from "@/lib/supabase";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase";
 import { trackEvent } from "@/lib/analytics";
@@ -58,31 +58,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const searchParams = new URLSearchParams(window.location.search);
       // OAuth redirects often return error info in the URL hash instead of query parameters
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      
+
       const error = searchParams.get("error") || hashParams.get("error");
-      const errorDescription = searchParams.get("error_description") || hashParams.get("error_description");
-      
+      const errorDescription =
+        searchParams.get("error_description") || hashParams.get("error_description");
+
       if (error || errorDescription) {
         let displayMessage = errorDescription || error || "Authentication error occurred.";
         const msgLower = displayMessage.toLowerCase();
-        if (msgLower.includes("provider google not found") || msgLower.includes("signup provider google not found")) {
-          displayMessage = "Google Sign-in is not enabled in your Supabase Auth Providers. Please check Step 5 in SUPABASE_SETUP.md.";
+        if (
+          msgLower.includes("provider google not found") ||
+          msgLower.includes("signup provider google not found")
+        ) {
+          displayMessage =
+            "Google Sign-in is not enabled in your Supabase Auth Providers. Please check Step 5 in SUPABASE_SETUP.md.";
         } else if (msgLower.includes("client_id_not_found") || msgLower.includes("client id")) {
-          displayMessage = "Google Client ID is not configured correctly in your Supabase dashboard.";
+          displayMessage =
+            "Google Client ID is not configured correctly in your Supabase dashboard.";
         }
         setAuthError(decodeURIComponent(displayMessage.replace(/\+/g, " ")));
-        
+
         // Clean up the URL query/hash parameters so they don't persist
-        const cleanSearch = window.location.search.replace(/[?&]error[^&]*/g, "").replace(/^&/, "?");
+        const cleanSearch = window.location.search
+          .replace(/[?&]error[^&]*/g, "")
+          .replace(/^&/, "?");
         const cleanHash = window.location.hash.replace(/[#&]error[^&]*/g, "");
-        const newUrl = window.location.pathname + (cleanSearch === "?" ? "" : cleanSearch) + cleanHash;
+        const newUrl =
+          window.location.pathname + (cleanSearch === "?" ? "" : cleanSearch) + cleanHash;
         window.history.replaceState({}, document.title, newUrl);
       }
     }
   }, []);
 
   const loadProfile = useCallback(async (currentUser: User | null) => {
-    if (!currentUser) {
+    if (!currentUser || !isSupabaseConfigured) {
       setProfile(null);
       setProfileLoading(false);
       return null;
@@ -108,6 +117,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setUser(null);
+      setProfile(null);
+      setLoading(false);
+      setProfileLoading(false);
+      return;
+    }
+
     // Check current session
     supabase.auth
       .getSession()
@@ -134,6 +151,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadProfile]);
 
   const signUp = async (email: string, password: string) => {
+    if (!isSupabaseConfigured) throw new Error("Account features are temporarily unavailable.");
+
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
 
@@ -147,6 +166,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
+    if (!isSupabaseConfigured) throw new Error("Account features are temporarily unavailable.");
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -157,6 +178,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithGoogle = async (isSignUp = false) => {
+    if (!isSupabaseConfigured) throw new Error("Account features are temporarily unavailable.");
+
     // Redirect to the current origin (e.g. http://localhost:5173) which matches typical Supabase site URL setup
     const redirectTo = typeof window !== "undefined" ? window.location.origin : undefined;
     if (isSignUp && typeof window !== "undefined") {
@@ -177,6 +200,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    if (!isSupabaseConfigured) return;
+
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     setUser(null);
@@ -184,6 +209,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const resendConfirmation = async (email: string) => {
+    if (!isSupabaseConfigured) throw new Error("Account features are temporarily unavailable.");
+
     const emailRedirectTo = typeof window !== "undefined" ? window.location.origin : undefined;
     const { error } = await supabase.auth.resend({
       type: "signup",
@@ -198,6 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateProfile = useCallback(
     async (username: string) => {
+      if (!isSupabaseConfigured) throw new Error("Account features are temporarily unavailable.");
       if (!user) throw new Error("You need to be signed in to update your account.");
 
       const trimmedUsername = username.trim();

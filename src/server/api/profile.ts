@@ -1,6 +1,12 @@
-import { supabase } from "@/lib/supabase";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 export async function GET() {
+  if (!isSupabaseConfigured) {
+    return new Response(JSON.stringify({ error: "Supabase is not configured" }), {
+      status: 503,
+    });
+  }
+
   const {
     data: { user },
     error: authError,

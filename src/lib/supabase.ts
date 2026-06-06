@@ -2,12 +2,15 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 export const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn("Warning: Missing Supabase environment variables. Database operations will fail until VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are added to Cloudflare settings.");
+if (!isSupabaseConfigured) {
+  console.warn(
+    "Warning: Missing Supabase environment variables. Database operations will fail until VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are added to Cloudflare settings.",
+  );
 }
 
-export const supabase: SupabaseClient = (supabaseUrl && supabaseAnonKey)
+export const supabase: SupabaseClient = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : (null as any);
 
