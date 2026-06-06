@@ -246,39 +246,38 @@ const RECOMMENDED_SONGS_HOMEPAGE = [
 const gameHighlights = [
   {
     icon: Keyboard,
-    title: "Typing that follows the music",
+    title: "Timed lyric input",
     description:
-      "Each round shows lyric lines in time with the track, so practice feels closer to rhythm training than a plain typing drill.",
+      "Lines advance with the track, so the challenge is reading ahead, staying calm, and typing the words that are actually being sung.",
   },
   {
     icon: Target,
-    title: "Accuracy matters",
+    title: "Measured accuracy",
     description:
-      "Scores reward clean input, timing, and consistency. Fast typing helps, but careless mistakes quickly pull a run down.",
+      "The score favors clean entries over frantic corrections. A steady round usually beats a fast round with repeated misses.",
   },
   {
     icon: Trophy,
-    title: "Compete when you are ready",
+    title: "Optional ranking",
     description:
-      "Signed-in players can save scores and compare results on the leaderboard for daily, weekly, and all-time challenges.",
+      "Accounts are only needed for saved scores and leaderboard placement. The core game remains playable without signing in.",
   },
 ];
 
 const faqs = [
   {
-    question: "What is KeyVerse?",
-    answer:
-      "KeyVerse is a free rhythm typing game. You search for a song, start a round, and type the synced lyrics as the music plays.",
+    question: "Can I play without signing in?",
+    answer: "Yes. Sign-in is only required for saved scores, profiles, and leaderboard entries.",
   },
   {
-    question: "Do I need an account?",
+    question: "Why does a song sometimes feel out of sync?",
     answer:
-      "No. You can play without signing in. Accounts are used for saved scores, profiles, and leaderboard entries.",
+      "The game combines lyric timing with public video playback. If a video is a live cut, remix, or regional version, timing can drift.",
   },
   {
-    question: "Why are some songs harder than others?",
+    question: "What makes a track difficult?",
     answer:
-      "Difficulty depends on tempo, lyric density, repeated phrases, pauses, and how clearly the vocal timing maps to typed words.",
+      "Dense verses, short pauses, punctuation, and fast vocal phrasing all raise the typing pressure.",
   },
 ];
 
@@ -597,53 +596,66 @@ function Index() {
 
         {!routeQuery && (
           <section className="w-full max-w-4xl z-20 text-left">
-            <div className="grid gap-4 md:grid-cols-3">
-              {gameHighlights.map(({ icon: Icon, title, description }) => (
-                <div
-                  key={title}
-                  className="rounded-xl border border-border/40 bg-card/45 p-5 backdrop-blur-sm"
-                >
-                  <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <h2 className="font-mono text-sm font-bold tracking-wide">{title}</h2>
-                  <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                    {description}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-8 grid gap-8 border-t border-border/20 pt-8 md:grid-cols-[1.1fr_0.9fr]">
-              <div>
-                <h2 className="text-xl font-bold tracking-tight">
-                  A typing game built around songs
-                </h2>
-                <div className="mt-4 space-y-3 text-sm leading-7 text-muted-foreground">
-                  <p>
-                    Most typing practice asks you to copy random words. KeyVerse uses the structure
-                    of music instead: verses, pauses, hooks, and repeated phrases become the rhythm
-                    you follow.
-                  </p>
-                  <p>
-                    The goal is simple enough for a quick round, but the score system gives you room
-                    to improve. Better timing, fewer corrections, and steadier focus all make a
-                    noticeable difference.
+            <div className="border-y border-border/20 py-7">
+              <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold tracking-tight">How the game works</h2>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    A short overview for new players before they start a round.
                   </p>
                 </div>
                 <Link
                   to="/how-to-play"
-                  className="mt-5 inline-flex rounded-lg bg-primary px-4 py-2 text-xs font-mono font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                  className="text-xs font-mono font-semibold text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-primary"
                 >
-                  How to play
+                  Read the guide
                 </Link>
               </div>
 
-              <div className="rounded-xl border border-border/40 bg-card/45 p-5">
-                <h2 className="font-mono text-sm font-bold tracking-wide">Common questions</h2>
+              <div className="grid gap-0 border border-border/30 bg-card/30 md:grid-cols-3">
+                {gameHighlights.map(({ icon: Icon, title, description }) => (
+                  <div
+                    key={title}
+                    className="border-b border-border/30 p-5 md:border-b-0 md:border-r md:last:border-r-0"
+                  >
+                    <div className="mb-3 flex items-center gap-2">
+                      <Icon className="h-4 w-4 text-primary" />
+                      <h3 className="font-mono text-xs font-bold uppercase tracking-wider">
+                        {title}
+                      </h3>
+                    </div>
+                    <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-8 grid gap-8 md:grid-cols-[1.15fr_0.85fr]">
+              <div>
+                <h2 className="text-lg font-semibold tracking-tight">Practice with real pacing</h2>
+                <div className="mt-4 space-y-3 text-sm leading-7 text-muted-foreground">
+                  <p>
+                    KeyVerse is built around the rhythm of a finished song, not a random word list.
+                    Verses create longer typing runs, hooks give you repetition, and pauses force
+                    you to wait instead of rushing ahead.
+                  </p>
+                  <p>
+                    That pacing makes each round a useful typing drill and a small listening test.
+                    The best scores tend to come from relaxed accuracy rather than raw speed.
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-l border-border/30 pl-0 md:pl-6">
+                <h2 className="font-mono text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Notes
+                </h2>
                 <div className="mt-4 space-y-4">
                   {faqs.map((item) => (
-                    <div key={item.question}>
+                    <div
+                      key={item.question}
+                      className="border-b border-border/20 pb-4 last:border-0"
+                    >
                       <h3 className="text-sm font-semibold">{item.question}</h3>
                       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                         {item.answer}

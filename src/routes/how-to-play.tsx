@@ -23,33 +23,33 @@ const steps = [
     icon: Search,
     title: "Find a song",
     description:
-      "Search for a track or choose one from the recommended list. KeyVerse looks for synced lyric timing so the words can follow the music.",
+      "Search by artist or track title, or start from the recommended list if you want a known-good round.",
   },
   {
     icon: Music2,
     title: "Start the round",
     description:
-      "The player loads a matching YouTube video and displays lyric lines as the song moves forward. You can report a sync issue if a video does not match well.",
+      "KeyVerse pairs synced lyrics with a matching video and moves the active line as playback advances.",
   },
   {
     icon: Keyboard,
     title: "Type in rhythm",
     description:
-      "Enter the current lyric line as cleanly as possible. The best runs come from a balance of speed, timing, and accuracy.",
+      "Type the current lyric line cleanly. Reading ahead helps, but the input should stay with the vocal.",
   },
   {
     icon: Trophy,
     title: "Review the score",
     description:
-      "After a round, compare your score and accuracy. Signed-in players can save results and compete on public leaderboards.",
+      "Use the score, accuracy, and leaderboard placement to see where a run improved or fell apart.",
   },
 ];
 
 const tips = [
-  "Listen for pauses before you type. Many missed characters happen when a line starts earlier or later than expected.",
-  "Prioritize clean words over raw speed. Correcting a mistake usually costs more time than typing slightly slower.",
-  "Practice short, repetitive tracks first, then move to faster songs with denser lyrics.",
-  "Use headphones when possible so the vocal timing is easier to follow.",
+  "Let the first line establish the tempo before pushing for speed.",
+  "Type clean words first; corrections usually cost more than a slightly slower pace.",
+  "Replay one track until accuracy is stable, then move to a denser song.",
+  "Report a sync issue when a video version clearly does not match the lyric timing.",
 ];
 
 function HowToPlay() {
@@ -65,8 +65,7 @@ function HowToPlay() {
             </div>
             <h1 className="text-3xl font-bold tracking-tight md:text-4xl">How to Play KeyVerse</h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              KeyVerse turns lyric timing into typing practice. The rules are simple, but improving
-              your score takes rhythm, accuracy, and a little patience.
+              A quick reference for the rhythm typing flow, score behavior, and sync reports.
             </p>
           </div>
           <Link
@@ -78,30 +77,33 @@ function HowToPlay() {
           </Link>
         </div>
 
-        <section className="grid gap-4 md:grid-cols-4">
+        <section className="grid border border-border/30 bg-card/30 md:grid-cols-4">
           {steps.map(({ icon: Icon, title, description }) => (
-            <article key={title} className="rounded-xl border border-border/40 bg-card/45 p-5">
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
-                <Icon className="h-5 w-5" />
+            <article
+              key={title}
+              className="border-b border-border/30 p-5 md:border-b-0 md:border-r md:last:border-r-0"
+            >
+              <div className="mb-3 flex items-center gap-2">
+                <Icon className="h-4 w-4 text-primary" />
+                <h2 className="font-mono text-xs font-bold uppercase tracking-wider">{title}</h2>
               </div>
-              <h2 className="font-mono text-sm font-bold tracking-wide">{title}</h2>
               <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{description}</p>
             </article>
           ))}
         </section>
 
-        <section className="grid gap-8 md:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-xl border border-border/40 bg-card/45 p-6">
-            <h2 className="text-xl font-bold tracking-tight">What the score rewards</h2>
+        <section className="grid gap-8 border-t border-border/20 pt-8 md:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">What the score rewards</h2>
             <p className="mt-4 text-sm leading-7 text-muted-foreground">
-              A strong KeyVerse score is not only about words per minute. The game rewards accurate
-              typing, steady timing, and completing lyric lines without repeated corrections. Songs
-              with faster vocals, denser lines, or unusual phrasing naturally become harder.
+              Score is not just words per minute. A strong run combines accurate input, consistent
+              timing, and completed lyric lines with few corrections. Fast verses, clipped words,
+              and unusual phrasing naturally raise the difficulty.
             </p>
           </div>
 
-          <div className="rounded-xl border border-border/40 bg-card/45 p-6">
-            <h2 className="text-xl font-bold tracking-tight">Tips for better lyric typing</h2>
+          <div className="border-l border-border/30 pl-0 md:pl-6">
+            <h2 className="text-xl font-semibold tracking-tight">Practice notes</h2>
             <ul className="mt-4 space-y-3 text-sm leading-7 text-muted-foreground">
               {tips.map((tip) => (
                 <li key={tip} className="border-b border-border/20 pb-3 last:border-0 last:pb-0">
@@ -112,13 +114,13 @@ function HowToPlay() {
           </div>
         </section>
 
-        <section className="rounded-xl border border-border/40 bg-card/45 p-6">
-          <h2 className="text-xl font-bold tracking-tight">Song sync and third-party content</h2>
+        <section className="border-t border-border/20 pt-8">
+          <h2 className="text-xl font-semibold tracking-tight">Song sync and sources</h2>
           <p className="mt-4 text-sm leading-7 text-muted-foreground">
-            KeyVerse uses third-party services for lyrics, videos, artwork, and metadata. Because
-            public videos can change or vary by region, a track may occasionally load a video that
-            feels slightly out of sync. When that happens, use the in-game report option so the
-            mismatch can be reviewed.
+            KeyVerse uses third-party services for lyrics, videos, artwork, and metadata. Public
+            videos can vary by region or version, so a track may occasionally feel slightly out of
+            sync. The in-game report option includes the song and video details so mismatches can be
+            reviewed.
           </p>
         </section>
       </div>

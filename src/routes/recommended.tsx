@@ -325,8 +325,8 @@ function Recommended() {
               Recommended Songs
             </h1>
             <p className="text-xs text-muted-foreground mt-2 leading-relaxed max-w-xl">
-              Hop straight into the game with these popular, highly-rhythmic, and beginner-friendly
-              tracks. Perfect for mastering your timing and typing accuracy!
+              Tracks that tend to work well for rhythm typing: clear phrasing, recognizable
+              sections, and enough repetition to make a replay worthwhile.
             </p>
           </div>
 
@@ -355,22 +355,25 @@ function Recommended() {
           <SongGrid songs={TRENDING_SONGS} />
         </div>
 
-        <section className="grid gap-6 border-t border-border/20 pt-8 text-left md:grid-cols-2">
+        <section className="grid gap-8 border-t border-border/20 pt-8 text-left md:grid-cols-[1.1fr_0.9fr]">
           <div>
-            <h2 className="text-xl font-bold tracking-tight">How these songs are chosen</h2>
+            <h2 className="text-xl font-semibold tracking-tight">Selection notes</h2>
             <p className="mt-4 text-sm leading-7 text-muted-foreground">
-              The recommended list favors tracks with clear vocal timing, steady phrasing, and
-              enough repetition to make practice feel fair. Easy songs usually have more open space
-              between lines, while medium songs ask you to react faster and recover from denser
-              phrases.
+              The list favors songs with reliable timing, distinct vocal entries, and sections that
+              make sense on repeat. Easier tracks leave more room between lines; medium tracks
+              compress the phrasing and ask for faster recovery.
             </p>
           </div>
-          <div className="rounded-xl border border-border/40 bg-card/45 p-6">
-            <h2 className="font-mono text-sm font-bold tracking-wide">Practice path</h2>
+          <div className="border-l border-border/30 pl-0 md:pl-6">
+            <h2 className="font-mono text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Practice order
+            </h2>
             <ol className="mt-4 space-y-3 text-sm leading-7 text-muted-foreground">
-              <li>Start with an easy track and focus on clean lines.</li>
-              <li>Replay the same song until your accuracy is stable.</li>
-              <li>Move to medium tracks when the timing starts to feel natural.</li>
+              <li>Start with one easy track and learn where the lyric lines begin.</li>
+              <li>
+                Replay it until missed characters are rare, not just until the score improves.
+              </li>
+              <li>Move to medium tracks when the rhythm feels predictable.</li>
             </ol>
           </div>
         </section>
