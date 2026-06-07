@@ -5,7 +5,7 @@ import { searchTracks, type TrackSearchResult } from "@/lib/lrc";
 import { motion } from "motion/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Footer } from "@/components/ui/footer";
-import { Keyboard, Play, Target, Trophy } from "lucide-react";
+import { Play } from "lucide-react";
 import { DeflectCard } from "@/components/ui/deflect-card";
 import { trackEvent } from "@/lib/analytics";
 
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/")({
 const floatingElements = [
   {
     char: "♪",
-    size: "text-3xl font-sans text-primary/70 z-10",
+    size: "text-3xl font-sans text-primary/45",
     top: "8%",
     left: "10%",
     delay: 0,
@@ -36,7 +36,7 @@ const floatingElements = [
   },
   {
     char: "♫",
-    size: "text-2xl font-sans text-primary/70 z-10",
+    size: "text-2xl font-sans text-primary/45",
     top: "72%",
     left: "8%",
     delay: 1.5,
@@ -44,7 +44,7 @@ const floatingElements = [
   },
   {
     char: "♩",
-    size: "text-xl font-sans text-primary/70 z-10",
+    size: "text-xl font-sans text-primary/45",
     top: "5%",
     left: "85%",
     delay: 0.5,
@@ -52,7 +52,7 @@ const floatingElements = [
   },
   {
     char: "♬",
-    size: "text-3xl font-sans text-primary/70 z-10",
+    size: "text-3xl font-sans text-primary/45",
     top: "78%",
     left: "88%",
     delay: 2,
@@ -60,7 +60,7 @@ const floatingElements = [
   },
   {
     char: "A",
-    size: "text-[11px] font-mono border border-primary/30 px-2 py-0.5 rounded bg-primary/10 shadow-md text-primary/80 z-10",
+    size: "text-[11px] font-mono border border-primary/20 px-2 py-0.5 rounded bg-primary/5 shadow-md text-primary/55",
     top: "25%",
     left: "90%",
     delay: 1,
@@ -68,7 +68,7 @@ const floatingElements = [
   },
   {
     char: "S",
-    size: "text-[11px] font-mono border border-primary/30 px-2 py-0.5 rounded bg-primary/10 shadow-md text-primary/80 z-10",
+    size: "text-[11px] font-mono border border-primary/20 px-2 py-0.5 rounded bg-primary/5 shadow-md text-primary/55",
     top: "45%",
     left: "5%",
     delay: 2.5,
@@ -76,7 +76,7 @@ const floatingElements = [
   },
   {
     char: "space",
-    size: "text-[9px] uppercase tracking-wider font-mono border border-primary/30 px-3.5 py-0.5 rounded bg-primary/10 shadow-md text-primary/80 z-10",
+    size: "text-[9px] uppercase tracking-wider font-mono border border-primary/20 px-3.5 py-0.5 rounded bg-primary/5 shadow-md text-primary/55",
     top: "85%",
     left: "48%",
     delay: 0.8,
@@ -84,7 +84,7 @@ const floatingElements = [
   },
   {
     char: "♩",
-    size: "text-lg font-sans text-primary/70 z-10",
+    size: "text-lg font-sans text-primary/45",
     top: "35%",
     left: "94%",
     delay: 3,
@@ -245,19 +245,16 @@ const RECOMMENDED_SONGS_HOMEPAGE = [
 
 const gameHighlights = [
   {
-    icon: Keyboard,
     title: "Timed lyric input",
     description:
       "Lines advance with the track, so the challenge is reading ahead, staying calm, and typing the words that are actually being sung.",
   },
   {
-    icon: Target,
     title: "Measured accuracy",
     description:
       "The score favors clean entries over frantic corrections. A steady round usually beats a fast round with repeated misses.",
   },
   {
-    icon: Trophy,
     title: "Optional ranking",
     description:
       "Accounts are only needed for saved scores and leaderboard placement. The core game remains playable without signing in.",
@@ -346,33 +343,35 @@ function Index() {
       <Navbar />
 
       <div className="w-full max-w-4xl mx-auto px-6 py-28 flex flex-col items-center text-center justify-start flex-1 gap-10 relative">
-        {/* Floating background music notes and keycaps */}
-        {showAmbientMotion &&
-          floatingElements.map((el, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{
-                opacity: [0.45, 0.85, 0.45],
-                y: [0, -14, 0],
-                x: [0, 6, 0],
-                rotate: [0, 10, -10, 0],
-              }}
-              transition={{
-                duration: el.duration,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: el.delay,
-              }}
-              className={`absolute pointer-events-none select-none ${el.size}`}
-              style={{
-                top: el.top,
-                left: el.left,
-              }}
-            >
-              {el.char}
-            </motion.div>
-          ))}
+        {showAmbientMotion && (
+          <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
+            {floatingElements.map((el, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{
+                  opacity: [0.35, 0.65, 0.35],
+                  y: [0, -14, 0],
+                  x: [0, 6, 0],
+                  rotate: [0, 10, -10, 0],
+                }}
+                transition={{
+                  duration: el.duration,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: el.delay,
+                }}
+                className={`absolute ${el.size}`}
+                style={{
+                  top: el.top,
+                  left: el.left,
+                }}
+              >
+                {el.char}
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         {/* Hero Header Section */}
         <div className="w-full max-w-2xl flex flex-col items-center text-center relative z-20">
@@ -381,21 +380,8 @@ function Index() {
               className={`text-5xl md:text-6xl font-bold tracking-tight leading-tight text-foreground mb-6 ${disableAnimation ? "" : "animate-fade-in-up"}`}
             >
               Feel the rhythm in every{" "}
-              <span className="inline-block whitespace-nowrap relative py-2">
+              <span className="inline-block whitespace-nowrap py-2">
                 <span className="playwrite-mx-regular text-primary italic">keystroke.</span>
-                <svg
-                  className="absolute -bottom-2 left-0 w-full h-3 text-primary opacity-80"
-                  viewBox="0 0 100 20"
-                  preserveAspectRatio="none"
-                >
-                  <path
-                    d="M 2 15 Q 30 5 60 15 T 98 15"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                  />
-                </svg>
               </span>
             </h1>
 
@@ -613,17 +599,14 @@ function Index() {
               </div>
 
               <div className="grid gap-0 border border-border/30 bg-card/30 md:grid-cols-3">
-                {gameHighlights.map(({ icon: Icon, title, description }) => (
+                {gameHighlights.map(({ title, description }) => (
                   <div
                     key={title}
                     className="border-b border-border/30 p-5 md:border-b-0 md:border-r md:last:border-r-0"
                   >
-                    <div className="mb-3 flex items-center gap-2">
-                      <Icon className="h-4 w-4 text-primary" />
-                      <h3 className="font-mono text-xs font-bold uppercase tracking-wider">
-                        {title}
-                      </h3>
-                    </div>
+                    <h3 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider">
+                      {title}
+                    </h3>
                     <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
                   </div>
                 ))}

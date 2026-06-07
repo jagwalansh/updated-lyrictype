@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Keyboard, Music2, Search, Trophy } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Footer } from "@/components/ui/footer";
 import { Navbar } from "@/components/ui/navbar";
 
@@ -20,25 +20,21 @@ export const Route = createFileRoute("/how-to-play")({
 
 const steps = [
   {
-    icon: Search,
     title: "Find a song",
     description:
       "Search by artist or track title, or start from the recommended list if you want a known-good round.",
   },
   {
-    icon: Music2,
     title: "Start the round",
     description:
       "KeyVerse pairs synced lyrics with a matching video and moves the active line as playback advances.",
   },
   {
-    icon: Keyboard,
     title: "Type in rhythm",
     description:
       "Type the current lyric line cleanly. Reading ahead helps, but the input should stay with the vocal.",
   },
   {
-    icon: Trophy,
     title: "Review the score",
     description:
       "Use the score, accuracy, and leaderboard placement to see where a run improved or fell apart.",
@@ -78,15 +74,14 @@ function HowToPlay() {
         </div>
 
         <section className="grid border border-border/30 bg-card/30 md:grid-cols-4">
-          {steps.map(({ icon: Icon, title, description }) => (
+          {steps.map(({ title, description }) => (
             <article
               key={title}
               className="border-b border-border/30 p-5 md:border-b-0 md:border-r md:last:border-r-0"
             >
-              <div className="mb-3 flex items-center gap-2">
-                <Icon className="h-4 w-4 text-primary" />
-                <h2 className="font-mono text-xs font-bold uppercase tracking-wider">{title}</h2>
-              </div>
+              <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider">
+                {title}
+              </h2>
               <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{description}</p>
             </article>
           ))}
