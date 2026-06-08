@@ -344,7 +344,10 @@ function Index() {
 
       <div className="w-full max-w-4xl mx-auto px-6 py-28 flex flex-col items-center text-center justify-start flex-1 gap-10 relative">
         {showAmbientMotion && (
-          <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
+          <div
+            className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none"
+            aria-hidden="true"
+          >
             {floatingElements.map((el, idx) => (
               <motion.div
                 key={idx}
@@ -464,7 +467,7 @@ function Index() {
                           {t.artworkUrl100 ? (
                             <img
                               src={t.artworkUrl100}
-                              alt=""
+                              alt={`${t.trackName} album artwork`}
                               className="h-10 w-10 rounded-lg shrink-0 object-cover border border-border/10"
                             />
                           ) : (
@@ -558,6 +561,7 @@ function Index() {
                     <div className="flex items-center gap-3 relative z-10">
                       <img
                         src={song.artworkUrl100}
+                        alt={`${song.trackName} album artwork`}
                         className="h-12 w-12 rounded-lg object-cover border border-border/10 shrink-0"
                       />
                       <div className="min-w-0">

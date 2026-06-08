@@ -224,6 +224,7 @@ export function Navbar({ staticLayout = false }: NavbarProps) {
         >
           <Link
             to="/"
+            aria-label="KeyVerse home"
             className="font-mono text-xl font-medium tracking-tight hover:opacity-90 transition-opacity shrink-0"
           >
             <motion.span
@@ -265,6 +266,7 @@ export function Navbar({ staticLayout = false }: NavbarProps) {
           <motion.div className="flex items-center gap-3 shrink-0">
             <Link
               to="/"
+              aria-label="Home"
               className="relative z-50 rounded-md border border-border/40 bg-card/50 px-3 py-1.5 font-mono text-xl font-medium tracking-tight shadow-sm transition-all hover:bg-card/85"
             >
               <motion.span
@@ -281,11 +283,13 @@ export function Navbar({ staticLayout = false }: NavbarProps) {
               onClick={() => setSearchOpen(true)}
               className="py-1.5 border border-border/40 bg-card/50 hover:bg-card/85 transition-all shadow-sm rounded-md px-3 cursor-pointer relative z-50 h-8 flex items-center justify-center"
               title="Search Songs"
+              aria-label="Search songs"
             >
               <Search className="h-[18px] w-[18px] text-foreground hover:text-primary transition-colors duration-200" />
             </motion.button>
             <Link
               to="/leaderboard"
+              aria-label="Leaderboard"
               className="relative z-50 rounded-md border border-border/40 bg-card/50 px-3 py-1.5 font-mono text-xl font-medium tracking-tight shadow-sm transition-all hover:bg-card/85"
             >
               <motion.span
@@ -302,6 +306,7 @@ export function Navbar({ staticLayout = false }: NavbarProps) {
               onClick={toggleTheme}
               className="border border-border/40 bg-card/50 shadow-sm hover:bg-accent transition-all rounded-md px-3 h-8 cursor-pointer flex items-center justify-center relative z-50"
               title="Toggle Theme"
+              aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
             >
               {isDark ? (
                 <Sun className="h-4 w-4 text-foreground hover:text-primary transition-colors duration-200" />
@@ -318,6 +323,7 @@ export function Navbar({ staticLayout = false }: NavbarProps) {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setAccountOpen(true)}
                   className="border border-input bg-background shadow-sm hover:bg-accent transition-all rounded-md px-3 h-8 cursor-pointer flex items-center justify-center relative z-50"
+                  aria-label="Open account"
                 >
                   <UserRound
                     className="h-4 w-4 text-foreground hover:text-primary transition-colors duration-200"

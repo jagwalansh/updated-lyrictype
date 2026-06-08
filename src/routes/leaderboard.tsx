@@ -262,7 +262,7 @@ function LeaderboardPage() {
                                 {row.art_url ? (
                                   <img
                                     src={row.art_url}
-                                    alt=""
+                                    alt={`${row.track} album artwork`}
                                     className="h-full w-full object-cover"
                                   />
                                 ) : (

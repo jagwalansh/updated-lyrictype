@@ -167,7 +167,7 @@ export function AccountModal({ open, onOpenChange }: AccountModalProps) {
                   {pb.art_url && (
                     <img
                       src={pb.art_url}
-                      alt=""
+                      alt={`${pb.track} album artwork`}
                       className="h-10 w-10 rounded-lg object-cover border border-border/10"
                     />
                   )}

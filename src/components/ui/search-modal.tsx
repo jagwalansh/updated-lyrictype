@@ -150,7 +150,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                       {t.artworkUrl100 ? (
                         <img
                           src={t.artworkUrl100}
-                          alt=""
+                          alt={`${t.trackName} album artwork`}
                           className="h-10 w-10 rounded-lg shrink-0 object-cover border border-border/10"
                         />
                       ) : (
@@ -191,6 +191,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
                 className="px-2.5 py-1 rounded-md border border-border/40 hover:bg-muted/60 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer transition-colors"
+                aria-label="Previous search results page"
               >
                 &larr; Prev
               </button>
@@ -201,6 +202,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
                 className="px-2.5 py-1 rounded-md border border-border/40 hover:bg-muted/60 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer transition-colors"
+                aria-label="Next search results page"
               >
                 Next &rarr;
               </button>

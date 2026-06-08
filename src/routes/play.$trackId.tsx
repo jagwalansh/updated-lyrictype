@@ -1496,6 +1496,7 @@ function PlayPage() {
                       <img
                         src={`https://i.ytimg.com/vi/${previousVideoCandidate.videoId}/hqdefault.jpg`}
                         alt=""
+                        aria-hidden="true"
                         className="h-full w-full object-cover opacity-55"
                       />
                       <div className="absolute inset-0 bg-black/35" />
@@ -1520,6 +1521,7 @@ function PlayPage() {
                       <img
                         src={`https://i.ytimg.com/vi/${nextVideoCandidate.videoId}/hqdefault.jpg`}
                         alt=""
+                        aria-hidden="true"
                         className="h-full w-full object-cover opacity-55"
                       />
                       <div className="absolute inset-0 bg-black/35" />
@@ -1606,7 +1608,7 @@ function PlayPage() {
                         {art ? (
                           <img
                             src={art}
-                            alt=""
+                            alt={`${trackName || "Selected track"} album artwork`}
                             className="h-36 w-36 rounded-lg shadow-md mb-6 relative z-10"
                           />
                         ) : (
