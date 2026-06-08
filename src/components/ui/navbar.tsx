@@ -5,9 +5,21 @@ import { useAuth } from "@/lib/auth-context";
 import { useModal } from "@/lib/modal-context";
 import { motion } from "motion/react";
 
-const AccountModal = lazy(() => import("@/components/ui/account-modal").then((module) => ({ default: module.AccountModal })));
-const AuthModal = lazy(() => import("@/components/ui/auth-modal").then((module) => ({ default: module.AuthModal })));
-const SearchModal = lazy(() => import("@/components/ui/search-modal").then((module) => ({ default: module.SearchModal })));
+type ViewTransitionDocument = Document & {
+  startViewTransition: (callback: () => void) => {
+    ready: Promise<void>;
+  };
+};
+
+const AccountModal = lazy(() =>
+  import("@/components/ui/account-modal").then((module) => ({ default: module.AccountModal })),
+);
+const AuthModal = lazy(() =>
+  import("@/components/ui/auth-modal").then((module) => ({ default: module.AuthModal })),
+);
+const SearchModal = lazy(() =>
+  import("@/components/ui/search-modal").then((module) => ({ default: module.SearchModal })),
+);
 
 const HomeIcon = ({ className }: { className?: string }) => {
   return (
@@ -38,16 +50,8 @@ const LeaderboardIcon = ({ className }: { className?: string }) => {
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <path
-          d="M2 13V8H5V13H2Z M6 13V4H10V13H6Z M11 13V6H14V13H11Z"
-          fill="currentColor"
-        />
-        <path
-          d="M1 14H15"
-          stroke="currentColor"
-          strokeWidth="1.2"
-          strokeLinecap="round"
-        />
+        <path d="M2 13V8H5V13H2Z M6 13V4H10V13H6Z M11 13V6H14V13H11Z" fill="currentColor" />
+        <path d="M1 14H15" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
       </svg>
     </div>
   );
@@ -69,7 +73,9 @@ export function Navbar({ staticLayout = false }: NavbarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
-    const dark = document.documentElement.classList.contains("dark") || localStorage.getItem("theme") === "dark";
+    const dark =
+      document.documentElement.classList.contains("dark") ||
+      localStorage.getItem("theme") === "dark";
     setIsDark(dark);
     if (dark) {
       document.documentElement.classList.add("dark");
@@ -124,7 +130,7 @@ export function Navbar({ staticLayout = false }: NavbarProps) {
 
   const toggleTheme = (event: React.MouseEvent) => {
     const isDarkNow = document.documentElement.classList.contains("dark");
-    
+
     const applyTheme = () => {
       if (isDarkNow) {
         document.documentElement.classList.remove("dark");
@@ -145,24 +151,18 @@ export function Navbar({ staticLayout = false }: NavbarProps) {
     const x = event.clientX;
     const y = event.clientY;
 
-    const endRadius = Math.hypot(
-      Math.max(x, innerWidth - x),
-      Math.max(y, innerHeight - y)
-    );
+    const endRadius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
 
     if (isDarkNow) {
       document.documentElement.classList.add("dark-to-light-transition");
     }
 
-    const transition = (document as any).startViewTransition(() => {
+    const transition = (document as ViewTransitionDocument).startViewTransition(() => {
       applyTheme();
     });
 
     transition.ready.then(() => {
-      const clipPath = [
-        `circle(0px at ${x}px ${y}px)`,
-        `circle(${endRadius}px at ${x}px ${y}px)`
-      ];
+      const clipPath = [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`];
 
       document.documentElement.animate(
         {
@@ -171,10 +171,8 @@ export function Navbar({ staticLayout = false }: NavbarProps) {
         {
           duration: 400,
           easing: "ease-in-out",
-          pseudoElement: isDarkNow
-            ? "::view-transition-old(root)"
-            : "::view-transition-new(root)",
-        }
+          pseudoElement: isDarkNow ? "::view-transition-old(root)" : "::view-transition-new(root)",
+        },
       );
     });
 
@@ -224,8 +222,15 @@ export function Navbar({ staticLayout = false }: NavbarProps) {
             navIsScrolled ? "" : "mx-auto max-w-6xl"
           }`}
         >
-          <Link to="/" className="font-mono text-xl font-medium tracking-tight hover:opacity-90 transition-opacity shrink-0">
-            <motion.span className="flex items-baseline" animate={navIsScrolled ? "compact" : "full"} initial={false}>
+          <Link
+            to="/"
+            className="font-mono text-xl font-medium tracking-tight hover:opacity-90 transition-opacity shrink-0"
+          >
+            <motion.span
+              className="flex items-baseline"
+              animate={navIsScrolled ? "compact" : "full"}
+              initial={false}
+            >
               <span>k</span>
               <motion.span
                 variants={{
@@ -240,9 +245,7 @@ export function Navbar({ staticLayout = false }: NavbarProps) {
               >
                 ey
               </motion.span>
-              <motion.span className="border-b-2 border-primary text-primary">
-                V
-              </motion.span>
+              <motion.span className="border-b-2 border-primary text-primary">V</motion.span>
               <motion.span
                 variants={{
                   full: { width: "auto", opacity: 1 },
@@ -259,10 +262,7 @@ export function Navbar({ staticLayout = false }: NavbarProps) {
             </motion.span>
           </Link>
 
-
-          <motion.div
-            className="flex items-center gap-3 shrink-0"
-          >
+          <motion.div className="flex items-center gap-3 shrink-0">
             <Link
               to="/"
               className="relative z-50 rounded-md border border-border/40 bg-card/50 px-3 py-1.5 font-mono text-xl font-medium tracking-tight shadow-sm transition-all hover:bg-card/85"
@@ -319,7 +319,10 @@ export function Navbar({ staticLayout = false }: NavbarProps) {
                   onClick={() => setAccountOpen(true)}
                   className="border border-input bg-background shadow-sm hover:bg-accent transition-all rounded-md px-3 h-8 cursor-pointer flex items-center justify-center relative z-50"
                 >
-                  <UserRound className="h-4 w-4 text-foreground hover:text-primary transition-colors duration-200" aria-hidden="true" />
+                  <UserRound
+                    className="h-4 w-4 text-foreground hover:text-primary transition-colors duration-200"
+                    aria-hidden="true"
+                  />
                 </motion.button>
               ) : (
                 <motion.button

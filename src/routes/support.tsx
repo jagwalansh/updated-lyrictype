@@ -10,6 +10,7 @@ import {
   Heart,
   Loader2,
   Mail,
+  MessageCircle,
   Send,
   X,
 } from "lucide-react";
@@ -23,8 +24,7 @@ export const Route = createFileRoute("/support")({
       { title: "Contact and Support | KeyVerse" },
       {
         name: "description",
-        content:
-          "Contact KeyVerse with feedback, questions, bug reports, or song suggestions.",
+        content: "Contact KeyVerse with feedback, questions, bug reports, or song suggestions.",
       },
     ],
     links: [{ rel: "canonical", href: "https://keyverse.me/support" }],
@@ -35,11 +35,13 @@ export const Route = createFileRoute("/support")({
 type Status = "idle" | "sending" | "success" | "preview" | "error";
 
 const PATREON_URL = "https://www.patreon.com/cw/playKeyverse";
+const DISCORD_USERNAME = "nxxei";
 
 function Support() {
   const [contactOpen, setContactOpen] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [discordCopied, setDiscordCopied] = useState(false);
 
   const handleOpenChange = (open: boolean) => {
     setContactOpen(open);
@@ -77,16 +79,23 @@ function Support() {
       setStatus(data?.delivered === false ? "preview" : "success");
       form.reset();
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Your message could not be sent.",
-      );
+      setErrorMessage(error instanceof Error ? error.message : "Your message could not be sent.");
       setStatus("error");
     }
   };
 
   const sent = status === "success" || status === "preview";
+
+  const handleDiscordCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(DISCORD_USERNAME);
+      setDiscordCopied(true);
+      window.setTimeout(() => setDiscordCopied(false), 1800);
+    } catch {
+      setErrorMessage(`Discord username: @${DISCORD_USERNAME}`);
+      setStatus("error");
+    }
+  };
 
   return (
     <main className="relative flex min-h-screen flex-col items-center bg-background font-sans text-foreground">
@@ -98,12 +107,9 @@ function Support() {
             <div className="mb-1 text-xs font-mono font-semibold uppercase tracking-wider text-primary">
               Contact
             </div>
-            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-              Contact and Support
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Contact and Support</h1>
             <p className="mt-2 max-w-xl text-xs leading-relaxed text-muted-foreground">
-              Questions, feedback, song suggestions, and bug reports are all
-              welcome.
+              Questions, feedback, song suggestions, and bug reports are all welcome.
             </p>
           </div>
           <Link
@@ -128,13 +134,10 @@ function Support() {
             <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
             <div className="relative z-10">
-              <h2 className="font-mono text-lg font-bold tracking-wide">
-                Contact and Support
-              </h2>
+              <h2 className="font-mono text-lg font-bold tracking-wide">Contact and Support</h2>
               <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                Found a mistake in the lyric sync? Or did the player fail to
-                load a video? We are constantly improving KeyVerse and would
-                love to hear from you.
+                Found a mistake in the lyric sync? Or did the player fail to load a video? We are
+                constantly improving KeyVerse and would love to hear from you.
               </p>
             </div>
 
@@ -153,6 +156,13 @@ function Support() {
                   Submit Ticket &rarr;
                 </span>
               </SupportLink>
+              <SupportButton onClick={handleDiscordCopy}>
+                <MessageCircle className="h-4 w-4 text-primary" />
+                <span>DM on Discord</span>
+                <span className="ml-auto text-[10px] text-muted-foreground">
+                  {discordCopied ? "Copied" : `@${DISCORD_USERNAME}`}
+                </span>
+              </SupportButton>
               <SupportLink href={PATREON_URL}>
                 <Heart className="h-4 w-4 text-primary" />
                 <span>Support on Patreon</span>
@@ -186,13 +196,7 @@ function Support() {
             <form onSubmit={handleSubmit}>
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field label="Name" name="name" autoComplete="name" required />
-                <Field
-                  label="Email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                />
+                <Field label="Email" name="email" type="email" autoComplete="email" required />
               </div>
 
               <div className="mt-5">
@@ -200,9 +204,7 @@ function Support() {
               </div>
 
               <label className="mt-5 block">
-                <span className="mb-2 block text-xs font-mono font-semibold">
-                  Message
-                </span>
+                <span className="mb-2 block text-xs font-mono font-semibold">Message</span>
                 <textarea
                   name="message"
                   rows={7}
@@ -225,9 +227,7 @@ function Support() {
                 ) : sent ? (
                   <>
                     <CheckCircle2 className="h-4 w-4" />
-                    {status === "preview"
-                      ? "Preview submitted"
-                      : "Message sent"}
+                    {status === "preview" ? "Preview submitted" : "Message sent"}
                   </>
                 ) : (
                   <>
@@ -258,13 +258,7 @@ function Support() {
   );
 }
 
-function SupportButton({
-  onClick,
-  children,
-}: {
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
+function SupportButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
   return (
     <motion.button
       whileHover={{ y: -2 }}
@@ -277,13 +271,7 @@ function SupportButton({
   );
 }
 
-function SupportLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: React.ReactNode;
-}) {
+function SupportLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <motion.a
       whileHover={{ y: -2 }}
@@ -316,9 +304,7 @@ function Field({
       <span className="mb-2 block text-xs font-mono font-semibold">
         {label}
         {!required && (
-          <span className="ml-1 font-sans font-normal text-muted-foreground">
-            (optional)
-          </span>
+          <span className="ml-1 font-sans font-normal text-muted-foreground">(optional)</span>
         )}
       </span>
       <input

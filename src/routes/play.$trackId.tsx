@@ -31,6 +31,10 @@ import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
 import * as Dialog from "@radix-ui/react-dialog";
 
+const DISCORD_USERNAME = "nxxei";
+const DISCORD_USER_ID = "1215184320424050698";
+const X_USERNAME = "jagwalansh";
+
 interface Search {
   artist: string;
   track: string;
@@ -266,6 +270,30 @@ function SyncReportModal({
                   placeholder="For example: the lyrics started after the vocal, or this looks like a shortened music video."
                   className="flex w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <div className="h-px flex-1 bg-border" />
+                  <span>Or</span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <a
+                    href={`https://discord.com/users/${DISCORD_USER_ID}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 font-medium "
+                  >
+                    <DiscordIcon className="h-5 w-5" /> @{DISCORD_USERNAME}
+                  </a>
+                  <span className="h-4 w-px bg-border" aria-hidden="true" />
+                  <a
+                    href={`https://x.com/${X_USERNAME}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 font-medium "
+                  >
+                    <XSocialIcon className="h-4 w-4" /> @{X_USERNAME}
+                  </a>
+                </div>
               </div>
 
               <button
@@ -293,6 +321,9 @@ function SyncReportModal({
                   >
                     Send by email instead
                   </a>
+                  <p className="mt-2 flex items-center gap-1.5 text-xs">
+                    You can also DM <DiscordIcon className="h-4 w-4" /> @{DISCORD_USERNAME}.
+                  </p>
                 </div>
               )}
             </form>
@@ -307,6 +338,28 @@ function formatTime(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = Math.floor(Math.max(0, Math.floor(sec % 60)));
   return `${m}:${s < 10 ? "0" : ""}${s}`;
+}
+
+function DiscordIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-label="Discord"
+      className={className}
+      fill="currentColor"
+      role="img"
+      viewBox="0 0 24 24"
+    >
+      <path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.2.4c1.8.5 2.7 1.2 2.7 1.2a13.1 13.1 0 0 0-11.8 0S7 3.9 8.8 3.4L8.6 3a19.8 19.8 0 0 0-4.9 1.4C.6 9.1-.2 13.7.2 18.2A20 20 0 0 0 6.2 21s.7-1 1.3-1.8a8.3 8.3 0 0 1-2.1-1.4l.5.3c4 1.9 8.3 1.9 12.2 0l.5-.3a8.3 8.3 0 0 1-2.1 1.4c.6.8 1.3 1.8 1.3 1.8a20 20 0 0 0 6-2.8c.5-5.2-.8-9.8-3.5-13.8ZM8.1 15.4c-1.2 0-2.1-1.1-2.1-2.4s1-2.4 2.1-2.4c1.2 0 2.1 1.1 2.1 2.4s-.9 2.4-2.1 2.4Zm7.8 0c-1.2 0-2.1-1.1-2.1-2.4s1-2.4 2.1-2.4c1.2 0 2.1 1.1 2.1 2.4s-.9 2.4-2.1 2.4Z" />
+    </svg>
+  );
+}
+
+function XSocialIcon({ className }: { className?: string }) {
+  return (
+    <svg aria-label="X" className={className} fill="currentColor" role="img" viewBox="0 0 24 24">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117Z" />
+    </svg>
+  );
 }
 
 function findLineIdxForTime(time: number, lyricLines: LyricLine[]): number {

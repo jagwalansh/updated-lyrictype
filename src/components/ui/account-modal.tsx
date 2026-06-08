@@ -44,14 +44,18 @@ export function AccountModal({ open, onOpenChange }: AccountModalProps) {
       .limit(1)
       .maybeSingle()
       .then(({ data, error }) => {
-        if (error || !data) { setPb(null); return; }
+        if (error || !data) {
+          setPb(null);
+          return;
+        }
         supabase
           .from("songs")
           .select("artist, track, art_url")
           .eq("id", data.song_id)
           .single()
           .then(({ data: song }) => {
-            if (song) setPb({ ...data, artist: song.artist, track: song.track, art_url: song.art_url });
+            if (song)
+              setPb({ ...data, artist: song.artist, track: song.track, art_url: song.art_url });
             else setPb(null);
           });
       });
@@ -155,11 +159,17 @@ export function AccountModal({ open, onOpenChange }: AccountModalProps) {
               <div className="rounded-lg border border-border/20 bg-background/30 p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <Trophy className="h-3.5 w-3.5 text-amber-500" />
-                  <span className="text-xs font-mono font-semibold text-foreground">Personal Best</span>
+                  <span className="text-xs font-mono font-semibold text-foreground">
+                    Personal Best
+                  </span>
                 </div>
                 <div className="flex items-center gap-3">
                   {pb.art_url && (
-                    <img src={pb.art_url} alt="" className="h-10 w-10 rounded-lg object-cover border border-border/10" />
+                    <img
+                      src={pb.art_url}
+                      alt=""
+                      className="h-10 w-10 rounded-lg object-cover border border-border/10"
+                    />
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-semibold truncate text-foreground">{pb.track}</p>

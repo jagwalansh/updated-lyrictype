@@ -176,14 +176,16 @@ function AdSenseLoader() {
     if (typeof document === "undefined") return;
 
     if (isPlayRoute) {
-      document.querySelectorAll<HTMLElement>(
-        [
-          "ins.adsbygoogle",
-          ".google-auto-placed",
-          "iframe[id^='google_ads_iframe_']",
-          "iframe[src*='googlesyndication.com']",
-        ].join(","),
-      ).forEach((element) => element.remove());
+      document
+        .querySelectorAll<HTMLElement>(
+          [
+            "ins.adsbygoogle",
+            ".google-auto-placed",
+            "iframe[id^='google_ads_iframe_']",
+            "iframe[src*='googlesyndication.com']",
+          ].join(","),
+        )
+        .forEach((element) => element.remove());
       return;
     }
 

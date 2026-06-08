@@ -12,7 +12,7 @@ if (!isSupabaseConfigured) {
 
 export const supabase: SupabaseClient = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
-  : (null as any);
+  : (null as unknown as SupabaseClient);
 
 export type Database = {
   public: {

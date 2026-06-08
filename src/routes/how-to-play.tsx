@@ -79,9 +79,7 @@ function HowToPlay() {
               key={title}
               className="border-b border-border/30 p-5 md:border-b-0 md:border-r md:last:border-r-0"
             >
-              <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider">
-                {title}
-              </h2>
+              <h2 className="mb-3 font-mono text-xs font-bold uppercase tracking-wider">{title}</h2>
               <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{description}</p>
             </article>
           ))}

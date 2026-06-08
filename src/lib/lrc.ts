@@ -30,16 +30,25 @@ export interface TrackSearchResult {
   artworkUrl100?: string;
 }
 
+type ItunesTrackResult = {
+  trackId?: number;
+  trackName?: string;
+  artistName?: string;
+  collectionName?: string;
+  trackTimeMillis?: number;
+  artworkUrl100?: string;
+};
+
 export async function searchTracks(query: string): Promise<TrackSearchResult[]> {
   if (!query.trim()) return [];
 
   const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=30`;
   const res = await fetch(itunesUrl);
   if (!res.ok) throw new Error("Search failed");
-  const data = await res.json();
+  const data = (await res.json()) as { results?: ItunesTrackResult[] };
 
-  return (data.results || []).map((item: any) => ({
-    id: item.trackId,
+  return (data.results || []).map((item) => ({
+    id: item.trackId ?? 0,
     trackName: item.trackName || "Unknown",
     artistName: item.artistName || "Unknown",
     albumName: item.collectionName,
@@ -50,34 +59,43 @@ export async function searchTracks(query: string): Promise<TrackSearchResult[]> 
 function normalizeStr(str: string): string {
   return str
     .toLowerCase()
-    .replace(/\s*[\(\[][^\)\]]*[\)\]]/g, "") // Remove parenthesized/bracketed details (e.g. "feat. ...")
-    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()\[\]'"]/g, "") // Remove all punctuation
+    .replace(/\s*[([][^)\]]*[)\]]/g, "") // Remove parenthesized/bracketed details (e.g. "feat. ...")
+    .replace(/[.,/#!$%^&*;:{}=_`~()[\]'"-]/g, "") // Remove all punctuation
     .replace(/\s+/g, "") // Remove all whitespace
     .trim();
 }
 
-function shouldRemoveFirstLine(firstLineText: string, artistName: string, trackName: string): boolean {
+function shouldRemoveFirstLine(
+  firstLineText: string,
+  artistName: string,
+  trackName: string,
+): boolean {
   const normLine = normalizeStr(firstLineText);
   const normTrack = normalizeStr(trackName);
   const normArtist = normalizeStr(artistName);
-  
+
   if (!normLine) return true;
-  
+
   // 1. Match track name
   if (normLine === normTrack) return true;
-  
+
   // 2. Match artist name
   if (normLine === normArtist) return true;
-  
+
   // 3. Match combinations
   if (normLine === normalizeStr(`${artistName} ${trackName}`)) return true;
   if (normLine === normalizeStr(`${trackName} ${artistName}`)) return true;
-  
+
   // 4. Common metadata indicator phrases
-  if (normLine.includes("lyricsby") || normLine.includes("writtenby") || normLine.includes("producedby") || normLine.includes("lrcby")) {
+  if (
+    normLine.includes("lyricsby") ||
+    normLine.includes("writtenby") ||
+    normLine.includes("producedby") ||
+    normLine.includes("lrcby")
+  ) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -102,12 +120,12 @@ export async function fetchSyncedLyrics(
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timeoutId);
     if (!res.ok) return null;
-    const data = (await res.json()) as { syncedLyrics?: string | null, duration?: number };
+    const data = (await res.json()) as { syncedLyrics?: string | null; duration?: number };
     if (!data.syncedLyrics) return null;
 
     const parsedLines = parseLrc(data.syncedLyrics);
     const cleanedLines = [...parsedLines];
-    
+
     // Clean starting metadata lines (e.g. title, artist name) in the first 20 seconds
     while (cleanedLines.length > 0 && cleanedLines[0].time < 20) {
       if (shouldRemoveFirstLine(cleanedLines[0].text, artist, track)) {

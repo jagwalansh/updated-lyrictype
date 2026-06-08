@@ -1,4 +1,7 @@
-export const CUSTOM_LYRICS: Record<string, { plainLyrics?: string; syncedLyrics?: string; duration?: number }> = {
+export const CUSTOM_LYRICS: Record<
+  string,
+  { plainLyrics?: string; syncedLyrics?: string; duration?: number }
+> = {
   "ravyn lenae - love me not": {
     duration: 214,
     syncedLyrics: `[00:16.76] See, right now, I need you, I'll meet you somewhere now
@@ -50,6 +53,6 @@ export const CUSTOM_LYRICS: Record<string, { plainLyrics?: string; syncedLyrics?
 [03:05.11] And, oh, it's hard to see you, but I wish you were right here
 [03:09.59] Oh, it's hard to leave you when I get you everywhere
 [03:13.65] All this time I'm thinkin' I'm strong enough to sink in
-[03:18.12] Oh, no, I don't need you, but I miss you, come here`
-  }
+[03:18.12] Oh, no, I don't need you, but I miss you, come here`,
+  },
 };

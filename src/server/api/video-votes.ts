@@ -17,10 +17,7 @@ function getRequestClient(req: Request) {
   });
 }
 
-async function loadVoteData(
-  client: ReturnType<typeof getRequestClient>,
-  songId: string,
-) {
+async function loadVoteData(client: ReturnType<typeof getRequestClient>, songId: string) {
   const { data, error } = await client.rpc("get_song_video_vote_scores", {
     p_song_id: songId,
   });

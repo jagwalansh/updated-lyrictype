@@ -20,6 +20,18 @@ export default defineConfig({
   build: {
     rollupOptions: {
       external: ["cloudflare:email"],
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+
+          if (id.includes("@tanstack")) return "vendor-tanstack";
+          if (id.includes("@radix-ui")) return "vendor-radix";
+          if (id.includes("@supabase")) return "vendor-supabase";
+          if (id.includes("motion")) return "vendor-motion";
+
+          return "vendor";
+        },
+      },
     },
   },
 });

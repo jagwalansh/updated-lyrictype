@@ -10,8 +10,7 @@ export const Route = createFileRoute("/about")({
       { title: "About KeyVerse" },
       {
         name: "description",
-        content:
-          "Learn about KeyVerse, a rhythm typing game built for music lovers.",
+        content: "Learn about KeyVerse, a rhythm typing game built for music lovers.",
       },
     ],
     links: [{ rel: "canonical", href: "https://keyverse.me/about" }],
@@ -51,12 +50,9 @@ function About() {
             <div className="mb-1 text-xs font-mono font-semibold uppercase tracking-wider text-primary">
               Our story
             </div>
-            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-              About KeyVerse
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">About KeyVerse</h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              A rhythm typing game where your favorite songs become the
-              challenge.
+              A rhythm typing game where your favorite songs become the challenge.
             </p>
           </div>
           <Link
@@ -81,16 +77,14 @@ function About() {
             </h2>
             <div className="mt-5 space-y-4 text-sm leading-7 text-muted-foreground">
               <p>
-                KeyVerse began with a simple idea: typing practice feels better
-                when it is connected to music you already love. Instead of
-                copying disconnected words, you follow lyrics as the song
-                plays and try to stay in sync.
+                KeyVerse began with a simple idea: typing practice feels better when it is connected
+                to music you already love. Instead of copying disconnected words, you follow lyrics
+                as the song plays and try to stay in sync.
               </p>
               <p>
-                Each round measures speed and accuracy while leaderboards give
-                you a reason to return, improve, and compete. The game is free,
-                minimal, and built to make a few minutes of practice feel like
-                play.
+                Each round measures speed and accuracy while leaderboards give you a reason to
+                return, improve, and compete. The game is free, minimal, and built to make a few
+                minutes of practice feel like play.
               </p>
             </div>
           </div>
@@ -108,24 +102,18 @@ function About() {
               <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
                 <Icon className="h-5 w-5" />
               </div>
-              <h2 className="font-mono text-sm font-bold tracking-wide">
-                {title}
-              </h2>
-              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                {description}
-              </p>
+              <h2 className="font-mono text-sm font-bold tracking-wide">{title}</h2>
+              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{description}</p>
             </motion.div>
           ))}
         </section>
 
         <section className="flex flex-col items-start justify-between gap-5 rounded-2xl border border-border/40 bg-card/45 p-7 sm:flex-row sm:items-center">
           <div>
-            <div className="font-mono text-sm font-bold">
-              Built with the community
-            </div>
+            <div className="font-mono text-sm font-bold">Built with the community</div>
             <p className="mt-2 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-              KeyVerse uses services including LRCLIB and YouTube, and grows
-              through player feedback, bug reports, and song suggestions.
+              KeyVerse uses services including LRCLIB and YouTube, and grows through player
+              feedback, bug reports, and song suggestions.
             </p>
           </div>
           <Link

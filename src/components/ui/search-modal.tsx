@@ -83,7 +83,6 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-[101] w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/[0.08] dark:border-white/[0.03] bg-card/65 dark:bg-card/45 backdrop-blur-2xl p-6 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95">
-          
           {/* Header & Close */}
           <div className="mb-4 flex items-center justify-between gap-4">
             <div>
@@ -95,7 +94,12 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
-              <Button variant="ghost" size="icon" aria-label="Close search dialog" className="cursor-pointer">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Close search dialog"
+                className="cursor-pointer"
+              >
                 <X className="h-4 w-4" />
               </Button>
             </Dialog.Close>
@@ -119,7 +123,10 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
             {loading ? (
               <ul className="space-y-3">
                 {Array.from({ length: 4 }).map((_, idx) => (
-                  <li key={idx} className="flex items-center gap-3 px-2 py-2.5 border-b border-border/10 last:border-0">
+                  <li
+                    key={idx}
+                    className="flex items-center gap-3 px-2 py-2.5 border-b border-border/10 last:border-0"
+                  >
                     <Skeleton className="h-9 w-9 rounded-lg" />
                     <div className="min-w-0 flex-1 flex flex-col gap-1.5">
                       <Skeleton className="h-4.5 w-2/3" />
@@ -151,7 +158,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                           ♪
                         </div>
                       )}
-                      
+
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-semibold text-xs text-foreground group-hover:text-primary transition-colors">
                           {t.trackName}
@@ -199,7 +206,6 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
               </button>
             </div>
           )}
-
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
