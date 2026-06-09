@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+// Trigger dev server reload to pick up new /api/generate-sync endpoint
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";

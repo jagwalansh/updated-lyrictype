@@ -1,11 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, Fragment, useEffect } from "react";
 import { Navbar } from "@/components/ui/navbar";
 import { searchTracks, type TrackSearchResult } from "@/lib/lrc";
 import { motion } from "motion/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Footer } from "@/components/ui/footer";
-import { Play } from "lucide-react";
+import { Play, Sparkles } from "lucide-react";
 import { DeflectCard } from "@/components/ui/deflect-card";
 import { trackEvent } from "@/lib/analytics";
 
@@ -286,6 +286,30 @@ function Index() {
   const [currentPage, setCurrentPage] = useState(1);
   const [disableAnimation, setDisableAnimation] = useState(hasVisitedHome);
   const [showAmbientMotion, setShowAmbientMotion] = useState(false);
+  const [syncedMap, setSyncedMap] = useState<Record<number, { synced: boolean; isAiSynced: boolean }>>({});
+  const navigate = useNavigate();
+
+  // Check sync status of recommended songs on mount
+  useEffect(() => {
+    const checks = RECOMMENDED_SONGS_HOMEPAGE.map((song) =>
+      fetch(`/api/lyrics?artist=${encodeURIComponent(song.artistName)}&track=${encodeURIComponent(song.trackName)}`)
+        .then(async (res) => {
+          if (!res.ok) return { id: song.id, synced: false, isAiSynced: false };
+          const data = await res.json().catch(() => ({}));
+          return { id: song.id, synced: true, isAiSynced: !!data.isAiSynced };
+        })
+        .catch(() => ({ id: song.id, synced: false, isAiSynced: false })),
+    );
+    Promise.all(checks).then((resList) => {
+      setSyncedMap((prev) => {
+        const next = { ...prev };
+        resList.forEach((item) => {
+          next[item.id] = { synced: item.synced, isAiSynced: item.isAiSynced };
+        });
+        return next;
+      });
+    });
+  }, []);
 
   useEffect(() => {
     hasVisitedHome = true;
@@ -310,6 +334,8 @@ function Index() {
     };
   }, []);
 
+
+
   useEffect(() => {
     const query = routeQuery ?? "";
     if (query.trim()) {
@@ -319,7 +345,26 @@ function Index() {
       searchTracks(query)
         .then((r) => {
           setResults(r);
-          if (!r.length) setErr("No songs with synced lyrics found.");
+          // Check cached status for all searched tracks
+          const checks = r.map((track) =>
+            fetch(`/api/lyrics?artist=${encodeURIComponent(track.artistName)}&track=${encodeURIComponent(track.trackName)}`)
+              .then(async (res) => {
+                if (!res.ok) return { id: track.id, synced: false, isAiSynced: false };
+                const data = await res.json().catch(() => ({}));
+                return { id: track.id, synced: true, isAiSynced: !!data.isAiSynced };
+              })
+              .catch(() => ({ id: track.id, synced: false, isAiSynced: false })),
+          );
+          Promise.all(checks).then((resList) => {
+            setSyncedMap((prev) => {
+              const next = { ...prev };
+              resList.forEach((item) => {
+                next[item.id] = { synced: item.synced, isAiSynced: item.isAiSynced };
+              });
+              return next;
+            });
+          });
+          if (!r.length) setErr("No songs found.");
         })
         .catch(() => {
           setErr("Search failed. Try again.");
@@ -448,47 +493,59 @@ function Index() {
                 </ul>
               ) : (
                 <>
-                  <ul className="divide-y divide-border">
-                    {paginatedResults.map((t) => (
-                      <li key={t.id}>
-                        <Link
-                          to="/play/$trackId"
-                          params={{ trackId: String(t.id) }}
-                          search={{
-                            artist: t.artistName,
-                            track: t.trackName,
-                            art: t.artworkUrl100 || "",
-                            duration: t.duration,
-                            q: routeQuery || undefined,
-                            from: "/",
-                          }}
-                          className="flex items-center gap-4 rounded-xl px-4 py-3.5 transition-all hover:bg-muted/65 text-left group"
-                        >
-                          {t.artworkUrl100 ? (
-                            <img
-                              src={t.artworkUrl100}
-                              alt={`${t.trackName} album artwork`}
-                              className="h-10 w-10 rounded-lg shrink-0 object-cover border border-border/10"
-                            />
-                          ) : (
-                            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                              ♪
+                  <ul className="space-y-3">
+                    {paginatedResults.map((t) => {
+                      const syncInfo = syncedMap[t.id];
+                      const isAiSynced = !!syncInfo?.isAiSynced;
+
+                      return (
+                        <li key={t.id}>
+                          <Link
+                            to="/play/$trackId"
+                            params={{ trackId: String(t.id) }}
+                            search={{
+                              artist: t.artistName,
+                              track: t.trackName,
+                              art: t.artworkUrl100 || "",
+                              duration: t.duration,
+                              q: routeQuery || undefined,
+                              from: "/",
+                            }}
+                            className="flex items-center gap-4 rounded-xl px-4 py-3.5 transition-all hover:bg-muted/65 text-left group"
+                          >
+                            {t.artworkUrl100 ? (
+                              <img
+                                src={t.artworkUrl100}
+                                alt={`${t.trackName} album artwork`}
+                                className="h-10 w-10 rounded-lg shrink-0 object-cover border border-border/10"
+                              />
+                            ) : (
+                              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                                ♪
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="truncate font-semibold text-sm group-hover:text-primary transition-colors">
+                                  {t.trackName}
+                                </p>
+                                {isAiSynced && (
+                                  <span className="shrink-0 text-[8px] sm:text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 rounded px-1.5 py-0.5 flex items-center gap-0.5">
+                                    AI Synced ✨
+                                  </span>
+                                )}
+                              </div>
+                              <p className="truncate text-xs text-muted-foreground mt-0.5">
+                                {t.artistName}
+                              </p>
                             </div>
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate font-semibold text-sm group-hover:text-primary transition-colors">
-                              {t.trackName}
-                            </p>
-                            <p className="truncate text-xs text-muted-foreground mt-0.5">
-                              {t.artistName}
-                            </p>
-                          </div>
-                          <span className="font-mono text-xs text-primary group-hover:translate-x-1 transition-transform">
-                            play -&gt;
-                          </span>
-                        </Link>
-                      </li>
-                    ))}
+                            <span className="font-mono text-xs text-primary font-bold group-hover:translate-x-1 transition-transform">
+                              PLAY &rarr;
+                            </span>
+                          </Link>
+                        </li>
+                      );
+                    })}
                   </ul>
 
                   {results.length > ITEMS_PER_PAGE && (
@@ -540,46 +597,57 @@ function Index() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {RECOMMENDED_SONGS_HOMEPAGE.map((song) => (
-                <DeflectCard key={song.id} className="w-full rounded-xl">
-                  <Link
-                    to="/play/$trackId"
-                    params={{ trackId: String(song.id) }}
-                    search={{
-                      artist: song.artistName,
-                      track: song.trackName,
-                      art: song.artworkUrl100,
-                      duration: song.duration,
-                      q: routeQuery || undefined,
-                      from: "/",
-                    }}
-                    className="group relative flex items-center justify-between p-4 rounded-xl border border-border/40 bg-card/45 backdrop-blur-sm hover:border-primary/30 w-full h-full text-left"
-                  >
-                    {/* Subtle backlighting on card hover */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-xl" />
+              {RECOMMENDED_SONGS_HOMEPAGE.map((song) => {
+                const syncInfo = syncedMap[song.id];
+                const isAiSynced = !!syncInfo?.isAiSynced;
 
-                    <div className="flex items-center gap-3 relative z-10">
-                      <img
-                        src={song.artworkUrl100}
-                        alt={`${song.trackName} album artwork`}
-                        className="h-12 w-12 rounded-lg object-cover border border-border/10 shrink-0"
-                      />
-                      <div className="min-w-0">
-                        <h3 className="truncate font-semibold text-xs text-foreground group-hover:text-primary transition-colors">
-                          {song.trackName}
-                        </h3>
-                        <p className="truncate text-[10px] text-muted-foreground mt-0.5">
-                          {song.artistName}
-                        </p>
+                return (
+                  <DeflectCard key={song.id} className="w-full rounded-xl">
+                    <Link
+                      to="/play/$trackId"
+                      params={{ trackId: String(song.id) }}
+                      search={{
+                        artist: song.artistName,
+                        track: song.trackName,
+                        art: song.artworkUrl100,
+                        duration: song.duration,
+                        q: routeQuery || undefined,
+                        from: "/",
+                      }}
+                      className="group relative flex items-center justify-between p-4 rounded-xl border border-border/40 bg-card/45 backdrop-blur-sm hover:border-primary/30 w-full h-full text-left"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-xl" />
+
+                      <div className="flex items-center gap-3 relative z-10 min-w-0 flex-1">
+                        <img
+                          src={song.artworkUrl100}
+                          alt={`${song.trackName} album artwork`}
+                          className="h-12 w-12 rounded-lg object-cover border border-border/10 shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <h3 className="truncate font-semibold text-xs text-foreground group-hover:text-primary transition-colors">
+                              {song.trackName}
+                            </h3>
+                            {isAiSynced && (
+                              <span className="shrink-0 text-[8px] font-bold text-primary bg-primary/10 border border-primary/20 rounded px-1.5 py-0.5 flex items-center">
+                                AI Synced ✨
+                              </span>
+                            )}
+                          </div>
+                          <p className="truncate text-[10px] text-muted-foreground mt-0.5">
+                            {song.artistName}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <span className="text-[10px] font-mono font-bold text-primary group-hover:translate-x-1 transition-transform relative z-10 flex items-center gap-1">
-                      <Play className="h-2.5 w-2.5 fill-current" />
-                      PLAY
-                    </span>
-                  </Link>
-                </DeflectCard>
-              ))}
+                      <span className="text-[10px] font-mono font-bold text-primary group-hover:translate-x-1 transition-transform relative z-10 flex items-center gap-1 shrink-0 ml-2">
+                        <Play className="h-2.5 w-2.5 fill-current" />
+                        PLAY
+                      </span>
+                    </Link>
+                  </DeflectCard>
+                );
+              })}
             </div>
           </motion.div>
         )}

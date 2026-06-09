@@ -1,7 +1,40 @@
+const SUMMERS_YOUNG_SHADIENT = {
+  duration: 303,
+  syncedLyrics: `[00:24.93] I don't know where we're going I'm just caught in the moment
+[00:30.38] And I kinda like it like that Even though I know it'll never last
+[00:36.76] Sun never stopped coming Stumbled our way to something
+[00:42.45] Who's ever see where this goes If we never try, we'll never know
+[00:48.28] We'll last as long as a summer kiss Drink in your touch, got you on my lips
+[00:54.42] I'm thinking oh my God I just can't turn this off
+[01:00.34] Don't need your heart or your promises Don't care to know what forever is
+[01:11.39] I think we've just begun Life's sweet and summer's young
+[01:23.14] Life's sweet and summer's young I think we've just begun
+[01:30.89] Life's sweet and summer's young
+[02:22.90] Stars lighting up the highway Driving into the morning
+[02:30.95] Running your hand through my hair 'Cause only you can get me there
+[02:38.55] Maybe we'll have tomorrow Maybe your time is borrowed
+[02:46.35] But all that I need is right here Before it all disappears
+[03:08.80] We'll last as long as a summer kiss Drink in your touch, got you on my lips
+[03:16.70] I'm thinking oh my God I just can't turn this off
+[03:24.50] Don't need your heart or your promises Don't care to know what forever is
+[03:32.45] I think we've just begun Life's sweet and summer's young
+[03:39.05] Life's sweet and summer's young Life's sweet and summer's young
+[04:19.00] We'll last as long as a summer kiss Drink in your touch, got you on my lips
+[04:26.90] I'm thinking oh my God I just can't turn this off
+[04:34.70] Don't need your heart or your promises Don't care to know what forever is
+[04:42.65] I think we've just begun`,
+};
+
 export const CUSTOM_LYRICS: Record<
   string,
   { plainLyrics?: string; syncedLyrics?: string; duration?: number }
 > = {
+  "pls&ty - summer's young (shadient remix) [feat. dia frampton & shadient]": SUMMERS_YOUNG_SHADIENT,
+  "pls&ty - summer's young (shadient remix)": SUMMERS_YOUNG_SHADIENT,
+  "pls&ty - summer's young (feat. dia frampton & shadient) (shadient remix)": SUMMERS_YOUNG_SHADIENT,
+  "pls&ty - summer's young (shadient remix) feat. dia frampton & shadient": SUMMERS_YOUNG_SHADIENT,
+  "pls&ty - summer's young (feat. dia frampton & shadient) [shadient remix]": SUMMERS_YOUNG_SHADIENT,
+  "pls&ty - summer's young - shadient remix": SUMMERS_YOUNG_SHADIENT,
   "ravyn lenae - love me not": {
     duration: 214,
     syncedLyrics: `[00:16.76] See, right now, I need you, I'll meet you somewhere now

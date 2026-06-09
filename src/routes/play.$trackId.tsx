@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Navbar } from "@/components/ui/navbar";
-import { fetchSyncedLyrics, type LyricLine } from "@/lib/lrc";
+import { fetchSyncedLyrics, parseLrc, type LyricLine } from "@/lib/lrc";
 import YouTube, { type YouTubePlayer } from "react-youtube";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
@@ -26,6 +26,9 @@ import {
   ChevronUp,
   ChevronDown,
   ThumbsUp,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { trackEvent } from "@/lib/analytics";
@@ -396,6 +399,84 @@ export const Route = createFileRoute("/play/$trackId")({
   component: PlayPage,
 });
 
+function shouldRemoveFirstLine(
+  firstLineText: string,
+  artistName: string,
+  trackName: string,
+): boolean {
+  const normalizeStr = (str: string): string => {
+    return str
+      .toLowerCase()
+      .replace(/\s*[([][^)\]]*[)\]]/g, "")
+      .replace(/[.,/#!$%^&*;:{}=_`~()[\]'"-]/g, "")
+      .replace(/\s+/g, "")
+      .trim();
+  };
+  const normLine = normalizeStr(firstLineText);
+  const normTrack = normalizeStr(trackName);
+  const normArtist = normalizeStr(artistName);
+
+  if (!normLine) return true;
+  if (normLine === normTrack) return true;
+  if (normLine === normArtist) return true;
+  if (normLine === normalizeStr(`${artistName} ${trackName}`)) return true;
+  if (normLine === normalizeStr(`${trackName} ${artistName}`)) return true;
+  if (
+    normLine.includes("lyricsby") ||
+    normLine.includes("writtenby") ||
+    normLine.includes("producedby") ||
+    normLine.includes("lrcby")
+  ) {
+    return true;
+  }
+  return false;
+}
+
+async function generateAiSyncedLines({
+  artist,
+  track,
+  duration,
+  videoId,
+  signal,
+}: {
+  artist: string;
+  track: string;
+  duration?: number;
+  videoId: string | null;
+  signal?: AbortSignal;
+}): Promise<LyricLine[]> {
+  const syncResponse = await fetch("/api/generate-sync", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      artist,
+      track,
+      duration: duration || 0,
+      videoId,
+    }),
+    signal,
+  });
+
+  if (!syncResponse.ok) {
+    const errData = await syncResponse.json().catch(() => ({}));
+    throw new Error(errData.error || "Failed to generate AI synced lyrics");
+  }
+
+  const syncData = await syncResponse.json();
+  const parsedLines = parseLrc(syncData.syncedLyrics);
+  const cleanedLines = [...parsedLines];
+
+  while (cleanedLines.length > 0 && cleanedLines[0].time < 20) {
+    if (shouldRemoveFirstLine(cleanedLines[0].text, artist, track)) {
+      cleanedLines.shift();
+    } else {
+      break;
+    }
+  }
+
+  return cleanedLines;
+}
+
 function PlayPage() {
   const { artist, track, art, duration, q, from } = Route.useSearch();
   const { user } = useAuth();
@@ -410,6 +491,7 @@ function PlayPage() {
 
   const [lines, setLines] = useState<LyricLine[] | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
+  const [isGeneratingSync, setIsGeneratingSync] = useState(false);
 
   const [charIdx, setCharIdx] = useState(0);
   const [charResults, setCharResults] = useState<
@@ -571,22 +653,19 @@ function PlayPage() {
           duration: String(duration || 0),
         });
 
-        // Fetch lyrics, YouTube results, and community ranking together to avoid serial loading.
-        const [lyricsRes, ytResponse, voteData] = await Promise.all([
-          fetchSyncedLyrics(artist, track, duration),
+        // Start the regular lyrics lookup in parallel, but don't let it delay AI sync.
+        const lyricsPromise = fetchSyncedLyrics(artist, track, duration).catch((error) => {
+          console.error("Regular lyrics lookup failed before AI sync:", error);
+          return null;
+        });
+
+        // 1. Fetch YouTube results and community ranking first so AI sync can start ASAP.
+        const [ytResponse, voteData] = await Promise.all([
           fetch(`/api/youtube-search?${youtubeParams.toString()}`),
           fetchVideoVoteData(trackId),
         ]);
 
         if (cancelled) return;
-
-        // 1. Process lyrics
-        if (!lyricsRes || lyricsRes.lines.length === 0) {
-          setLoadErr("No synced lyrics found for this song.");
-          setYtLoading(false);
-          return;
-        }
-        setLines(lyricsRes.lines);
 
         // 2. Process YouTube response
         if (!ytResponse.ok) {
@@ -596,12 +675,15 @@ function PlayPage() {
 
         if (cancelled) return;
 
+        let activeVideoId: string | null = null;
         if (d.videoId) {
           const candidates: YoutubeCandidate[] = d.candidates || [
             { videoId: d.videoId, authorName: d.authorName },
           ];
           const rankedCandidates = sortVideoCandidates(candidates, voteData.scores);
           const selectedCandidate = rankedCandidates[0] ?? candidates[0];
+          activeVideoId = selectedCandidate.videoId;
+
           setVideoVoteScores(voteData.scores);
           setUserVideoVotes(voteData.userVotes);
           setVideoId(selectedCandidate.videoId);
@@ -609,6 +691,50 @@ function PlayPage() {
           setYtCandidates(rankedCandidates);
         } else {
           setLoadErr("Could not find a YouTube video for this track.");
+          return;
+        }
+
+        // 3. Trigger AI sync immediately after the video is selected.
+        setIsGeneratingSync(true);
+        const syncController = new AbortController();
+        const syncPromise = generateAiSyncedLines({
+          artist,
+          track,
+          duration,
+          videoId: activeVideoId,
+          signal: syncController.signal,
+        });
+
+        const lyricsRes = await lyricsPromise;
+        if (cancelled) {
+          syncController.abort();
+          return;
+        }
+
+        if (lyricsRes?.isAiSynced) {
+          syncController.abort();
+          setLines(lyricsRes.lines);
+          setIsGeneratingSync(false);
+          return;
+        }
+
+        try {
+          const syncedLines = await syncPromise;
+          if (cancelled) return;
+          setLines(syncedLines);
+          toast.success("AI Lyrics Generated Successfully!");
+        } catch (syncErr: any) {
+          if (syncErr?.name === "AbortError") return;
+          console.error("Auto AI sync generation error:", syncErr);
+          if (lyricsRes && lyricsRes.lines.length > 0) {
+            // Fallback to ordinary lyrics if available
+            setLines(lyricsRes.lines);
+            toast.info("Could not align with AI. Playing with ordinary lyrics.");
+          } else {
+            setLoadErr(syncErr.message || "Failed to generate synced lyrics.");
+          }
+        } finally {
+          if (!cancelled) setIsGeneratingSync(false);
         }
       } catch (e) {
         console.error(e);
@@ -791,6 +917,18 @@ function PlayPage() {
         if (fillEl) fillEl.style.width = `${pct}%`;
         if (unplayedEl) unplayedEl.style.left = `${pct}%`;
         if (handleEl) handleEl.style.left = `${pct}%`;
+
+        // Stopwatch DOM updates
+        const stopwatchEl = document.getElementById("stopwatch-display");
+        if (stopwatchEl) {
+          const t = currentTimeRef.current;
+          const mins = Math.floor(t / 60);
+          const secs = Math.floor(t % 60);
+          const ms = Math.floor((t % 1) * 1000);
+          stopwatchEl.innerText = `${mins.toString().padStart(2, "0")}:${secs
+            .toString()
+            .padStart(2, "0")}.${ms.toString().padStart(3, "0")}`;
+        }
       }
 
       if (lines && lines[currentLineIdx]) {
@@ -1257,6 +1395,9 @@ function PlayPage() {
     if (unplayedEl) unplayedEl.style.left = "0%";
     if (handleEl) handleEl.style.left = "0%";
 
+    const stopwatchEl = document.getElementById("stopwatch-display");
+    if (stopwatchEl) stopwatchEl.innerText = "00:00.000";
+
     if (player) {
       player.pauseVideo();
       player.seekTo(0, true);
@@ -1265,6 +1406,35 @@ function PlayPage() {
 
     inputRef.current?.focus();
   }
+
+  const handleGenerateSync = () => {
+    if (isGeneratingSync) return;
+
+    // Pause video playback
+    const player = ytPlayerRef.current;
+    if (player) {
+      player.pauseVideo();
+    }
+    setPlaying(false);
+    setIsGeneratingSync(true);
+
+    generateAiSyncedLines({ artist, track, duration, videoId })
+      .then((cleanedLines) => {
+        setLines(cleanedLines);
+        toast.success("AI Lyrics Generated Successfully!");
+        
+        setTimeout(() => {
+          restart();
+        }, 100);
+      })
+      .catch((err) => {
+        console.error("AI Sync generation error:", err);
+        toast.error("Failed to generate AI Sync: " + err.message);
+      })
+      .finally(() => {
+        setIsGeneratingSync(false);
+      });
+  };
 
   const showSpotifyPlayer = !!(videoId && playing && !songEnded && !showBlurOverlay);
   const selectedVideoIndex = ytCandidates.findIndex((candidate) => candidate.videoId === videoId);
@@ -1608,7 +1778,7 @@ function PlayPage() {
                         {art ? (
                           <img
                             src={art}
-                            alt={`${trackName || "Selected track"} album artwork`}
+                            alt={`${track || "Selected track"} album artwork`}
                             className="h-36 w-36 rounded-lg shadow-md mb-6 relative z-10"
                           />
                         ) : (
@@ -1762,6 +1932,15 @@ function PlayPage() {
                 className="relative h-[360px] overflow-hidden rounded-xl border border-border/40 bg-card/40 shadow-inner"
                 onClick={() => inputRef.current?.focus()}
               >
+                {isGeneratingSync && (
+                  <div className="absolute inset-0 bg-background/85 backdrop-blur-sm z-50 flex flex-col items-center justify-center text-center p-6 select-none pointer-events-auto">
+                    <Loader2 className="animate-spin h-10 w-10 text-primary mb-4" />
+                    <h3 className="text-lg font-bold mb-1">Generating AI Sync</h3>
+                    <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
+                      AI is downloading this YouTube video's audio and transcribing it. This will take about 15–30 seconds...
+                    </p>
+                  </div>
+                )}
                 <div ref={lyricsRef} className="h-full cursor-pointer overflow-hidden px-5 py-8">
                   {songEnded ? (
                     /* ── Result Card (replaces lyrics when song ends) ── */
@@ -1900,7 +2079,7 @@ function PlayPage() {
                     </motion.div>
                   ) : (
                     /* ── Normal Lyrics Display ── */
-                    <div className="relative z-10">
+                    <div className={`relative z-10 transition-opacity duration-300 ${isGeneratingSync ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
                       <div className="min-h-[200px]" />
 
                       {lines.map((line, idx) => {
@@ -2073,6 +2252,22 @@ function PlayPage() {
               {/* Standard Playback controls */}
               <div className="flex items-center gap-3">
                 <button
+                  type="button"
+                  onClick={() => {
+                    const player = ytPlayerRef.current;
+                    if (player) {
+                      const t = player.getCurrentTime();
+                      player.seekTo(Math.max(0, t - 2.5), true);
+                    }
+                  }}
+                  disabled={!videoId || !audioReady}
+                  className="rounded-lg border border-border/40 bg-card/45 backdrop-blur-sm py-2.5 px-3 font-semibold hover:bg-muted transition-colors cursor-pointer flex items-center justify-center gap-1 disabled:opacity-40 text-xs font-mono"
+                  title="Seek back 2.5s"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5 text-primary" />
+                  <span>-2.5s</span>
+                </button>
+                <button
                   onClick={togglePlay}
                   disabled={!videoId || !audioReady}
                   className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-40 cursor-pointer flex items-center justify-center gap-2 animate-pulse-subtle"
@@ -2084,6 +2279,23 @@ function PlayPage() {
                   </kbd>
                 </button>
                 <button
+                  type="button"
+                  onClick={() => {
+                    const player = ytPlayerRef.current;
+                    if (player) {
+                      const t = player.getCurrentTime();
+                      const duration = player.getDuration() || 0;
+                      player.seekTo(Math.min(duration, t + 2.5), true);
+                    }
+                  }}
+                  disabled={!videoId || !audioReady}
+                  className="rounded-lg border border-border/40 bg-card/45 backdrop-blur-sm py-2.5 px-3 font-semibold hover:bg-muted transition-colors cursor-pointer flex items-center justify-center gap-1 disabled:opacity-40 text-xs font-mono"
+                  title="Seek forward 2.5s"
+                >
+                  <span>+2.5s</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-primary" />
+                </button>
+                <button
                   onClick={restart}
                   className="rounded-lg border border-border/40 bg-card/45 backdrop-blur-sm py-2.5 px-5 text-sm font-semibold hover:bg-muted transition-colors cursor-pointer flex items-center justify-center gap-2"
                 >
@@ -2092,6 +2304,36 @@ function PlayPage() {
                   <kbd className="rounded border border-border/50 bg-background/60 px-1.5 py-0.5 font-mono text-[10px] font-bold leading-none text-muted-foreground">
                     Tab
                   </kbd>
+                </button>
+                <button
+                  id="stopwatch-button"
+                  type="button"
+                  onClick={() => {
+                    const t = currentTimeRef.current;
+                    const mins = Math.floor(t / 60);
+                    const secs = Math.floor(t % 60);
+                    const hundredths = Math.floor((t % 1) * 100);
+                    const timestamp = `[${mins.toString().padStart(2, "0")}:${secs
+                      .toString()
+                      .padStart(2, "0")}.${hundredths.toString().padStart(2, "0")}]`;
+                    navigator.clipboard.writeText(timestamp);
+                    toast.success(`Copied ${timestamp}`);
+                  }}
+                  className="rounded-lg border border-border/40 bg-card/45 backdrop-blur-sm py-2.5 px-4 text-sm font-mono font-semibold hover:bg-muted transition-colors cursor-pointer flex items-center justify-center gap-2"
+                  title="Click to copy current timestamp"
+                >
+                  <Clock className="w-3.5 h-3.5 text-primary" />
+                  <span id="stopwatch-display">00:00.000</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleGenerateSync}
+                  disabled={isGeneratingSync || !videoId}
+                  className="rounded-lg border border-primary/30 bg-primary/10 py-2.5 px-4 text-sm font-semibold hover:bg-primary/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-40 text-primary shadow-sm"
+                  title="Generate AI synced lyrics for the current video"
+                >
+                  <Sparkles className="w-3.5 h-3.5 fill-current text-primary animate-pulse shrink-0" />
+                  <span>AI Sync</span>
                 </button>
               </div>
 

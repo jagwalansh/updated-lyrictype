@@ -185,6 +185,8 @@ type YoutubeVideoRenderer = {
 
 type LyricsCacheData = {
   syncedLyrics?: string | null;
+  duration?: number;
+  isAiSynced?: boolean;
 };
 
 type YoutubeSearchData = {
@@ -833,6 +835,420 @@ Sitemap: https://keyverse.me/sitemap.xml`;
             status: 500,
             headers: { "content-type": "application/json" },
           });
+        }
+      }
+
+      // Lyrics Aligner Helper Functions
+      async function fetchOfficialLyricsText(
+        artist: string,
+        track: string,
+        duration: number
+      ): Promise<{ text: string; isSynced: boolean } | null> {
+        const checkCustomLyrics = (a: string, t: string) => {
+          const key = `${a.toLowerCase().trim()} - ${t.toLowerCase().trim()}`;
+          return CUSTOM_LYRICS[key] || null;
+        };
+        const extractedOriginal = extractOriginalArtist(track);
+        const cleanedArtist = cleanArtist(artist);
+        const cleanedTrack = cleanTitle(track);
+        
+        const customData =
+          checkCustomLyrics(cleanedArtist, cleanedTrack) ||
+          checkCustomLyrics(artist, track) ||
+          (extractedOriginal ? checkCustomLyrics(extractedOriginal, cleanedTrack) : null);
+
+        if (customData) {
+          const text = customData.syncedLyrics || customData.plainLyrics || "";
+          return { text, isSynced: !!customData.syncedLyrics };
+        }
+
+        const isTrackMatch = (
+          item: { trackName: string; artistName: string },
+          expectedArtist: string,
+          expectedTrack: string,
+        ): boolean => {
+          const itemArtist = cleanArtist(item.artistName).toLowerCase();
+          const itemTrack = cleanTitle(item.trackName).toLowerCase();
+          const expArtist = cleanArtist(expectedArtist).toLowerCase();
+          const expTrack = cleanTitle(expectedTrack).toLowerCase();
+          return (itemArtist === expArtist || itemArtist.includes(expArtist) || expArtist.includes(itemArtist)) &&
+                 (itemTrack === expTrack || itemTrack.includes(expTrack) || expTrack.includes(itemTrack));
+        };
+
+        const tryFetch = async (a: string, t: string) => {
+          let url = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(a)}&track_name=${encodeURIComponent(t)}`;
+          if (duration > 0) url += `&duration=${duration}`;
+          try {
+            const res = await fetch(url, {
+              headers: {
+                "User-Agent": "LyricalSyncGame v1.0.0 (https://github.com/jagwalansh/lyrical-sync-game)"
+              }
+            });
+            if (res.ok) {
+              const data = await res.json() as any;
+              return data;
+            }
+          } catch (e) {}
+          return null;
+        };
+
+        const directPairs = [
+          ...(extractedOriginal ? [[extractedOriginal, cleanedTrack]] : []),
+          [cleanedArtist, cleanedTrack],
+          ...(cleanedArtist !== artist || cleanedTrack !== track ? [[artist, track]] : []),
+        ];
+
+        for (const [candidateArtist, candidateTrack] of directPairs) {
+          const data = await tryFetch(candidateArtist, candidateTrack);
+          if (data && (data.syncedLyrics || data.plainLyrics)) {
+            return {
+              text: data.syncedLyrics || data.plainLyrics || "",
+              isSynced: !!data.syncedLyrics
+            };
+          }
+        }
+
+        try {
+          const searchUrl = `https://lrclib.net/api/search?artist_name=${encodeURIComponent(cleanedArtist)}&track_name=${encodeURIComponent(cleanedTrack)}`;
+          const res = await fetch(searchUrl, {
+            headers: {
+              "User-Agent": "LyricalSyncGame v1.0.0 (https://github.com/jagwalansh/lyrical-sync-game)"
+            }
+          });
+          if (res.ok) {
+            const results = await res.json() as any[];
+            if (Array.isArray(results) && results.length > 0) {
+              const match = results.find(
+                (item) => (item.syncedLyrics || item.plainLyrics) && isTrackMatch(item, cleanedArtist, cleanedTrack),
+              );
+              if (match) {
+                return {
+                  text: match.syncedLyrics || match.plainLyrics || "",
+                  isSynced: !!match.syncedLyrics
+                };
+              }
+            }
+          }
+        } catch (e) {}
+
+        return null;
+      }
+
+      function isFuzzyMatch(w1: string, w2: string): boolean {
+        if (w1 === w2) return true;
+        if (w1.length < 3 || w2.length < 3) return false;
+        if (w1.includes(w2) && w1.length - w2.length <= 2) return true;
+        if (w2.includes(w1) && w2.length - w1.length <= 2) return true;
+        return false;
+      }
+
+      function isNoiseSegment(text: string): boolean {
+        const lower = text.toLowerCase();
+        return (
+          lower.includes("subtitle") ||
+          lower.includes("thank you for watching") ||
+          lower.includes("thanks for watching") ||
+          lower.includes("subscribe") ||
+          lower.includes("youtube") ||
+          lower.includes("support the channel") ||
+          lower.trim() === "music" ||
+          lower.trim() === "[music]"
+        );
+      }
+
+      function alignLyrics(
+        officialData: { text: string; isSynced: boolean } | null,
+        aiSegments: any[],
+        fallbackLrc: string
+      ): string {
+        if (!officialData || !officialData.text || aiSegments.length === 0) {
+          return fallbackLrc;
+        }
+
+        let officialLines: string[] = [];
+        if (officialData.isSynced) {
+          officialLines = officialData.text
+            .split("\n")
+            .map(line => line.replace(/\[\d{2}:\d{2}\.\d{2,3}\]/g, "").trim())
+            .filter(line => line.length > 0 && !line.startsWith("id:") && !line.startsWith("ar:") && !line.startsWith("ti:"));
+        } else {
+          officialLines = officialData.text
+            .split("\n")
+            .map(line => line.trim())
+            .filter(line => line.length > 0);
+        }
+
+        if (officialLines.length === 0) {
+          return fallbackLrc;
+        }
+
+        const aiWords: { word: string; start: number; end: number; segmentIdx: number }[] = [];
+        aiSegments.forEach((segment, segmentIdx) => {
+          if (segment.words && segment.words.length > 0) {
+            segment.words.forEach((w: any) => {
+              const clean = w.word.toLowerCase().replace(/[^a-z0-9]/g, "");
+              if (clean.length > 0) {
+                aiWords.push({
+                  word: clean,
+                  start: w.start,
+                  end: w.end,
+                  segmentIdx
+                });
+              }
+            });
+          } else {
+            const words = segment.text.split(/\s+/).filter((w: string) => w.length > 0);
+            const count = words.length;
+            if (count > 0) {
+              const duration = segment.end - segment.start;
+              const step = duration / count;
+              words.forEach((word: string, idx: number) => {
+                const clean = word.toLowerCase().replace(/[^a-z0-9]/g, "");
+                if (clean.length > 0) {
+                  aiWords.push({
+                    word: clean,
+                    start: segment.start + idx * step,
+                    end: segment.start + (idx + 1) * step,
+                    segmentIdx
+                  });
+                }
+              });
+            }
+          }
+        });
+
+        const officialWords: { word: string; lineIdx: number }[] = [];
+        officialLines.forEach((lineText, lineIdx) => {
+          const words = lineText.split(/\s+/).filter(w => w.length > 0);
+          words.forEach(w => {
+            const clean = w.toLowerCase().replace(/[^a-z0-9]/g, "");
+            if (clean.length > 0) {
+              officialWords.push({ word: clean, lineIdx });
+            }
+          });
+        });
+
+        let aIdx = 0;
+        const matchedTimesByLine: Record<number, number[]> = {};
+        const matchedAiSegmentIndices = new Set<number>();
+
+        for (let oIdx = 0; oIdx < officialWords.length; oIdx++) {
+          const oWord = officialWords[oIdx].word;
+          const lineIdx = officialWords[oIdx].lineIdx;
+
+          let foundIdx = -1;
+          const searchLimit = Math.min(aiWords.length, aIdx + 25);
+          for (let k = aIdx; k < searchLimit; k++) {
+            if (aiWords[k].word === oWord || isFuzzyMatch(aiWords[k].word, oWord)) {
+              foundIdx = k;
+              break;
+            }
+          }
+
+          if (foundIdx !== -1) {
+            const time = aiWords[foundIdx].start;
+            if (!matchedTimesByLine[lineIdx]) {
+              matchedTimesByLine[lineIdx] = [];
+            }
+            matchedTimesByLine[lineIdx].push(time);
+            matchedAiSegmentIndices.add(aiWords[foundIdx].segmentIdx);
+            aIdx = foundIdx + 1;
+          }
+        }
+
+        const alignedLines: { time: number; text: string }[] = [];
+        let lastKnownTime = 0;
+
+        for (let i = 0; i < officialLines.length; i++) {
+          const times = matchedTimesByLine[i];
+          if (times && times.length > 0) {
+            const lineTime = Math.min(...times);
+            alignedLines.push({ time: lineTime, text: officialLines[i] });
+            lastKnownTime = lineTime;
+          } else {
+            let nextTime = -1;
+            for (let j = i + 1; j < officialLines.length; j++) {
+              const nextTimes = matchedTimesByLine[j];
+              if (nextTimes && nextTimes.length > 0) {
+                nextTime = Math.min(...nextTimes);
+                break;
+              }
+            }
+
+            let estimatedTime = lastKnownTime + 2.0;
+            if (nextTime !== -1) {
+              estimatedTime = lastKnownTime + (nextTime - lastKnownTime) * 0.5;
+            }
+            alignedLines.push({ time: estimatedTime, text: officialLines[i] });
+            lastKnownTime = estimatedTime;
+          }
+        }
+
+        aiSegments.forEach((seg, segIdx) => {
+          if (!matchedAiSegmentIndices.has(segIdx)) {
+            const cleanText = seg.text.trim();
+            if (cleanText.length > 2 && !isNoiseSegment(cleanText)) {
+              const exists = alignedLines.some(line => Math.abs(line.time - seg.start) < 0.5);
+              if (!exists) {
+                alignedLines.push({
+                  time: seg.start,
+                  text: cleanText
+                });
+              }
+            }
+          }
+        });
+
+        alignedLines.sort((a, b) => a.time - b.time);
+
+        function formatLrcTime(seconds: number): string {
+          const minutes = Math.floor(seconds / 60);
+          const sec = seconds % 60;
+          return `[${minutes.toString().padStart(2, "0")}:${sec.toFixed(2).padStart(5, "0")}]`;
+        }
+
+        return alignedLines.map(line => `${formatLrcTime(line.time)} ${line.text}`).join("\n");
+      }
+
+      if (url.pathname === "/api/generate-sync") {
+        const bodyText = await request.text();
+        let artist = "";
+        let track = "";
+        let duration = 0;
+        let videoId = "";
+
+        try {
+          const body = JSON.parse(bodyText);
+          artist = body.artist || "";
+          track = body.track || "";
+          duration = body.duration || 0;
+          videoId = body.videoId || "";
+        } catch (e) {}
+
+        if (!artist || !track) {
+          return new Response(JSON.stringify({ error: "Missing artist or track" }), {
+            status: 400,
+            headers: { "content-type": "application/json" },
+          });
+        }
+
+        let selectedVideoId = videoId;
+        if (!selectedVideoId) {
+          try {
+            const cleanedArtist = cleanArtist(artist);
+            const cleanedTrack = cleanTitle(track);
+            const searchTerms = [
+              `${cleanedArtist} ${cleanedTrack} official audio`,
+              `${cleanedArtist} ${cleanedTrack} topic`,
+              `${cleanedArtist} ${cleanedTrack}`,
+            ];
+
+            const searchResultGroups = await Promise.all(
+              uniqueStrings(searchTerms).map(async (searchTerm) => {
+                try {
+                  return await fetchYoutubeSearchResults(searchTerm);
+                } catch (error) {
+                  return [];
+                }
+              }),
+            );
+
+            const videosById = new Map<string, YoutubeVideoCandidate>();
+            for (const video of searchResultGroups.flat()) {
+              const existing = videosById.get(video.videoId);
+              if (!existing) {
+                videosById.set(video.videoId, video);
+                continue;
+              }
+              const existingScore = scoreYoutubeVideo(existing, artist, track, duration);
+              const nextScore = scoreYoutubeVideo(video, artist, track, duration);
+              if (nextScore > existingScore) {
+                videosById.set(video.videoId, video);
+              }
+            }
+
+            const videos = [...videosById.values()].filter(
+              (video) => !isLiveYoutubeVersion(video, track),
+            );
+
+            if (videos.length > 0) {
+              const scoredVideos = videos
+                .map((video) => ({
+                  video,
+                  score: scoreYoutubeVideo(video, artist, track, duration),
+                }))
+                .sort((a, b) => b.score - a.score);
+              selectedVideoId = scoredVideos[0].video.videoId;
+            }
+          } catch (e) {
+            console.error("YouTube lookup failed during sync generation:", e);
+          }
+        }
+
+        if (!selectedVideoId) {
+          return new Response(JSON.stringify({ error: "Could not find a YouTube video for this track" }), {
+            status: 404,
+            headers: { "content-type": "application/json" },
+          });
+        }
+
+        const youtubeUrl = `https://www.youtube.com/watch?v=${selectedVideoId}`;
+
+        try {
+          const pyRes = await fetch("http://127.0.0.1:8000/generate-sync", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ youtubeUrl }),
+          });
+
+          if (!pyRes.ok) {
+            const errData = (await pyRes.json()) as any;
+            return new Response(JSON.stringify({ error: errData.detail || "Transcription failed" }), {
+              status: pyRes.status,
+              headers: { "content-type": "application/json" },
+            });
+          }
+
+          const pyData = (await pyRes.json()) as any;
+          const aiSegments = pyData.segments || [];
+
+          let alignedLyrics = pyData.lrc;
+          try {
+            const officialData = await fetchOfficialLyricsText(artist, track, duration);
+            if (officialData && officialData.text) {
+              alignedLyrics = alignLyrics(officialData, aiSegments, pyData.lrc);
+              console.log(`Successfully aligned official lyrics with AI timestamps for ${artist} - ${track}`);
+            } else {
+              console.log(`No official lyrics found to align for ${artist} - ${track}. Using raw AI synced lyrics.`);
+            }
+          } catch (alignErr) {
+            console.error("Error during lyrics alignment:", alignErr);
+          }
+
+          const cacheKey = `${artist}:${track}`;
+          const sharedCacheKey = `lyrics:v2:${cacheKey}`;
+          const cacheData: LyricsCacheData = { 
+            syncedLyrics: alignedLyrics, 
+            duration: duration || pyData.duration || 0,
+            isAiSynced: true
+          };
+
+          lyricsCache.set(cacheKey, { data: cacheData, timestamp: Date.now() });
+          putSharedCache(env, ctx, sharedCacheKey, cacheData, LYRICS_CACHE_TTL_SECONDS);
+
+          return new Response(JSON.stringify(cacheData), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        } catch (error) {
+          console.error("Failed to connect to Python sync backend:", error);
+          return new Response(
+            JSON.stringify({ error: "Failed to connect to Python sync backend. Is it running?" }),
+            {
+              status: 502,
+              headers: { "content-type": "application/json" },
+            },
+          );
         }
       }
 
