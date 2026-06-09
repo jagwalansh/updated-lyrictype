@@ -452,8 +452,7 @@ function Index() {
                     {paginatedResults.map((t) => (
                       <li key={t.id}>
                         <Link
-                          to="/play/$trackId"
-                          params={{ trackId: String(t.id) }}
+                          to={`/play/${t.id}`}
                           search={{
                             artist: t.artistName,
                             track: t.trackName,
@@ -543,8 +542,7 @@ function Index() {
               {RECOMMENDED_SONGS_HOMEPAGE.map((song) => (
                 <DeflectCard key={song.id} className="w-full rounded-xl">
                   <Link
-                    to="/play/$trackId"
-                    params={{ trackId: String(song.id) }}
+                    to={`/play/${song.id}`}
                     search={{
                       artist: song.artistName,
                       track: song.trackName,

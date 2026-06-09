@@ -66,8 +66,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
   const handlePlayClick = (t: TrackSearchResult) => {
     onOpenChange(false);
     navigate({
-      to: "/play/$trackId",
-      params: { trackId: String(t.id) },
+      to: `/play/${t.id}`,
       search: {
         artist: t.artistName,
         track: t.trackName,
