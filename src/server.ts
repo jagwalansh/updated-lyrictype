@@ -56,7 +56,7 @@ function withSeoHeaders(request: Request, response: Response): Response {
   if (pathname !== "/play" && !pathname.startsWith("/play/")) return response;
 
   const headers = new Headers(response.headers);
-  headers.set("X-Robots-Tag", "noindex, nofollow");
+  headers.set("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet");
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -612,6 +612,8 @@ export default {
       if (url.pathname === "/robots.txt") {
         const robots = `User-agent: *
 Allow: /
+Disallow: /play
+Disallow: /play/
 Sitemap: https://keyverse.me/sitemap.xml`;
         return new Response(robots, {
           status: 200,

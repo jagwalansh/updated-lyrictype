@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /play
+Disallow: /play/
 
 Sitemap: https://keyverse.me/sitemap.xml
