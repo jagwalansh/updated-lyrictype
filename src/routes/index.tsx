@@ -5,7 +5,7 @@ import { searchTracks, type TrackSearchResult } from "@/lib/lrc";
 import { motion } from "motion/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Footer } from "@/components/ui/footer";
-import { Play, Sparkles } from "lucide-react";
+import { Play } from "lucide-react";
 import { DeflectCard } from "@/components/ui/deflect-card";
 import { trackEvent } from "@/lib/analytics";
 
@@ -286,30 +286,7 @@ function Index() {
   const [currentPage, setCurrentPage] = useState(1);
   const [disableAnimation, setDisableAnimation] = useState(hasVisitedHome);
   const [showAmbientMotion, setShowAmbientMotion] = useState(false);
-  const [syncedMap, setSyncedMap] = useState<Record<number, { synced: boolean; isAiSynced: boolean }>>({});
   const navigate = useNavigate();
-
-  // Check sync status of recommended songs on mount
-  useEffect(() => {
-    const checks = RECOMMENDED_SONGS_HOMEPAGE.map((song) =>
-      fetch(`/api/lyrics?artist=${encodeURIComponent(song.artistName)}&track=${encodeURIComponent(song.trackName)}`)
-        .then(async (res) => {
-          if (!res.ok) return { id: song.id, synced: false, isAiSynced: false };
-          const data = await res.json().catch(() => ({}));
-          return { id: song.id, synced: true, isAiSynced: !!data.isAiSynced };
-        })
-        .catch(() => ({ id: song.id, synced: false, isAiSynced: false })),
-    );
-    Promise.all(checks).then((resList) => {
-      setSyncedMap((prev) => {
-        const next = { ...prev };
-        resList.forEach((item) => {
-          next[item.id] = { synced: item.synced, isAiSynced: item.isAiSynced };
-        });
-        return next;
-      });
-    });
-  }, []);
 
   useEffect(() => {
     hasVisitedHome = true;
@@ -345,25 +322,6 @@ function Index() {
       searchTracks(query)
         .then((r) => {
           setResults(r);
-          // Check cached status for all searched tracks
-          const checks = r.map((track) =>
-            fetch(`/api/lyrics?artist=${encodeURIComponent(track.artistName)}&track=${encodeURIComponent(track.trackName)}`)
-              .then(async (res) => {
-                if (!res.ok) return { id: track.id, synced: false, isAiSynced: false };
-                const data = await res.json().catch(() => ({}));
-                return { id: track.id, synced: true, isAiSynced: !!data.isAiSynced };
-              })
-              .catch(() => ({ id: track.id, synced: false, isAiSynced: false })),
-          );
-          Promise.all(checks).then((resList) => {
-            setSyncedMap((prev) => {
-              const next = { ...prev };
-              resList.forEach((item) => {
-                next[item.id] = { synced: item.synced, isAiSynced: item.isAiSynced };
-              });
-              return next;
-            });
-          });
           if (!r.length) setErr("No songs found.");
         })
         .catch(() => {
@@ -495,9 +453,6 @@ function Index() {
                 <>
                   <ul className="space-y-3">
                     {paginatedResults.map((t) => {
-                      const syncInfo = syncedMap[t.id];
-                      const isAiSynced = !!syncInfo?.isAiSynced;
-
                       return (
                         <li key={t.id}>
                           <Link
@@ -529,11 +484,6 @@ function Index() {
                                 <p className="truncate font-semibold text-sm group-hover:text-primary transition-colors">
                                   {t.trackName}
                                 </p>
-                                {isAiSynced && (
-                                  <span className="shrink-0 text-[8px] sm:text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 rounded px-1.5 py-0.5 flex items-center gap-0.5">
-                                    AI Synced ✨
-                                  </span>
-                                )}
                               </div>
                               <p className="truncate text-xs text-muted-foreground mt-0.5">
                                 {t.artistName}
@@ -598,9 +548,6 @@ function Index() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {RECOMMENDED_SONGS_HOMEPAGE.map((song) => {
-                const syncInfo = syncedMap[song.id];
-                const isAiSynced = !!syncInfo?.isAiSynced;
-
                 return (
                   <DeflectCard key={song.id} className="w-full rounded-xl">
                     <Link
@@ -629,11 +576,6 @@ function Index() {
                             <h3 className="truncate font-semibold text-xs text-foreground group-hover:text-primary transition-colors">
                               {song.trackName}
                             </h3>
-                            {isAiSynced && (
-                              <span className="shrink-0 text-[8px] font-bold text-primary bg-primary/10 border border-primary/20 rounded px-1.5 py-0.5 flex items-center">
-                                AI Synced ✨
-                              </span>
-                            )}
                           </div>
                           <p className="truncate text-[10px] text-muted-foreground mt-0.5">
                             {song.artistName}

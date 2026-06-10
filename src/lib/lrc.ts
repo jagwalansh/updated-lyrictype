@@ -102,7 +102,6 @@ function shouldRemoveFirstLine(
 export interface LyricsResult {
   lines: LyricLine[];
   duration: number;
-  isAiSynced?: boolean;
 }
 
 export async function fetchSyncedLyrics(
@@ -121,7 +120,7 @@ export async function fetchSyncedLyrics(
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timeoutId);
     if (!res.ok) return null;
-    const data = (await res.json()) as { syncedLyrics?: string | null; duration?: number; isAiSynced?: boolean };
+    const data = (await res.json()) as { syncedLyrics?: string | null; duration?: number };
     if (!data.syncedLyrics) return null;
 
     const parsedLines = parseLrc(data.syncedLyrics);
@@ -136,7 +135,7 @@ export async function fetchSyncedLyrics(
       }
     }
 
-    return { lines: cleanedLines, duration: data.duration || duration || 0, isAiSynced: data.isAiSynced };
+    return { lines: cleanedLines, duration: data.duration || duration || 0 };
   } catch (error) {
     clearTimeout(timeoutId);
     console.error("Failed to fetch lyrics:", error);

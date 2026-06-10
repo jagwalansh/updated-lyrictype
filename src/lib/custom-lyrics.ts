@@ -1,28 +1,22 @@
 const SUMMERS_YOUNG_SHADIENT = {
   duration: 303,
-  syncedLyrics: `[00:24.93] I don't know where we're going I'm just caught in the moment
-[00:30.38] And I kinda like it like that Even though I know it'll never last
-[00:36.76] Sun never stopped coming Stumbled our way to something
-[00:42.45] Who's ever see where this goes If we never try, we'll never know
-[00:48.28] We'll last as long as a summer kiss Drink in your touch, got you on my lips
-[00:54.42] I'm thinking oh my God I just can't turn this off
-[01:00.34] Don't need your heart or your promises Don't care to know what forever is
-[01:11.39] I think we've just begun Life's sweet and summer's young
-[01:23.14] Life's sweet and summer's young I think we've just begun
-[01:30.89] Life's sweet and summer's young
-[02:22.90] Stars lighting up the highway Driving into the morning
-[02:30.95] Running your hand through my hair 'Cause only you can get me there
-[02:38.55] Maybe we'll have tomorrow Maybe your time is borrowed
-[02:46.35] But all that I need is right here Before it all disappears
-[03:08.80] We'll last as long as a summer kiss Drink in your touch, got you on my lips
-[03:16.70] I'm thinking oh my God I just can't turn this off
-[03:24.50] Don't need your heart or your promises Don't care to know what forever is
-[03:32.45] I think we've just begun Life's sweet and summer's young
-[03:39.05] Life's sweet and summer's young Life's sweet and summer's young
-[04:19.00] We'll last as long as a summer kiss Drink in your touch, got you on my lips
-[04:26.90] I'm thinking oh my God I just can't turn this off
-[04:34.70] Don't need your heart or your promises Don't care to know what forever is
-[04:42.65] I think we've just begun`,
+  syncedLyrics: `[00:24.38] I don't know where we're going I'm just caught in the moment
+[00:30.32] Not gonna like it like that Even though I know it'll never last
+[00:36.40] Sun every shot coming Stumbled our way to something
+[00:42.42] You'll never see where this goes If we never try, we'll never know
+[00:48.18] We'll last as long as a summer kiss Drinking your touch, got your other lips
+[00:54.08] I'm thinkin' oh my god I just can't turn this off
+[00:59.90] Don't need your heart, all your promises Don't care to know what forever is
+[01:06.08] I think we just begun Last week in summer's show
+[01:57.14] Life's sweet and summer's
+[02:0.00] Stars lighting up the highway Driving into the morning
+[02:6.00] Running your hand through my hair 'Cause only you can get me there
+[02:11.55] Maybe we'll have tomorrow Maybe your time is borrowed
+[02:18.35] But all that I need is right here Before it all disappears
+[02:23.80] We'll last as long as a summer kiss Drink in your touch, got you on my lips
+[02:29.70] I'm thinking oh my God I just can't turn this off
+[02:36.40] Don't need your heart or your promises Don't care to know what forever is
+[02:42.00] I think we've just begun Life's sweet and summer's young`,
 };
 
 export const CUSTOM_LYRICS: Record<
