@@ -185,6 +185,7 @@ type YoutubeVideoRenderer = {
 
 type LyricsCacheData = {
   syncedLyrics?: string | null;
+  duration?: number;
 };
 
 type YoutubeSearchData = {

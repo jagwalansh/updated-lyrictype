@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, Fragment, useEffect } from "react";
 import { Navbar } from "@/components/ui/navbar";
 import { searchTracks, type TrackSearchResult } from "@/lib/lrc";
@@ -286,6 +286,7 @@ function Index() {
   const [currentPage, setCurrentPage] = useState(1);
   const [disableAnimation, setDisableAnimation] = useState(hasVisitedHome);
   const [showAmbientMotion, setShowAmbientMotion] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     hasVisitedHome = true;
@@ -310,6 +311,8 @@ function Index() {
     };
   }, []);
 
+
+
   useEffect(() => {
     const query = routeQuery ?? "";
     if (query.trim()) {
@@ -319,7 +322,7 @@ function Index() {
       searchTracks(query)
         .then((r) => {
           setResults(r);
-          if (!r.length) setErr("No songs with synced lyrics found.");
+          if (!r.length) setErr("No songs found.");
         })
         .catch(() => {
           setErr("Search failed. Try again.");
@@ -475,15 +478,17 @@ function Index() {
                             </div>
                           )}
                           <div className="min-w-0 flex-1">
-                            <p className="truncate font-semibold text-sm group-hover:text-primary transition-colors">
-                              {t.trackName}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="truncate font-semibold text-sm group-hover:text-primary transition-colors">
+                                {t.trackName}
+                              </p>
+                            </div>
                             <p className="truncate text-xs text-muted-foreground mt-0.5">
                               {t.artistName}
                             </p>
                           </div>
-                          <span className="font-mono text-xs text-primary group-hover:translate-x-1 transition-transform">
-                            play -&gt;
+                          <span className="font-mono text-xs text-primary font-bold group-hover:translate-x-1 transition-transform">
+                            PLAY &rarr;
                           </span>
                         </Link>
                       </li>
@@ -556,22 +561,24 @@ function Index() {
                     {/* Subtle backlighting on card hover */}
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-xl" />
 
-                    <div className="flex items-center gap-3 relative z-10">
+                    <div className="flex items-center gap-3 relative z-10 min-w-0 flex-1">
                       <img
                         src={song.artworkUrl100}
                         alt={`${song.trackName} album artwork`}
                         className="h-12 w-12 rounded-lg object-cover border border-border/10 shrink-0"
                       />
-                      <div className="min-w-0">
-                        <h3 className="truncate font-semibold text-xs text-foreground group-hover:text-primary transition-colors">
-                          {song.trackName}
-                        </h3>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="truncate font-semibold text-xs text-foreground group-hover:text-primary transition-colors">
+                            {song.trackName}
+                          </h3>
+                        </div>
                         <p className="truncate text-[10px] text-muted-foreground mt-0.5">
                           {song.artistName}
                         </p>
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono font-bold text-primary group-hover:translate-x-1 transition-transform relative z-10 flex items-center gap-1">
+                    <span className="text-[10px] font-mono font-bold text-primary group-hover:translate-x-1 transition-transform relative z-10 flex items-center gap-1 shrink-0 ml-2">
                       <Play className="h-2.5 w-2.5 fill-current" />
                       PLAY
                     </span>

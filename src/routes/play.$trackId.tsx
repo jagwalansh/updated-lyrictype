@@ -19,7 +19,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  Sparkles,
   Flag,
   Send,
   X,
@@ -378,9 +377,6 @@ function charsMatch(typedChar: string, expectedChar: string): boolean {
   return typedChar === expectedChar;
 }
 
-// Local debugging only:
-// const GOD_MODE = true;
-
 export const Route = createFileRoute("/play/$trackId")({
   head: () => ({
     meta: [{ name: "robots", content: "noindex, nofollow" }],
@@ -395,6 +391,39 @@ export const Route = createFileRoute("/play/$trackId")({
   }),
   component: PlayPage,
 });
+
+function shouldRemoveFirstLine(
+  firstLineText: string,
+  artistName: string,
+  trackName: string,
+): boolean {
+  const normalizeStr = (str: string): string => {
+    return str
+      .toLowerCase()
+      .replace(/\s*[([][^)\]]*[)\]]/g, "")
+      .replace(/[.,/#!$%^&*;:{}=_`~()[\]'"-]/g, "")
+      .replace(/\s+/g, "")
+      .trim();
+  };
+  const normLine = normalizeStr(firstLineText);
+  const normTrack = normalizeStr(trackName);
+  const normArtist = normalizeStr(artistName);
+
+  if (!normLine) return true;
+  if (normLine === normTrack) return true;
+  if (normLine === normArtist) return true;
+  if (normLine === normalizeStr(`${artistName} ${trackName}`)) return true;
+  if (normLine === normalizeStr(`${trackName} ${artistName}`)) return true;
+  if (
+    normLine.includes("lyricsby") ||
+    normLine.includes("writtenby") ||
+    normLine.includes("producedby") ||
+    normLine.includes("lrcby")
+  ) {
+    return true;
+  }
+  return false;
+}
 
 function PlayPage() {
   const { artist, track, art, duration, q, from } = Route.useSearch();
@@ -416,6 +445,7 @@ function PlayPage() {
     Array<{ status: "hit" | "miss" | "pending"; char?: string }>
   >([]);
   const [lineComplete, setLineComplete] = useState(false);
+  const [lyricsFinished, setLyricsFinished] = useState(false);
   const [waitingForNext, setWaitingForNext] = useState<string | null>(null);
 
   const [stats, setStats] = useState({ correct: 0, total: 0, started: 0 });
@@ -548,6 +578,7 @@ function PlayPage() {
     setScoreSaveSkippedReason(null);
     setLoadErr(null);
     setLines(null);
+    setLyricsFinished(false);
     setVideoId(null);
     setYtAuthor(null);
     setYtCandidates([]);
@@ -571,22 +602,19 @@ function PlayPage() {
           duration: String(duration || 0),
         });
 
-        // Fetch lyrics, YouTube results, and community ranking together to avoid serial loading.
-        const [lyricsRes, ytResponse, voteData] = await Promise.all([
-          fetchSyncedLyrics(artist, track, duration),
+        // Start the regular lyrics lookup in parallel with YouTube search.
+        const lyricsPromise = fetchSyncedLyrics(artist, track, duration).catch((error) => {
+          console.error("Regular lyrics lookup failed:", error);
+          return null;
+        });
+
+        // 1. Fetch YouTube results and community ranking.
+        const [ytResponse, voteData] = await Promise.all([
           fetch(`/api/youtube-search?${youtubeParams.toString()}`),
           fetchVideoVoteData(trackId),
         ]);
 
         if (cancelled) return;
-
-        // 1. Process lyrics
-        if (!lyricsRes || lyricsRes.lines.length === 0) {
-          setLoadErr("No synced lyrics found for this song.");
-          setYtLoading(false);
-          return;
-        }
-        setLines(lyricsRes.lines);
 
         // 2. Process YouTube response
         if (!ytResponse.ok) {
@@ -602,6 +630,7 @@ function PlayPage() {
           ];
           const rankedCandidates = sortVideoCandidates(candidates, voteData.scores);
           const selectedCandidate = rankedCandidates[0] ?? candidates[0];
+
           setVideoVoteScores(voteData.scores);
           setUserVideoVotes(voteData.userVotes);
           setVideoId(selectedCandidate.videoId);
@@ -609,7 +638,20 @@ function PlayPage() {
           setYtCandidates(rankedCandidates);
         } else {
           setLoadErr("Could not find a YouTube video for this track.");
+          return;
         }
+
+        const lyricsRes = await lyricsPromise;
+        if (cancelled) {
+          return;
+        }
+
+        if (lyricsRes && lyricsRes.lines.length > 0) {
+          setLines(lyricsRes.lines);
+          return;
+        }
+
+        setLoadErr("No synced lyrics found for this track.");
       } catch (e) {
         console.error(e);
         if (!cancelled) setLoadErr("Failed to load track data.");
@@ -791,9 +833,10 @@ function PlayPage() {
         if (fillEl) fillEl.style.width = `${pct}%`;
         if (unplayedEl) unplayedEl.style.left = `${pct}%`;
         if (handleEl) handleEl.style.left = `${pct}%`;
+
       }
 
-      if (lines && lines[currentLineIdx]) {
+      if (lines && lines[currentLineIdx] && !lyricsFinished) {
         const line = lines[currentLineIdx];
         const nextLineTime = lines[currentLineIdx + 1]?.time || line.time + 5;
         const timeDiff = line.time - currentTimeRef.current;
@@ -887,7 +930,8 @@ function PlayPage() {
             }
 
             if (currentLineIdx === lines.length - 1) {
-              endSong();
+              setLyricsFinished(true);
+              updateWaitingForNext(null);
             } else {
               handleLineComplete(true);
             }
@@ -906,7 +950,7 @@ function PlayPage() {
 
       rafRef.current = requestAnimationFrame(updateTime);
     }
-  }, [playing, lines, currentLineIdx, handleLineComplete, endSong, updateWaitingForNext]);
+  }, [playing, lines, currentLineIdx, lyricsFinished, handleLineComplete, updateWaitingForNext]);
 
   useEffect(() => {
     if (playing) {
@@ -946,7 +990,7 @@ function PlayPage() {
       return;
     }
 
-    if (!fullText || !lines || !playing) return;
+    if (!fullText || !lines || !playing || lyricsFinished) return;
 
     const line = lines[currentLineIdx];
     if (!line) return;
@@ -1053,7 +1097,8 @@ function PlayPage() {
       setLineComplete(true);
       if (currentLineIdx === lines.length - 1) {
         completedLyricsRef.current = true;
-        endSong();
+        setLyricsFinished(true);
+        updateWaitingForNext(null);
       }
     }
   }
@@ -1226,6 +1271,7 @@ function PlayPage() {
     songStartedTrackedRef.current = false;
     songCompletedTrackedRef.current = false;
     completedLyricsRef.current = false;
+    setLyricsFinished(false);
     inactivityMissesRef.current = 0;
     lastCompletedLineRef.current = -1;
     setSongEnded(false);
@@ -1608,7 +1654,7 @@ function PlayPage() {
                         {art ? (
                           <img
                             src={art}
-                            alt={`${trackName || "Selected track"} album artwork`}
+                            alt={`${track || "Selected track"} album artwork`}
                             className="h-36 w-36 rounded-lg shadow-md mb-6 relative z-10"
                           />
                         ) : (
@@ -1900,7 +1946,7 @@ function PlayPage() {
                     </motion.div>
                   ) : (
                     /* ── Normal Lyrics Display ── */
-                    <div className="relative z-10">
+                    <div className="relative z-10 transition-opacity duration-300 opacity-100">
                       <div className="min-h-[200px]" />
 
                       {lines.map((line, idx) => {

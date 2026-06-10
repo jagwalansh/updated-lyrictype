@@ -1,7 +1,34 @@
+const SUMMERS_YOUNG_SHADIENT = {
+  duration: 303,
+  syncedLyrics: `[00:24.38] I don't know where we're going I'm just caught in the moment
+[00:30.32] Not gonna like it like that Even though I know it'll never last
+[00:36.40] Sun every shot coming Stumbled our way to something
+[00:42.42] You'll never see where this goes If we never try, we'll never know
+[00:48.18] We'll last as long as a summer kiss Drinking your touch, got your other lips
+[00:54.08] I'm thinkin' oh my god I just can't turn this off
+[00:59.90] Don't need your heart, all your promises Don't care to know what forever is
+[01:06.08] I think we just begun Last week in summer's show
+[01:57.14] Life's sweet and summer's
+[02:0.00] Stars lighting up the highway Driving into the morning
+[02:6.00] Running your hand through my hair 'Cause only you can get me there
+[02:11.55] Maybe we'll have tomorrow Maybe your time is borrowed
+[02:18.35] But all that I need is right here Before it all disappears
+[02:23.80] We'll last as long as a summer kiss Drink in your touch, got you on my lips
+[02:29.70] I'm thinking oh my God I just can't turn this off
+[02:36.40] Don't need your heart or your promises Don't care to know what forever is
+[02:42.00] I think we've just begun Life's sweet and summer's young`,
+};
+
 export const CUSTOM_LYRICS: Record<
   string,
   { plainLyrics?: string; syncedLyrics?: string; duration?: number }
 > = {
+  "pls&ty - summer's young (shadient remix) [feat. dia frampton & shadient]": SUMMERS_YOUNG_SHADIENT,
+  "pls&ty - summer's young (shadient remix)": SUMMERS_YOUNG_SHADIENT,
+  "pls&ty - summer's young (feat. dia frampton & shadient) (shadient remix)": SUMMERS_YOUNG_SHADIENT,
+  "pls&ty - summer's young (shadient remix) feat. dia frampton & shadient": SUMMERS_YOUNG_SHADIENT,
+  "pls&ty - summer's young (feat. dia frampton & shadient) [shadient remix]": SUMMERS_YOUNG_SHADIENT,
+  "pls&ty - summer's young - shadient remix": SUMMERS_YOUNG_SHADIENT,
   "ravyn lenae - love me not": {
     duration: 214,
     syncedLyrics: `[00:16.76] See, right now, I need you, I'll meet you somewhere now
@@ -56,3 +83,37 @@ export const CUSTOM_LYRICS: Record<
 [03:18.12] Oh, no, I don't need you, but I miss you, come here`,
   },
 };
+
+function normalizeCustomLyricsLookup(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[.,/#!$%^*;:{}=_`~'"-]/g, " ")
+    .replace(/[()[\]]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function hasCustomLyrics(artist: string, track: string): boolean {
+  const artistNorm = normalizeCustomLyricsLookup(artist);
+  const trackNorm = normalizeCustomLyricsLookup(track);
+
+  return Object.keys(CUSTOM_LYRICS).some((key) => {
+    const delimiterIndex = key.indexOf(" - ");
+    const customArtist = delimiterIndex >= 0 ? key.slice(0, delimiterIndex) : "";
+    const customTrack = delimiterIndex >= 0 ? key.slice(delimiterIndex + 3) : key;
+    const customArtistNorm = normalizeCustomLyricsLookup(customArtist);
+    const customTrackNorm = normalizeCustomLyricsLookup(customTrack);
+
+    const artistMatches =
+      artistNorm === customArtistNorm ||
+      artistNorm.includes(customArtistNorm) ||
+      customArtistNorm.includes(artistNorm);
+    const trackMatches =
+      trackNorm === customTrackNorm ||
+      trackNorm.includes(customTrackNorm) ||
+      customTrackNorm.includes(trackNorm);
+
+    return artistMatches && trackMatches;
+  });
+}

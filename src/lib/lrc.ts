@@ -1,3 +1,5 @@
+import { hasCustomLyrics } from "./custom-lyrics";
+
 export interface LyricLine {
   time: number; // seconds
   text: string;
@@ -39,6 +41,15 @@ type ItunesTrackResult = {
   artworkUrl100?: string;
 };
 
+const SYNC_RISKY_VERSION_RE =
+  /\b(remix|rework|edit|sped\s*up|spedup|speed\s*up|slowed|slow(?:ed)?\s*(?:and\s*)?reverb|slowreverb|slowedreverb|reverb|nightcore|lo-?fi|8d|pitched|instrumental|karaoke|live|acoustic)\b/i;
+
+function shouldKeepSearchResult(track: TrackSearchResult): boolean {
+  const versionText = `${track.trackName} ${track.albumName ?? ""}`;
+  if (!SYNC_RISKY_VERSION_RE.test(versionText)) return true;
+  return hasCustomLyrics(track.artistName, track.trackName);
+}
+
 export async function searchTracks(query: string): Promise<TrackSearchResult[]> {
   if (!query.trim()) return [];
 
@@ -47,14 +58,16 @@ export async function searchTracks(query: string): Promise<TrackSearchResult[]> 
   if (!res.ok) throw new Error("Search failed");
   const data = (await res.json()) as { results?: ItunesTrackResult[] };
 
-  return (data.results || []).map((item) => ({
-    id: item.trackId ?? 0,
-    trackName: item.trackName || "Unknown",
-    artistName: item.artistName || "Unknown",
-    albumName: item.collectionName,
-    duration: item.trackTimeMillis ? Math.floor(item.trackTimeMillis / 1000) : undefined,
-    artworkUrl100: item.artworkUrl100,
-  }));
+  return (data.results || [])
+    .map((item) => ({
+      id: item.trackId ?? 0,
+      trackName: item.trackName || "Unknown",
+      artistName: item.artistName || "Unknown",
+      albumName: item.collectionName,
+      duration: item.trackTimeMillis ? Math.floor(item.trackTimeMillis / 1000) : undefined,
+      artworkUrl100: item.artworkUrl100,
+    }))
+    .filter(shouldKeepSearchResult);
 }
 function normalizeStr(str: string): string {
   return str
