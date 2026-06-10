@@ -83,3 +83,37 @@ export const CUSTOM_LYRICS: Record<
 [03:18.12] Oh, no, I don't need you, but I miss you, come here`,
   },
 };
+
+function normalizeCustomLyricsLookup(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[.,/#!$%^*;:{}=_`~'"-]/g, " ")
+    .replace(/[()[\]]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function hasCustomLyrics(artist: string, track: string): boolean {
+  const artistNorm = normalizeCustomLyricsLookup(artist);
+  const trackNorm = normalizeCustomLyricsLookup(track);
+
+  return Object.keys(CUSTOM_LYRICS).some((key) => {
+    const delimiterIndex = key.indexOf(" - ");
+    const customArtist = delimiterIndex >= 0 ? key.slice(0, delimiterIndex) : "";
+    const customTrack = delimiterIndex >= 0 ? key.slice(delimiterIndex + 3) : key;
+    const customArtistNorm = normalizeCustomLyricsLookup(customArtist);
+    const customTrackNorm = normalizeCustomLyricsLookup(customTrack);
+
+    const artistMatches =
+      artistNorm === customArtistNorm ||
+      artistNorm.includes(customArtistNorm) ||
+      customArtistNorm.includes(artistNorm);
+    const trackMatches =
+      trackNorm === customTrackNorm ||
+      trackNorm.includes(customTrackNorm) ||
+      customTrackNorm.includes(trackNorm);
+
+    return artistMatches && trackMatches;
+  });
+}
